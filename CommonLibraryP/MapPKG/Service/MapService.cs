@@ -5,6 +5,7 @@ using DevExpress.XtraPrinting.Shape.Native;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,6 +28,14 @@ namespace CommonLibraryP.MapPKG
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<MapDBContext>();
                 return await dbContext.MapConfigs.Include(x => x.MapComponents).AsNoTracking().ToListAsync();
+            }
+        }
+        public async Task<MapConfig?> GetMapConfigById(Guid id)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<MapDBContext>();
+                return await dbContext.MapConfigs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
             }
         }
         public async Task<RequestResult> UpsertMapConfig(MapConfig mapConfig)
@@ -78,6 +87,50 @@ namespace CommonLibraryP.MapPKG
                 {
                     return new(4, $"Delete map {mapConfig.Name} fail({e.Message})");
                 }
+            }
+        }
+
+        public async Task<RequestResult> UpdateAllComponentsInMap(MapConfig mapConfig, IEnumerable<MapComponent> mapComponents)
+        {
+            var targetMap = await GetMapConfigById(mapConfig.Id);
+            if (targetMap is not null)
+            {
+                if (mapComponents.Any(x => x.MapId != targetMap.Id))
+                {
+                    return new(4, "Components map id error");
+                }
+                var currentComponentsInMap = await GetComponentsInMapById(targetMap.Id);
+                var componentsDelete = currentComponentsInMap.ExceptBy(currentComponentsInMap.Select(p => p.Id), p => p.Id);
+
+                var deleteTasks = componentsDelete.Select(x => DeleteMapComponentTPC(x));
+                var deleteTaskResults = await Task.WhenAll(deleteTasks);
+                if (deleteTaskResults.Any(x => !x.IsSuccess))
+                {
+                    return new(4, "Delete not exist components fail");
+                }
+
+                var upsertTasks = mapComponents.Select(x => UpsertMapComponentTPC(x));
+                var upsertTaskResults = await Task.WhenAll(upsertTasks);
+                if (upsertTaskResults.Any(x => !x.IsSuccess))
+                {
+                    return new(4, "Upsert components fail");
+                }
+
+                return new(2, $"Update map {mapConfig.Name} all components success");
+
+            }
+            else
+            {
+                return new(4, "Map not found");
+            }
+        }
+
+        private async Task<List<MapComponent>> GetComponentsInMapById(Guid mapId)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<MapDBContext>();
+                return await dbContext.MapComponents.AsNoTracking().Where(x => x.MapId == mapId).ToListAsync();
             }
         }
 

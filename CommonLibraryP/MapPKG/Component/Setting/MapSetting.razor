@@ -1,6 +1,8 @@
 ﻿@namespace CommonLibraryP.MapPKG.Component
+@using Blazor.Diagrams.Core.Controls.Default
 @using Blazor.Diagrams.Core.Geometry
 @using Blazor.Diagrams.Core.Models
+@using Blazor.Diagrams.Core.Models.Base
 @using Blazor.Diagrams.Core.PathGenerators
 @using Blazor.Diagrams.Core.Routers
 @using Blazor.Diagrams.Options
@@ -25,33 +27,17 @@
 
 <style>
     .diagram-container {
-    width: 100%;
-    height: 100%;
-    border: 1px solid white;
-    overflow: hidden;
+        width: 100%;
+        height: 100%;
+        border: 1px solid white;
+        overflow: hidden;
     }
 
     .img {
-    cursor: auto;
-    overflow: auto;
+        cursor: auto;
+        overflow: auto;
     }
 </style>
-
-<script>
-    function GetPosition(element) {
-    const rect = element.getBoundingClientRect();
-    return {
-    x: rect.x,
-    y:rect.y,
-    top: rect.top,
-    left: rect.left,
-    height: rect.height,
-    width: rect.width,
-    };
-    }
-</script>
-
-
 
 <DxGridLayout RowSpacing="1rem" ColumnSpacing="1rem">
     <Rows>
@@ -60,7 +46,7 @@
     </Rows>
     <Columns>
         <DxGridLayoutColumn Width="3fr" />
-        <DxGridLayoutColumn Width="8fr" />
+        <DxGridLayoutColumn Width="9fr" />
     </Columns>
     <Items>
         <DxGridLayoutItem Row="0" Column="0" RowSpan="2">
@@ -88,37 +74,27 @@
                 <div class="h-100 d-flex flex-wrap justify-content-evenly p-3 card">
                     <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
                         <Items>
+                            <DxToolbarItem IconCssClass="bi bi-info-circle" RenderStyle="ButtonRenderStyle.Info" Enabled="hasContainer" Click="ShowMapInfo" BeginGroup="true" />
                             <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true">
                                 <Items>
                                     <DxToolbarItem Text="Machine" Click="NewMapComponentMachine" />
                                     <DxToolbarItem Text="Station" Click="NewMapComponentStation" BeginGroup="true" />
                                 </Items>
                             </DxToolbarItem>
-                            @*                             <DxToolbarItem RenderStyle="ButtonRenderStyle.Secondary" Text="@($"{componentEditMode.ToString()}({mouseEventArgs?.ClientX}, {mouseEventArgs?.ClientY})")" Enabled="false" BeginGroup="true" />*@                            <DxToolbarItem RenderStyle="ButtonRenderStyle.Danger" IconCssClass="oi oi-trash" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
+                            <DxToolbarItem RenderStyle="ButtonRenderStyle.Info" IconCssClass="bi bi-floppy" Click="AlignNodeToComponent" BeginGroup="true" />
+                            <DxToolbarItem RenderStyle="ButtonRenderStyle.Danger" IconCssClass="oi oi-trash" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
                         </Items>
                     </DxToolbar>
                 </div>
             </Template>
         </DxGridLayoutItem>
-        <DxGridLayoutItem Row="1" Column="1" CssClass="img">
+        <DxGridLayoutItem Row="1" Column="1" CssClass="img" >
             <Template>
-                @if (mapSelected)
+                @if (diagramInitialized)
                 {
-                    @* <div @ref="shapeLayer" class="h-100 w-100 card p-3"
-                         style="background-image: url('@($"{imageDisplayByteString}")'); background-size:contain; background-position:center ;background-repeat: no-repeat"
-                         @ondrop="OnDrop" ondragover="event.preventDefault();">
-                        @foreach (var component in mapComponents)
-                        {
-                            <MapComponentEdit MapComponentParam="@component"
-                                              ComponentClickCallback="ComponentClick" IsFocus=@(CheckIsFocus(component.Id))
-                                              ComponentMouseEventStartArgsCallback="StartAction" />
-                        }
-                    </div> *@
                     <div class="diagram-container" style=@($"background-image: url('{imageDisplayByteString}'); background-size:contain; background-position:center ;background-repeat: no-repeat")>
-                        <CascadingValue Value="Diagram">
-                            <DiagramCanvas>
-
-                            </DiagramCanvas>
+                        <CascadingValue Value="@Diagram">
+                            <DiagramCanvas></DiagramCanvas>
                         </CascadingValue>
                     </div>
                 }
@@ -126,6 +102,31 @@
         </DxGridLayoutItem>
     </Items>
 </DxGridLayout>
+
+<DxPopup @bind-Visible="@mapInfoPopup" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <HeaderTemplate>
+        <div class="w-100 p-3 border border-bottom">
+            <DxToolbar>
+                <Items>
+                    <DxToolbarItem IconCssClass="oi oi-x" Click="CloseMapInfo" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                </Items>
+            </DxToolbar>
+        </div>
+    </HeaderTemplate>
+    <BodyContentTemplate Context="bodycontext">
+        <DxFormLayout>
+            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Original point" ColSpanLg="6" BeginRow="true">
+                <DxTextBox Text="@($"({Math.Round(Diagram.Container.Left, 2)},{Math.Round(Diagram.Container.Top, 2)})")" ReadOnly="true"></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Width" ColSpanLg="3">
+                <DxSpinEdit Value="@(Diagram.Container.Width)" DisplayFormat="f1" ReadOnly="true" />
+            </DxFormLayoutItem>
+            <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Height" ColSpanLg="3">
+                <DxSpinEdit Value="@(Diagram.Container.Height)" DisplayFormat="f1" ReadOnly="true" />
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    </BodyContentTemplate>
+</DxPopup>
 
 <DxPopup @bind-Visible="@mapPopupVisible" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
     <HeaderTemplate>
@@ -152,9 +153,9 @@
                 </DxFormLayoutItem>
                 <DxFormLayoutItem ColSpanLg="12" BeginRow="true">
                     <DxFileInput FilesUploading="OnFilesUploading"
-                    AllowMultiFileUpload="false"
-                    MaxFileSize="15000000"
-                    AcceptedFileTypes="AllowedFileExtensions">
+                                 AllowMultiFileUpload="false"
+                                 MaxFileSize="15000000"
+                                 AcceptedFileTypes="AllowedFileExtensions">
                     </DxFileInput>
                 </DxFormLayoutItem>
                 <DxFormLayoutItem ColSpanLg="12">
@@ -183,8 +184,7 @@
         </div>
     </HeaderTemplate>
     <BodyContentTemplate Context="bodycontext">
-
-        <EditForm Model="@targetMapComponent" Context="EditFormContext" OnValidSubmit="UpsertComponent" On>
+        <EditForm Model="@targetMapComponent" Context="EditFormContext" OnValidSubmit="UpsertComponent">
             <DataAnnotationsValidator />
             <DxFormLayout>
                 @if (targetMapComponent is MapComponentMachine mapComponentMachine)
@@ -240,6 +240,7 @@
     private bool mapPopupVisible = false;
 
 
+
     private readonly List<string> AllowedFileExtensions = new() { ".jpg", ".jpeg", ".png" };
 
     private string imageDisplayByteString => GetImageDisplayByteString();
@@ -268,34 +269,59 @@
     private IEnumerable<Machine> machines;
 
     private BlazorDiagram Diagram { get; set; } = null!;
+    private bool diagramInitialized = false;
+    private bool hasContainer => Diagram?.Container is not null;
 
     #endregion
 
+    private bool mapInfoPopup = false;
+
+
     protected override async Task OnInitializedAsync()
     {
+        //await InitDiagram();
         await InitParam();
-        await InitDiagram();
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await InitDiagram();
+            Diagram.PointerClick += OnDiagramClick;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task InitDiagram()
     {
+        diagramInitialized = false;
         var options = new BlazorDiagramOptions
-            {
-                AllowMultiSelection = false,
-                Zoom =
+        {
+            AllowMultiSelection = false,
+            Zoom =
             {
                 Enabled = false,
             },
-                AllowPanning = false,
-                Links =
-            {
-                DefaultRouter = new NormalRouter(),
-                DefaultPathGenerator = new SmoothPathGenerator()
-            },
-            };
+            AllowPanning = false,
+        };
 
         Diagram = new BlazorDiagram(options);
+
         Diagram.RegisterComponent<MapDiagramNode, MapDiagramNodeComponent>();
+        Diagram.RegisterComponent<ResizeControl, ResizeComponent>();
+        // Diagram.RegisterComponent<ResizeControlTop, ResizeTop>();
+        // Diagram.RegisterComponent<ResizeControl, ResizeBottom>();
+        // Diagram.RegisterComponent<ResizeControlLeft, ResizeLeft>();
+        // Diagram.RegisterComponent<ResizeControlRight, ResizeRight>();
+
+
+
+
+        diagramInitialized = true;
+
+        await Task.CompletedTask;
     }
 
     private async Task InitParam()
@@ -304,6 +330,10 @@
         stations = await mapService.GetStationsFromMchineService();
         machines = await mapService.GetMachinesFromMchineService();
     }
+
+    private void ShowMapInfo() => mapInfoPopup = true;
+    private void CloseMapInfo() => mapInfoPopup = false;
+
 
     #region map
 
@@ -370,19 +400,26 @@
         }
     }
 
+
+
     #endregion
 
     #region component
 
     private async Task DataItemSelected(Object? obj)
     {
+        //await InitDiagram();
         taregtMapConfigObj = obj;
         Diagram.Nodes.Clear();
-        foreach (var node in mapComponents)
+        var width = Diagram.Container.Width;
+        var height = Diagram.Container.Height;
+        foreach (var mapComponent in mapComponents)
         {
-            Diagram.Nodes.Add((new MapDiagramNode(position: new Point(node.PositionX, node.PositionY))).SetConfig(node));
+            var newNode = new MapDiagramNode(mapComponent, width, height);
+            //Diagram.Controls.AddFor(newNode).Add(new BoundaryControl());
+            Diagram.Controls.AddFor(newNode).Add(new ResizeControl());
+            Diagram.Nodes.Add(newNode);
         }
-
         await Task.CompletedTask;
     }
 
@@ -412,58 +449,36 @@
         notificationService.ShowToast(res);
     }
 
-    // private async Task ComponentClick(Guid id)
-    // {
-    //     targetMapComponent = mapComponents?.FirstOrDefault(x => x.Id == id);
-    //     await InvokeAsync(StateHasChanged);
-    // }
-
-    // private bool CheckIsFocus(Guid id)
-    // {
-    //     return mapComponentSelected ? targetMapComponent.Id == id : false;
-    // }
-
-    // private async Task StartAction(MapComponentEditMode mapComponentEditMode, MouseEventArgs e)
-    // {
-    //     mouseEventArgs = e;
-    //     componentEditMode = mapComponentEditMode;
-    //     await InvokeAsync(StateHasChanged);
-    // }
-
-    // private async Task OnDrop(MouseEventArgs e)
-    // {
-    //     if (mapComponentSelected)
-    //     {
-    //         shapePanelSize = await js.InvokeAsync<Rect>("GetPosition", shapeLayer);
-
-    //         switch (componentEditMode)
-    //         {
-    //             case MapComponentEditMode.Move:
-    //                 targetMapComponent.PositionX = (e.ClientX - mouseEventArgs.OffsetX - shapePanelSize.Left) / shapePanelSize.Width * 100;
-    //                 //targetMapComponent.PositionX += (deltaX / 100);
-    //                 targetMapComponent.PositionY = (e.ClientY - mouseEventArgs.OffsetY - shapePanelSize.Top) / shapePanelSize.Height * 100;
-    //                 //targetMapComponent.PositionY += (deltaY / 100);
-    //                 break;
-    //             case MapComponentEditMode.ResizeCorner:
-    //                 targetMapComponent.Width = (e.ClientX - shapePanelSize.Left) / shapePanelSize.Width * 100 - targetMapComponent.PositionX;
-    //                 targetMapComponent.Height = (e.ClientY - shapePanelSize.Top) / shapePanelSize.Height * 100 - targetMapComponent.PositionY;
-    //                 break;
-    //             default:
-    //                 break;
-    //         }
-    //         componentEditMode = MapComponentEditMode.None;
-    //         await InvokeAsync(StateHasChanged);
-    //     }
-    // }
-
-    public class Rect
+    private void TestMap()
     {
-        public double x { get; set; }
-        public double y { get; set; }
-        public double Top { get; set; }
-        public double Left { get; set; }
-        public double Height { get; set; }
-        public double Width { get; set; }
+        var a = Diagram.Nodes.ToList();
+    }
+
+    private async Task AlignNodeToComponent()
+    {
+        var nodes = Diagram.Nodes.ToList();
+        var updateList = new List<MapComponent>();
+        var width = Diagram.Container.Width;
+        var height = Diagram.Container.Height;
+        foreach (var node in nodes)
+        {
+            if (node is MapDiagramNode mapDiagramNode)
+            {
+                mapDiagramNode.UpdateNodeToComponent(width, height);
+                updateList.Add(mapDiagramNode.MapComponent);
+            }
+        }
+        var res = await mapService.UpdateAllComponentsInMap(targetMapConfig, updateList);
+        notificationService.ShowToast(res);
+    }
+
+    #endregion
+
+    #region diagram
+
+    private void OnDiagramClick(Model? model, Blazor.Diagrams.Core.Events.PointerEventArgs? pointerEventArgs)
+    {
+        
     }
 
     #endregion

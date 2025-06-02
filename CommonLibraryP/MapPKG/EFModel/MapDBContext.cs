@@ -17,6 +17,7 @@ namespace CommonLibraryP.MapPKG
         }
 
         public virtual DbSet<MapConfig> MapConfigs { get; set; }
+        public virtual DbSet<MapComponent> MapComponents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
