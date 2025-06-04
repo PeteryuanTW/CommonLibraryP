@@ -118,7 +118,7 @@ namespace CommonLibraryP.MachinePKG
             modelBuilder.Entity<ModbusTCPTag>(entity =>
             {
 
-                //entity.ToTable("ConditionLogicNodes");
+                //entity.ToTable("ModbusTCPTags");
 
             });
 
