@@ -190,13 +190,16 @@ namespace CommonLibraryP.MachinePKG
         }
         private async Task UpdateTags()
         {
+            var tasks = new List<Task>();
             foreach (Tag tag in TagCategory.Tags)
             {
                 if (tag.UpdateByTime)
                 {
-                    var res = await UpdateTag(tag);
+                    tasks.Add(UpdateTag(tag));
+                    //var res = await UpdateTag(tag);
                 }
             }
+            await Task.WhenAll(tasks);
             lastTagUpdateTime = DateTime.Now;
         }
         protected virtual Task UpdateStatus()
