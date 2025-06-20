@@ -5,6 +5,7 @@ using DevExpress.Data.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using static System.Collections.Specialized.BitVector32;
 
 namespace CommonLibraryP.ShopfloorPKG
@@ -246,8 +247,69 @@ namespace CommonLibraryP.ShopfloorPKG
                     stations.Add(InitMachineToDerivesClass(stationbase));
                 }
                 stations.ForEach(x => x.InitStation());
+                //var retrieveTasks = stations.Select(x => RetrieveWorkorderItemsAndTaskInStation(x));
+                foreach (var s in stations)
+                {
+                    await RetrieveWorkorderItemsAndTaskInStation(s);
+                }
+                //await Task.WhenAll(retrieveTasks);
             }
         }
+
+        private async Task RetrieveWorkorderItemsAndTaskInStation(Station station)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ShopfloorDBContext>();
+                var tasksInStation = await dbContext.TaskDetails.Where(x => x.StationId == station.Id && x.FinishedTime == null).AsNoTracking().ToListAsync();
+                bool hasTask = tasksInStation.Count > 0;
+                if (!hasTask)
+                {
+                    return;
+                }
+                bool singleTask = tasksInStation.Count == 1;
+
+                var distinctItemIds = tasksInStation.Select(x => x.ItemId).Distinct().ToList();
+                var ItemDetailsFromTasks = await dbContext.ItemDetails.Where(x => distinctItemIds.Contains(x.Id) && x.FinishedTime == null).AsNoTracking().ToListAsync();
+                bool hasItem = ItemDetailsFromTasks.Count > 0;
+                if (!hasItem)
+                {
+                    return;
+                }
+                bool singleItem = ItemDetailsFromTasks.Count == 1;
+
+                var distinctWorkorderIds = ItemDetailsFromTasks.Select(x => x.WorkordersId).Distinct().ToList();
+                var workordersFrom = await dbContext.Workorders.Where(x => distinctWorkorderIds.Contains(x.Id) && x.FinishedTime == null).AsNoTracking().ToListAsync();
+                bool hasWorkorder = workordersFrom.Count > 0;
+                if (!hasItem)
+                {
+                    return;
+                }
+                bool singleWorkorder = workordersFrom.Count == 1;
+
+                if (station.IsSingleWorkorder != singleWorkorder
+                    || station.IsSingleItem != singleItem
+                    || station.IsSingleItem != singleTask
+                    || singleItem != singleTask)
+                {
+                    return;
+                }
+
+                switch (station.StationType)
+                {
+                    case 111:
+                        station.SetWorkorder(workordersFrom.FirstOrDefault());
+                        station.Run();
+                        station.AddItemDetail(ItemDetailsFromTasks.FirstOrDefault());
+                        station.AddTaskDetail(tasksInStation.FirstOrDefault());
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+
 
         private Station? GetStationByName(string stationName)
         {
@@ -294,9 +356,22 @@ namespace CommonLibraryP.ShopfloorPKG
                     try
                     {
                         StationSingleWorkorder? stationSingleWorkorder = targetStation as StationSingleWorkorder;
-                        var itemDetail = await GetOrGenerateItemWithTaskDetail(stationSingleWorkorder.Workorders.FirstOrDefault().Id, serialNo, stationSingleWorkorder.Id);
-                        var addRes = stationSingleWorkorder.AddItemDetail(itemDetail);
-                        return addRes;
+                        var itemDetail = await GetOrGenerateItem(stationSingleWorkorder.Workorder.Id, serialNo, stationSingleWorkorder.Id);
+                        var addItemRes = stationSingleWorkorder.AddItemDetail(itemDetail);
+
+                        if (!addItemRes.IsSuccess)
+                        {
+                            return addItemRes;
+                        }
+
+                        var taskDetail = await GetOrGenerateTask(itemDetail.Id, stationSingleWorkorder.Id);
+                        var addTaskRes = stationSingleWorkorder.AddTaskDetail(taskDetail);
+                        if (!addTaskRes.IsSuccess)
+                        {
+                            return addTaskRes;
+                        }
+
+                        return new RequestResult(2, $"Add item and task success");
                     }
                     catch (Exception ex)
                     {
@@ -327,12 +402,15 @@ namespace CommonLibraryP.ShopfloorPKG
                     {
                         if (targetStation is StationSingleWorkorderSingleSerial stationSingleWorkorderSingleSerial)
                         {
-                            var item = stationSingleWorkorderSingleSerial?.WIPItemDetails.FirstOrDefault();
-                            stationSingleWorkorderSingleSerial?.RemoveItemDetail();
-
-                            var taskDetail = item?.TaskDetails.FirstOrDefault();
+                            var taskDetail = stationSingleWorkorderSingleSerial.WIPTaskDetail;
                             taskDetail.FinishedTime = DateTime.Now;
                             await UpsertTaskDetail(taskDetail);
+                            stationSingleWorkorderSingleSerial?.RemoveTaskDetail();
+
+
+                            var item = stationSingleWorkorderSingleSerial?.WIPItemDetail;
+                            stationSingleWorkorderSingleSerial?.RemoveItemDetail();
+
                             if (isLast)
                             {
                                 item.FinishedTime = DateTime.Now;
@@ -466,12 +544,12 @@ namespace CommonLibraryP.ShopfloorPKG
 
         #region item
 
-        private async Task<ItemDetail> GetOrGenerateItemWithTaskDetail(Guid workorderID, string serialNo, Guid stationID)
+        private async Task<ItemDetail> GetOrGenerateItem(Guid workorderID, string serialNo, Guid stationID)
         {
             using (var scope = scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ShopfloorDBContext>();
-                var targetItem = dbContext.ItemDetails.Include(x => x.TaskDetails.Where(y => y.StationId == stationID))
+                var targetItem = dbContext.ItemDetails
                     .AsNoTracking()
                     .AsSplitQuery()
                     .FirstOrDefault(x => x.WorkordersId == workorderID && x.SerialNo == serialNo);
@@ -479,27 +557,13 @@ namespace CommonLibraryP.ShopfloorPKG
                 {
                     //first item
                     var newItem = await GenerateItemDetail(workorderID, serialNo);
-                    var newTask = await GenerateTaskDetail(newItem.Id, stationID);
-                    newItem.TaskDetails.Add(newTask);
+                    //var newTask = await GenerateTaskDetail(newItem.Id, stationID);
+                    //newItem.TaskDetails.Add(newTask);
                     return newItem;
                 }
                 else
                 {
-                    if (targetItem.TaskDetails.Count is 0)
-                    {
-                        //first task
-                        var newTask = await GenerateTaskDetail(targetItem.Id, stationID);
-                        targetItem.TaskDetails.Add(newTask);
-                        return targetItem;
-                    }
-                    else if (targetItem.TaskDetails.Count is 1)
-                    {
-                        return targetItem;
-                    }
-                    else
-                    {
-                        throw new Exception($"Item {serialNo} task amount {targetItem.TaskDetails.Count} error");
-                    }
+                    return targetItem;
                 }
             }
         }
@@ -551,6 +615,30 @@ namespace CommonLibraryP.ShopfloorPKG
         #endregion
 
         #region task
+
+        private async Task<TaskDetail> GetOrGenerateTask(Guid ItemId, Guid stationID)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ShopfloorDBContext>();
+                var targetTask = dbContext.TaskDetails
+                    .AsNoTracking()
+                    .AsSplitQuery()
+                    .FirstOrDefault(x => x.StationId == stationID && x.ItemId == ItemId);
+                if (targetTask is null)
+                {
+                    //first item
+                    var newTask = await GenerateTaskDetail(ItemId, stationID);
+                    //var newTask = await GenerateTaskDetail(newItem.Id, stationID);
+                    //newItem.TaskDetails.Add(newTask);
+                    return newTask;
+                }
+                else
+                {
+                    return targetTask;
+                }
+            }
+        }
 
         private async Task<TaskDetail> GenerateTaskDetail(Guid itemID, Guid stationID)
         {

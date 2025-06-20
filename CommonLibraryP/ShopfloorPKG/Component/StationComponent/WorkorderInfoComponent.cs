@@ -16,12 +16,9 @@ namespace CommonLibraryP.ShopfloorPKG.Component
         protected bool hasStation => StationParamFromRoot != null;
 
         protected bool ToWorkorderLevelValid
-            => hasStation && StationParamFromRoot.WorkorderAmountValid;
+            => hasStation;
 
         protected bool ToItemLevelValid
-            => ToWorkorderLevelValid && StationParamFromRoot.ItemAmountValid;
-
-        protected bool ToTaskLevelValid
-            => ToItemLevelValid && StationParamFromRoot.TaskAmountValid;
+            => ToWorkorderLevelValid;
     }
 }

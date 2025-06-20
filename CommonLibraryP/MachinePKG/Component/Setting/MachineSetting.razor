@@ -6,7 +6,7 @@
 @inject MachineService machineService
 @inject NotificationService notificationService
 
-<DxGrid @ref="grid" Data="@machines" @bind-SelectedDataItem="@taregtMachineObj" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" DataItemDeleting="DeleteMachine" HighlightRowOnHover="true">
+<DxGrid @ref="grid" Data="@machines" @bind-SelectedDataItem="@taregtMachineObj" FilterMenuButtonDisplayMode="GridFilterMenuButtonDisplayMode.Always" FilterCriteriaChanged="Test" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" DataItemDeleting="DeleteMachine" HighlightRowOnHover="true">
     <ToolbarTemplate>
         <DxToolbar SizeMode="SizeMode.Large" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
             <DxToolbarItem IconCssClass="oi oi-plus" Click="NewMachineClicked" BeginGroup="true" />
@@ -143,8 +143,9 @@
     private async Task InitParam()
     {
         machines = await machineService.GetAllMachinesConfig();
-        await GetTagCategory();
-        taregtMachineObj = machines.FirstOrDefault();
+        grid?.ClearSelection();
+        //await GetTagCategory();
+        //taregtMachineObj = machines.FirstOrDefault();
     }
 
     private async Task GetTagCategory()
@@ -161,6 +162,7 @@
     private async Task CloseMachinePopup()
     {
         popupVisible = false;
+        //await Task.Delay(1);
         await InitParam();
     }
 
@@ -192,5 +194,10 @@
 
     private void ShowMachineTree() => machineTreePopupVisible = true;
     private void CloseMachineTree() => machineTreePopupVisible = false;
+
+    private void Test(GridFilterCriteriaChangedEventArgs g)
+    {
+        
+    }
 }
 

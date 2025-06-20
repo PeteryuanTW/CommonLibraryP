@@ -106,7 +106,7 @@
                         @StationOutInfo
                     </div>
                 </DxTabPage>
-                <DxTabPage Text="@($"{localizer["Item Record"]}")" Visible="@StationParam.CanStationOut"></DxTabPage>
+                @* <DxTabPage Text="@($"{localizer["Item Record"]}")" Visible="@StationParam.CanStationOut"></DxTabPage> *@
             </DxTabs>
         </BodyContentTemplate>
     </DxPopup>
@@ -140,7 +140,7 @@
     @<StationInInfo_SingleWorkorderWithSerialNo StationInCallback="StationInWithSerialNo" />: null;
 
     private RenderFragment? StationOutInfo => StationParam.IsSingleItem ?
-    @<StationOutInfo_SingleWorkorderWithSerialNo StationOutCallback="StationOutWithSerialNo" />: null;
+    @<StationOutInfo_SingleWorkorderWithSerialNo StationOutCallback="StationOutWithoutSerialNo" />: null;
 
     private RenderFragment? ItemRecordInfo;
 
@@ -177,12 +177,13 @@
     {
         if (hasStation)
         {
-            StationParam.UIUpdateAct += UpdateUIFromStation;
+            StationParam.UIUpdateAct -= UpdateUIFromStation;
         }
     }
 
     private async Task UpdateUIFromStation()
     {
+        
         await InvokeAsync(StateHasChanged);
     }
 
@@ -221,7 +222,7 @@
 
     #region station out
 
-    private async Task StationOutWithSerialNo(bool pass)
+    private async Task StationOutWithoutSerialNo(bool pass)
     {
         var res = await shopfloorService.StationOutByFIFO(StationParam?.Name, pass);
         CloseOperationPopup();

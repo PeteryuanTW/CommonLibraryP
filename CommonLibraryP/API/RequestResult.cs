@@ -24,4 +24,14 @@ namespace CommonLibraryP.API
             this.msg = msg;
         }
     }
+
+    public class RequestResult<T> : RequestResult
+    {
+        private T? obj;
+        public T? Obj => obj;
+        public RequestResult(int returnCode, string msg, T? obj) : base(returnCode, msg)
+        {
+            this.obj = obj;
+        }
+    }
 }

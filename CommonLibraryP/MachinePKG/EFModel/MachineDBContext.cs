@@ -45,7 +45,7 @@ namespace CommonLibraryP.MachinePKG
             modelBuilder.Entity<Machine>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.UseTpcMappingStrategy();
+                //entity.UseTpcMappingStrategy();
                 entity.ToTable("Machine");
 
                 entity.HasIndex(e => e.Name).IsUnique();

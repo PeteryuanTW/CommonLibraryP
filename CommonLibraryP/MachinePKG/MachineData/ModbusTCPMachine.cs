@@ -209,7 +209,7 @@ namespace CommonLibraryP.MachinePKG
                         if (val is ushort ushort_val)
                         {
                             //ushort ushort_val = (ushort)val;
-                            if (!output)
+                            if (output)
                             {
                                 //var a = await master.ReadHoldingRegistersAsync((byte)station, (ushort)startIndex, (byte)offset);
                                 await master.WriteSingleRegisterAsync(station, startIndex, ushort_val);

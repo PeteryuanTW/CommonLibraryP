@@ -3,6 +3,7 @@ using CommonLibraryP.Data;
 using CommonLibraryP.MachinePKG;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,7 +19,16 @@ namespace CommonLibraryP.ShopfloorPKG
 
         }
 
-        public override bool ItemAmountValid => wipItemDetails.Count >= 0 && wipItemDetails.Count <= 1;
+        protected ItemDetail? wipItemDetail;
+        [NotMapped]
+        public ItemDetail? WIPItemDetail => wipItemDetail;
+        public override int WIPItemAmount => wipItemDetail is null ? 0 : 1;
+
+
+        protected TaskDetail? wipTaskDetail;
+        [NotMapped]
+        public TaskDetail? WIPTaskDetail => wipTaskDetail;
+        protected override int WIPTaskAmount => WIPTaskDetail is null ? 0 : 1;
 
         public override RequestResult CheckCanAddItem()
         {
@@ -30,13 +40,13 @@ namespace CommonLibraryP.ShopfloorPKG
             {
                 return new RequestResult(4, $"Station {Name} workorder amount error ({WorkorderAmount})");
             }
-            if (ItemAmount is not 0)
+            if (WIPItemAmount is not 0)
             {
-                return new RequestResult(4, $"Station {Name} item amount error ({ItemAmount})");
+                return new RequestResult(4, $"Station {Name} item amount error ({WIPItemAmount})");
             }
-            if (!TaskAmountValid)
+            if (WIPTaskAmount is not 0)
             {
-                return new RequestResult(4, $"Station {Name} task amount error ({TaskAmount})");
+                return new RequestResult(4, $"Station {Name} task amount error ({WIPTaskAmount})");
             }
             return new RequestResult(2, $"Station {Name} can add item");
         }
@@ -47,14 +57,15 @@ namespace CommonLibraryP.ShopfloorPKG
             {
                 return check;
             }
-            if (itemDetail.TaskDetails.Count is not 1)
+            if (WIPItemAmount is not 0)
             {
                 return new RequestResult(4, $"Item {itemDetail.SerialNo} task amount {itemDetail.TaskDetails.Count} error");
             }
-            wipItemDetails.Add(itemDetail);
+            wipItemDetail = itemDetail;
             UIUpdate();
             return new RequestResult(2, $"Station {Name} add item {itemDetail?.SerialNo} success");
         }
+
         public override RequestResult CheckCanRemoveItem()
         {
             if (StationStatusCode is not 5)
@@ -65,28 +76,111 @@ namespace CommonLibraryP.ShopfloorPKG
             {
                 return new RequestResult(4, $"Station {Name} has no workorder yet");
             }
-            if (ItemAmount is not 1)
+            if (WIPItemAmount is not 1)
             {
                 return new RequestResult(4, $"Station {Name} has no item yet");
             }
-            if (!TaskAmountValid)
-            {
-                return new RequestResult(4, $"Station {Name} task amount error {TaskAmount}");
-            }
+            //if (WIPTaskAmount is not 1)
+            //{
+            //    return new RequestResult(4, $"Station {Name} task amount error {WIPTaskAmount}");
+            //}
             return new RequestResult(2, $"Station {Name} can remove item");
         }
-        public override RequestResult RemoveItemDetail()
+        public RequestResult RemoveItemDetail()
         {
             var check = CheckCanRemoveItem();
             if (!check.IsSuccess)
             {
                 return check;
             }
-            if (!TaskAmountValid)
+            if (WIPItemAmount is not 1)
             {
-                return new RequestResult(4, $"Item task amount {TaskAmount} error");;
+                return new RequestResult(4, $"Item amount {WIPItemAmount} error"); ;
             }
-            wipItemDetails.Clear();
+            wipItemDetail = null;
+            UIUpdate();
+            return new RequestResult(2, $"Station {Name} remove item success");
+        }
+
+
+        public override RequestResult CheckCanAddTask()
+        {
+            if (StationStatusCode is not 5)
+            {
+                return new RequestResult(4, $"Station {Name} is not running");
+            }
+            if (WorkorderAmount is not 1)
+            {
+                return new RequestResult(4, $"Station {Name} workorder amount error ({WorkorderAmount})");
+            }
+            if (WIPItemAmount is not 1)
+            {
+                return new RequestResult(4, $"Station {Name} item amount error ({WIPItemAmount})");
+            }
+            if (WIPTaskAmount is not 0)
+            {
+                return new RequestResult(4, $"Station {Name} task amount error ({WIPTaskAmount})");
+            }
+            return new RequestResult(2, $"Station {Name} can add task");
+        }
+
+        public override RequestResult AddTaskDetail(TaskDetail taskDetail)
+        {
+            var check = CheckCanAddTask();
+            if (!check.IsSuccess)
+            {
+                return check;
+            }
+            if (WIPItemAmount is not 1)
+            {
+                return new RequestResult(4, $"Item amount {WIPItemAmount} error");
+            }
+            if (WIPTaskAmount is not 0)
+            {
+                return new RequestResult(4, $"Task amount {WIPTaskAmount} error");
+            }
+            wipTaskDetail = taskDetail;
+            UIUpdate();
+            return new RequestResult(2, $"Station add task success");
+        }
+
+        public override RequestResult CheckCanRemoveTask()
+        {
+            if (StationStatusCode is not 5)
+            {
+                return new RequestResult(4, $"Station {Name} is not running");
+            }
+            if (WorkorderAmount is not 1)
+            {
+                return new RequestResult(4, $"Station {Name} has no workorder yet");
+            }
+            if (WIPItemAmount is not 1)
+            {
+                return new RequestResult(4, $"Station {Name} has no item yet");
+            }
+            if (WIPTaskAmount is not 1)
+            {
+                return new RequestResult(4, $"Station {Name} task amount error {WIPTaskAmount}");
+            }
+            return new RequestResult(2, $"Station {Name} can remove task");
+        }
+        
+        public RequestResult RemoveTaskDetail()
+        {
+            var check = CheckCanRemoveTask();
+            if (!check.IsSuccess)
+            {
+                return check;
+            }
+            if (WIPItemAmount is not 1)
+            {
+                return new RequestResult(4, $"Item amount {WIPItemAmount} error"); ;
+            }
+            if (WIPTaskAmount is not 1)
+            {
+                return new RequestResult(4, $"Item task amount {WIPTaskAmount} error"); ;
+            }
+            wipTaskDetail = null;
             UIUpdate();
             return new RequestResult(2, $"Station {Name} remove item success");
         }
