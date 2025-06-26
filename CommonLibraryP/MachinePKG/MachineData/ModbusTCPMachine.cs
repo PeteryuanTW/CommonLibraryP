@@ -11,7 +11,7 @@ using CommonLibraryP.Data;
 
 namespace CommonLibraryP.MachinePKG
 {
-    public class ModbusTCPMachine: Machine
+    public class ModbusTCPMachine : Machine
     {
         private TcpClient tcpClient;
         private IModbusFactory modbusFactory;
@@ -67,6 +67,7 @@ namespace CommonLibraryP.MachinePKG
                             {
                                 res_bool = (await master?.ReadCoilsAsync((byte)station, (ushort)startIndex, (ushort)offset)).FirstOrDefault();
                             }
+                            await Task.Delay(30);
                             return tag.SetValue(res_bool);
                         //ushort
                         case 2:
@@ -80,6 +81,7 @@ namespace CommonLibraryP.MachinePKG
                             {
                                 res_ushort = (await master?.ReadHoldingRegistersAsync((byte)station, (ushort)startIndex, (ushort)offset)).FirstOrDefault();
                             }
+                            await Task.Delay(30);
                             return tag.SetValue(res_ushort);
                         case 4:
                             ushort[] tmp_ushort = new ushort[offset];
@@ -104,6 +106,7 @@ namespace CommonLibraryP.MachinePKG
                                 string s = Encoding.ASCII.GetString(byteArray.TakeWhile(x => x != 0).ToArray());
                                 strList += s;
                             }
+                            await Task.Delay(30);
                             return tag.SetValue(strList);
                         case 11:
                             List<bool> res_boolList = Enumerable.Repeat(false, offset).ToList();
@@ -116,6 +119,7 @@ namespace CommonLibraryP.MachinePKG
                             {
                                 res_boolList = (await master.ReadCoilsAsync((byte)station, (ushort)startIndex, (ushort)offset)).ToList();
                             }
+                            await Task.Delay(30);
                             return tag.SetValue(res_boolList);
                         case 22:
                             List<ushort> res_ushortList = Enumerable.Repeat((ushort)0, offset).ToList();
@@ -128,8 +132,10 @@ namespace CommonLibraryP.MachinePKG
                             {
                                 res_ushortList = (await master.ReadHoldingRegistersAsync((byte)station, (ushort)startIndex, (ushort)offset)).ToList();
                             }
+                            await Task.Delay(30);
                             return tag.SetValue(res_ushortList);
                         default:
+                            await Task.Delay(30);
                             return new(4, "Not implement yet");
                     }
                 }
@@ -179,6 +185,7 @@ namespace CommonLibraryP.MachinePKG
                             bool bool_res = (await master.ReadCoilsAsync((byte)station, (ushort)startIndex, (ushort)offset)).FirstOrDefault();
                             var res_bool = tag.SetValue(bool_res);
                             TagsStatechange();
+                            await Task.Delay(30);
                             return res_bool;
                         }
                         else
@@ -202,6 +209,7 @@ namespace CommonLibraryP.MachinePKG
                             ushort ushort_res = (await master.ReadHoldingRegistersAsync((byte)station, (ushort)startIndex, (ushort)offset)).FirstOrDefault();
                             var res_ushort = tag.SetValue(ushort_res);
                             TagsStatechange();
+                            await Task.Delay(30);
                             return res_ushort;
                         }
                         else
@@ -229,6 +237,7 @@ namespace CommonLibraryP.MachinePKG
                             ushort ushort_valres = (await master.ReadHoldingRegistersAsync((byte)station, (ushort)startIndex, (ushort)offset)).FirstOrDefault();
                             var res_str = tag.SetValue(Convert.ToChar(ushort_valres).ToString());
                             TagsStatechange();
+                            await Task.Delay(30);
                             return res_str;
                         }
                         else
