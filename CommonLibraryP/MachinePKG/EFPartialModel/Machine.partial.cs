@@ -197,6 +197,7 @@ namespace CommonLibraryP.MachinePKG
                 {
                     tasks.Add(UpdateTag(tag));
                     //var res = await UpdateTag(tag);
+                    await Task.Delay(30);
                 }
             }
             await Task.WhenAll(tasks);
