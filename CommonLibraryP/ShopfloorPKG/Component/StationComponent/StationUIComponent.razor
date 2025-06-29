@@ -137,10 +137,10 @@
     @<DeployWorkorderInfo_SingleWorkorder StationParamFromRoot="@StationParam" WorkorderIdModelCallback="DeployWorkorder" /> : null;
 
     private RenderFragment? StationInInfo => StationParam.IsSingleItem ?
-    @<StationInInfo_SingleWorkorderWithSerialNo StationInCallback="StationInWithSerialNo" />: null;
+    @<StationInInfo_SingleWorkorderWithSerialNo StationName="@StationParam?.Name" StationInCallback="StationInWithSerialNo" />: null;
 
     private RenderFragment? StationOutInfo => StationParam.IsSingleItem ?
-    @<StationOutInfo_SingleWorkorderWithSerialNo StationOutCallback="StationOutWithoutSerialNo" />: null;
+    @<StationOutInfo_SingleWorkorderWithSerialNo StationName="@StationParam?.Name" StationOutCallback="StationOutWithoutSerialNo" />: null;
 
     private RenderFragment? ItemRecordInfo;
 
@@ -211,9 +211,9 @@
 
     #region station in
 
-    private async Task StationInWithSerialNo(string serialNo)
+    private async Task StationInWithSerialNo(SingleSarialNoStationInModel SingleSarialNoStationInModel)
     {
-        var res = await shopfloorService.StationInByNameAndSerialNo(StationParam?.Name, serialNo);
+        var res = await shopfloorService.StationInByNameAndSerialNo(SingleSarialNoStationInModel.StationName, SingleSarialNoStationInModel.SerialNo);
         CloseOperationPopup();
         notificationService.ShowToast(res);
     }
@@ -222,9 +222,9 @@
 
     #region station out
 
-    private async Task StationOutWithoutSerialNo(bool pass)
+    private async Task StationOutWithoutSerialNo(FIFOStationOutModel fifoStationOutModel)
     {
-        var res = await shopfloorService.StationOutByFIFO(StationParam?.Name, pass);
+        var res = await shopfloorService.StationOutByFIFO(fifoStationOutModel.StationName, fifoStationOutModel.Pass);
         CloseOperationPopup();
         notificationService.ShowToast(res);
     }

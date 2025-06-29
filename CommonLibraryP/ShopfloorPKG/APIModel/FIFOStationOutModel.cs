@@ -10,6 +10,8 @@ namespace CommonLibraryP.ShopfloorPKG
     public class FIFOStationOutModel
     {
         [Required]
+        public string StationName { get; set; } = string.Empty;
+        [Required]
         public bool Pass { get; set; }
     }
 }

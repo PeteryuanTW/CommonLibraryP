@@ -6,6 +6,9 @@
 <EditForm Model="@fifoStationOutModel" OnValidSubmit="StationOut" Context="EditFormContext">
     <DataAnnotationsValidator />
     <DxFormLayout>
+        <DxFormLayoutItem Caption="@($"{localizer["Station"]}")" CaptionPosition="CaptionPosition.Vertical">
+            <DxTextBox @bind-Text="@fifoStationOutModel.StationName" ReadOnly="true" />
+        </DxFormLayoutItem>
         <DxFormLayoutItem Caption="@($"{localizer["Ok"]}")" CaptionPosition="CaptionPosition.Vertical">
             <DxCheckBox @bind-Checked="@fifoStationOutModel.Pass" CheckType="CheckType.Switch"/>
         </DxFormLayoutItem>
@@ -23,19 +26,20 @@
 </EditForm>
 
 @code {
-
     [Parameter]
-    public EventCallback<bool> StationOutCallback { get; set; }
+    public string StationName { get; set; } = null!;
+    [Parameter]
+    public EventCallback<FIFOStationOutModel> StationOutCallback { get; set; }
     private FIFOStationOutModel fifoStationOutModel = new();
 
-    protected override Task OnInitializedAsync()
+    protected override void OnParametersSet()
     {
-        fifoStationOutModel = new();
-        return base.OnInitializedAsync();
+        fifoStationOutModel.StationName = StationName;
+        base.OnParametersSet();
     }
 
     private async Task StationOut()
     {
-        await StationOutCallback.InvokeAsync(fifoStationOutModel.Pass);
+        await StationOutCallback.InvokeAsync(fifoStationOutModel);
     }
 }
