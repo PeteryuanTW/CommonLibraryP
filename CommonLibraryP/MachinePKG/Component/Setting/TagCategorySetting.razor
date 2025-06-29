@@ -25,7 +25,7 @@
                             <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
                                 <Items>
                                     <DxToolbarItem IconCssClass="oi oi-plus" Click="NewCatClicked" BeginGroup="true" />
-                                    <DxToolbarItem IconCssClass="oi oi-pencil" Click="ShowCatPopup" Enabled="@catSelected" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-pencil" Text="@(targetCat?.Name)" Click="ShowCatPopup" Enabled="@catSelected" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
                                     <DxToolbarItem IconCssClass="oi oi-trash" Click="ShowCatDelete" Enabled="@catSelected" RenderStyle="ButtonRenderStyle.Danger" Alignment="ToolbarItemAlignment.Right" BeginGroup="true" />
                                 </Items>
                             </DxToolbar>
@@ -51,7 +51,7 @@
                             <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
                                 <Items>
                                     <DxToolbarItem IconCssClass="oi oi-plus" Click="NewTagClicked" Enabled="@catSelected" BeginGroup="true" />
-                                    <DxToolbarItem IconCssClass="oi oi-pencil" Click="ShowTagPopup" Enabled="@tagSelected" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                    <DxToolbarItem IconCssClass="oi oi-pencil" Text="@(targetTag?.Name)" Click="ShowTagPopup" Enabled="@tagSelected" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
                                     <DxToolbarItem IconCssClass="oi oi-trash" Click="ShowTagDelete" Enabled="@tagSelected" RenderStyle="ButtonRenderStyle.Danger" Alignment="ToolbarItemAlignment.Right" BeginGroup="true" />
                                     <DxToolbarItem IconCssClass="oi oi-eye" Click="SwitchTagDetailVisible" Enabled="@catSelected" RenderStyle="@detailStyle" BeginGroup="true" />
                                 </Items>
@@ -89,8 +89,8 @@
     </Items>
 </DxGridLayout>
 
-<DxPopup @bind-Visible="@catPopupVisible" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
-    <HeaderTemplate>
+<DxPopup @ref="@catPopup" ShowCloseButton="true" Closing="@InitParameter" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    @*     <HeaderTemplate>
         <div class="w-100 p-3 border border-bottom">
             <DxToolbar>
                 <Items>
@@ -98,7 +98,7 @@
                 </Items>
             </DxToolbar>
         </div>
-    </HeaderTemplate>
+    </HeaderTemplate> *@
     <BodyContentTemplate Context="bodycontext">
         <EditForm Model="@targetCat" Context="EditFormContext" OnValidSubmit="UpsertTagCategory">
             <DataAnnotationsValidator />
@@ -124,8 +124,8 @@
     </BodyContentTemplate>
 </DxPopup>
 
-<DxPopup @bind-Visible="@tagPopupVisible" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false">
-    <HeaderTemplate>
+<DxPopup @ref="@tagPopup" ShowCloseButton="true" Closing="@InitParameter" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    @*     <HeaderTemplate>
         <div class="w-100 p-3 border border-bottom">
             <DxToolbar>
                 <Items>
@@ -133,7 +133,7 @@
                 </Items>
             </DxToolbar>
         </div>
-    </HeaderTemplate>
+    </HeaderTemplate> *@
     <BodyContentTemplate Context="bodycontext">
         <EditForm Model="@targetTag" Context="EditFormContext" OnValidSubmit="UpsertTag">
             <DataAnnotationsValidator />
@@ -147,9 +147,6 @@
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["Update By Time"]}")" ColSpanLg="4">
                     <DxCheckBox @bind-Checked="@targetTag.UpdateByTime" CheckType="CheckType.Switch" />
                 </DxFormLayoutItem>
-                @*<DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["Special Type"]}")" ColSpanLg="3">
-                    <DxComboBox @bind-Value="@targetTag.SpecialType" Data="@SpecialTagTypes" ValueFieldName="@(nameof(SpecialTagTypeWrapperClass.Index))" TextFieldName="@(nameof(SpecialTagTypeWrapperClass.DisplayName))" />
-                </DxFormLayoutItem> *@
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
                     <hr />
                 </DxFormLayoutItem>
@@ -196,22 +193,24 @@
 @code {
 
     IGrid? catGrid { get; set; }
+    DxPopup? catPopup { get; set; }
     private IEnumerable<TagCategory>? tagCategories;
     private Object? targetCatObj;
-    //private bool targetCatObjSelected => targetCatObj is not null;
     private TagCategory? targetCat => targetCatObj as TagCategory;
     private bool catSelected => targetCat != null;
 
 
+
     IGrid? tagGrid { get; set; }
+    DxPopup? tagPopup { get; set; }
     private List<Tag> tags => catSelected ? targetCat.Tags.ToList() : new();
     private Object? targetTagObj;
     private Tag? targetTag => targetTagObj as Tag;
     private bool tagSelected => targetTag != null;
 
 
-    private bool catPopupVisible;
-    private bool tagPopupVisible;
+    //private bool catPopupVisible;
+    //private bool tagPopupVisible;
 
 
     private IEnumerable<ConnectionTypeWrapperClass> ConnectTypes => MachineTypeEnumHelper.GetConnectionTypeWrapperClasses();
@@ -230,8 +229,10 @@
     private async Task InitParameter()
     {
         tagCategories = await machineService.GetAllTagCategoriesWithTags();
-        targetCatObj = tagCategories.FirstOrDefault();
-        targetTagObj = tags.FirstOrDefault();
+        targetCatObj = catSelected ? tagCategories.FirstOrDefault(x => x.Id == targetCat.Id) : null;
+        targetTagObj = tagSelected && catSelected ? targetCat.Tags.FirstOrDefault(x => x.Id == targetTag.Id) : null;
+        //targetCatObj = tagCategories.FirstOrDefault();
+        //targetTagObj = tags.FirstOrDefault();
     }
     #region localization
 
@@ -257,28 +258,30 @@
     //     targetTag = args.DataItem as Tag;
     // }
 
-    private void ShowCatPopup()
+    private async Task ShowCatPopup()
     {
-        catPopupVisible = true;
+        //catPopupVisible = true;
+        await catPopup?.ShowAsync();
     }
 
-    private async void CloseCatPopup()
+    private async Task CloseCatPopup()
     {
-        catPopupVisible = false;
-        await InitParameter();
+        await catPopup?.CloseAsync();
+        //catPopupVisible = false;
+        //await InitParameter();
     }
 
 
-    private void NewCatClicked()
+    private async Task NewCatClicked()
     {
         GenrateNewCat();
-        ShowCatPopup();
+        await ShowCatPopup();
     }
 
-    private void NewTagClicked()
+    private async Task NewTagClicked()
     {
         GenrateNewTag();
-        ShowTagPopup();
+        await ShowTagPopup();
     }
 
     private void ShowCatDelete()
@@ -291,9 +294,10 @@
         tagGrid?.ShowDataItemDeleteConfirmation(tagSelected);
     }
 
-    private void ShowTagPopup()
+    private async Task ShowTagPopup()
     {
-        tagPopupVisible = true;
+        await tagPopup?.ShowAsync();
+        //tagPopupVisible = true;
     }
 
     private void SwitchTagDetailVisible()
@@ -301,10 +305,11 @@
         showTagDetails = !showTagDetails;
     }
 
-    private async void CloseTagPopup()
+    private async Task CloseTagPopup()
     {
-        tagPopupVisible = false;
-        await InitParameter();
+        await tagPopup?.CloseAsync();
+        //tagPopupVisible = false;
+        //await InitParameter();
     }
 
 
@@ -321,7 +326,7 @@
     private async Task UpsertTagCategory()
     {
         var res = await machineService.UpsertTagCategory(targetCat);
-        CloseCatPopup();
+        await CloseCatPopup();
         notificationService.ShowToast(res);
         //uiService.ShowToast(res);
     }
@@ -361,7 +366,7 @@
     {
         var res = await machineService.UpsertTagTPC(targetTag);
         await InitParameter();
-        CloseTagPopup();
+        await CloseTagPopup();
         notificationService.ShowToast(res);
         //await ActionCallback.InvokeAsync(res);
     }

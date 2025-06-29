@@ -2,10 +2,12 @@
 using CommonLibraryP.Data;
 using CommonLibraryP.ShopfloorPKG;
 using DevExpress.Blazor.Internal;
+using DevExpress.Pdf.ContentGeneration.Interop;
 using NModbus;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -18,6 +20,25 @@ namespace CommonLibraryP.MachinePKG
         private TcpClient tcpClient;
         private IModbusFactory modbusFactory;
         public IModbusMaster? master;
+
+
+        
+        private ushort coilBatch = 100;
+        private ushort registerBatch = 100;
+
+        private Stopwatch inputCoilStopwatch = new();
+        public Stopwatch InputCoilStopwatch => inputCoilStopwatch;
+
+        private Stopwatch outputCoilStopwatch = new();
+        public Stopwatch OutputCoilStopwatch => outputCoilStopwatch;
+
+        private Stopwatch inputRegisterStopwatch = new();
+        public Stopwatch InputRegisterStopwatch => inputRegisterStopwatch;
+
+        private Stopwatch outputRegisterStopwatch = new();
+        public Stopwatch OutputRegisterStopwatch => outputRegisterStopwatch;
+
+
         public ModbusTCPMachine() : base()
         {
             tcpClient = new();
@@ -60,47 +81,214 @@ namespace CommonLibraryP.MachinePKG
                     .Select(x => new { station = x.Key, tags = x.ToList() }).ToList();
                 foreach (var stationAndTags in updateBytimeTags)
                 {
-                    var boolInputTags = stationAndTags.tags.Where(x => x.IsBoolean && x.InputOrOutput).ToList();
+                    #region input coils
+                    var boolInputTags = stationAndTags.tags.Where(x => x.IsBoolean && !x.InputOrOutput).ToList();
                     if (boolInputTags is not null && boolInputTags.Count > 0)
                     {
+                        inputCoilStopwatch.Restart();
                         var boolInputStart = boolInputTags.Select(x => x.StartIndex).Min();
                         var boolInputEnd = boolInputTags.Select(x => x.StartIndex + x.Offset).Max();
-                        var boolInputValues = await master?.ReadInputsAsync(stationAndTags.station, boolInputStart, (ushort)(boolInputEnd - boolInputStart));
+                        var boolInputAmount = (ushort)(boolInputEnd - boolInputStart);
+
+                        bool[] boolInputResult = new bool[boolInputAmount];
+                        ushort boolInputRemaining = boolInputAmount;
+                        ushort boolInputOffset = 0;
+
+                        while (boolInputRemaining > 0)
+                        {
+                            ushort batchSize = Math.Min(boolInputRemaining, coilBatch);
+                            bool[] partial = await master?.ReadInputsAsync(stationAndTags.station, (ushort)(boolInputStart + boolInputOffset), (ushort)batchSize);
+
+                            if (partial == null || partial.Length != batchSize)
+                            {
+
+                            }
+
+                            Array.Copy(partial, 0, boolInputResult, boolInputOffset, batchSize);
+
+                            boolInputRemaining -= batchSize;
+                            boolInputOffset += batchSize;
+                        }
+                        //set tags from data
                         foreach (var boolInputTag in boolInputTags)
                         {
                             if (!boolInputTag.IsMultipleValue)
                             {
-                                boolInputTag.SetValue(boolInputValues[boolInputTag.StartIndex - boolInputStart]);
+                                boolInputTag.SetValue(boolInputResult[boolInputTag.StartIndex - boolInputStart]);
                             }
                             else
                             {
-                                boolInputTag.SetValue(boolInputValues[(boolInputTag.StartIndex - boolInputStart)..(boolInputTag.StartIndex - boolInputStart + boolInputTag.Offset)]);
+                                boolInputTag.SetValue(boolInputResult[(boolInputTag.StartIndex - boolInputStart)..(boolInputTag.StartIndex - boolInputStart + boolInputTag.Offset)]);
                             }
                         }
+                        inputCoilStopwatch.Stop();
                     }
+                    #endregion
 
-
-                    var booloutputTags = stationAndTags.tags.Where(x => x.IsBoolean && !x.InputOrOutput).ToList();
-                    var boolOutputStart = booloutputTags.Select(x => x.StartIndex).Min();
-                    var boolOutputEnd = booloutputTags.Select(x => x.StartIndex + x.Offset).Max();
-                    var boolOutputValues = await master?.ReadCoilsAsync(stationAndTags.station, boolOutputStart, (ushort)(boolOutputEnd - boolOutputStart));
-                    foreach (var boolOutputTag in booloutputTags)
+                    #region output coils
+                    var boolOutputTags = stationAndTags.tags.Where(x => x.IsBoolean && x.InputOrOutput).ToList();
+                    if (boolOutputTags is not null && boolOutputTags.Count > 0)
                     {
-                        if (!boolOutputTag.IsMultipleValue)
+                        outputCoilStopwatch.Restart();
+                        var boolOutputStart = boolOutputTags.Select(x => x.StartIndex).Min();
+                        var boolOutputEnd = boolOutputTags.Select(x => x.StartIndex + x.Offset).Max();
+                        var boolOutputAmount = (ushort)(boolOutputEnd - boolOutputStart);
+
+                        bool[] boolOutputResult = new bool[boolOutputAmount];
+                        ushort boolOutputRemaining = boolOutputAmount;
+                        ushort boolOutputOffset = 0;
+
+                        while (boolOutputRemaining > 0)
                         {
-                            boolOutputTag.SetValue(boolOutputValues[boolOutputTag.StartIndex - boolOutputStart]);
+                            ushort batchSize = Math.Min(boolOutputRemaining, coilBatch);
+                            bool[] partial = await master?.ReadInputsAsync(stationAndTags.station, (ushort)(boolOutputStart + boolOutputOffset), (ushort)batchSize);
+
+                            if (partial == null || partial.Length != batchSize)
+                            {
+
+                            }
+
+                            Array.Copy(partial, 0, boolOutputResult, boolOutputOffset, batchSize);
+
+                            boolOutputRemaining -= batchSize;
+                            boolOutputOffset += batchSize;
                         }
-                        else
+
+
+                        foreach (var boolOutputTag in boolOutputTags)
                         {
-                            boolOutputTag.SetValue(boolOutputValues[(boolOutputTag.StartIndex - boolOutputStart)..(boolOutputTag.StartIndex - boolOutputStart + boolOutputTag.Offset)]);
+                            if (!boolOutputTag.IsMultipleValue)
+                            {
+                                boolOutputTag.SetValue(boolOutputResult[boolOutputTag.StartIndex - boolOutputStart]);
+                            }
+                            else
+                            {
+                                boolOutputTag.SetValue(boolOutputResult[(boolOutputTag.StartIndex - boolOutputStart)..(boolOutputTag.StartIndex - boolOutputStart + boolOutputTag.Offset)]);
+                            }
                         }
+                        outputCoilStopwatch.Stop();
                     }
+                    #endregion
+
+                    #region input registers/strings
+                    var ushortOrStringInputTags = stationAndTags.tags.Where(x => (x.IsUshort || x.IsString) && !x.InputOrOutput).ToList();
+                    if (ushortOrStringInputTags is not null && ushortOrStringInputTags.Count > 0)
+                    {
+                        inputRegisterStopwatch.Restart();
+                        var ushortOrStringInputStart = ushortOrStringInputTags.Select(x => x.StartIndex).Min();
+                        var ushortOrStringInputEnd = ushortOrStringInputTags.Select(x => x.StartIndex + x.Offset).Max();
+                        var ushortOrStringInputAmount = (ushort)(ushortOrStringInputEnd - ushortOrStringInputStart);
+
+                        ushort[] ushortOrStringInputResult = new ushort[ushortOrStringInputAmount];
+                        ushort ushortOrStringInputRemaining = ushortOrStringInputAmount;
+                        ushort ushortOrStringInputOffset = 0;
+
+
+                        var stopwatch = Stopwatch.StartNew();
+                        while (ushortOrStringInputRemaining > 0)
+                        {
+                            ushort batchSize = Math.Min(ushortOrStringInputRemaining, registerBatch);
+                            ushort[] partial = await master?.ReadInputRegistersAsync(stationAndTags.station, (ushort)(ushortOrStringInputStart + ushortOrStringInputOffset), (ushort)batchSize);
+
+                            if (partial == null || partial.Length != batchSize)
+                            {
+
+                            }
+
+                            Array.Copy(partial, 0, ushortOrStringInputResult, ushortOrStringInputOffset, batchSize);
+
+                            ushortOrStringInputRemaining -= batchSize;
+                            ushortOrStringInputOffset += batchSize;
+                        }
+
+
+                        foreach (var ushortOrStringInputTag in ushortOrStringInputTags)
+                        {
+                            if (!ushortOrStringInputTag.IsMultipleValue)
+                            {
+                                if (!ushortOrStringInputTag.IsString)
+                                {
+                                    //ushort
+                                    ushortOrStringInputTag.SetValue(ushortOrStringInputResult[ushortOrStringInputTag.StartIndex - ushortOrStringInputStart]);
+                                }
+                                else
+                                {
+                                    //string
+                                    var str = UshortToString(ushortOrStringInputResult[(ushortOrStringInputTag.StartIndex - ushortOrStringInputStart)..(ushortOrStringInputTag.StartIndex - ushortOrStringInputStart + ushortOrStringInputTag.Offset)], ushortOrStringInputTag.StringReverse);
+                                    ushortOrStringInputTag.SetValue(str);
+                                }
+                            }
+                            else
+                            {
+                                ushortOrStringInputTag.SetValue(ushortOrStringInputResult[(ushortOrStringInputTag.StartIndex - ushortOrStringInputStart)..(ushortOrStringInputTag.StartIndex - ushortOrStringInputStart + ushortOrStringInputTag.Offset)]);
+                            }
+                        }
+                        inputRegisterStopwatch.Stop();
+                    }
+                    #endregion
+
+                    #region output registers/strings
+                    var ushortOrStringOutputTags = stationAndTags.tags.Where(x => (x.IsUshort || x.IsString) && x.InputOrOutput).ToList();
+                    if (ushortOrStringOutputTags is not null && ushortOrStringOutputTags.Count > 0)
+                    {
+                        outputRegisterStopwatch.Restart();
+                        var ushortOrStringOutputStart = ushortOrStringOutputTags.Select(x => x.StartIndex).Min();
+                        var ushortOrStringOutputEnd = ushortOrStringOutputTags.Select(x => x.StartIndex + x.Offset).Max();
+                        var ushortOrStringOutputAmount = (ushort)(ushortOrStringOutputEnd - ushortOrStringOutputStart);
+
+                        ushort[] ushortOrStringOutputResult = new ushort[ushortOrStringOutputAmount];
+                        ushort ushortOrStringOutputRemaining = ushortOrStringOutputAmount;
+                        ushort ushortOrStringOutputOffset = 0;
+
+
+                        //var stopwatch = Stopwatch.StartNew();
+                        while (ushortOrStringOutputRemaining > 0)
+                        {
+                            ushort batchSize = Math.Min(ushortOrStringOutputRemaining, registerBatch);
+                            ushort[] partial = await master?.ReadInputRegistersAsync(stationAndTags.station, (ushort)(ushortOrStringOutputStart + ushortOrStringOutputOffset), (ushort)batchSize);
+
+                            if (partial == null || partial.Length != batchSize)
+                            {
+
+                            }
+
+                            Array.Copy(partial, 0, ushortOrStringOutputResult, ushortOrStringOutputOffset, batchSize);
+
+                            ushortOrStringOutputRemaining -= batchSize;
+                            ushortOrStringOutputOffset += batchSize;
+                        }
+
+
+                        foreach (var ushortOrStringOutputTag in ushortOrStringOutputTags)
+                        {
+                            if (!ushortOrStringOutputTag.IsMultipleValue)
+                            {
+                                if (!ushortOrStringOutputTag.IsString)
+                                {
+                                    //ushort
+                                    ushortOrStringOutputTag.SetValue(ushortOrStringOutputResult[ushortOrStringOutputTag.StartIndex - ushortOrStringOutputStart]);
+                                }
+                                else
+                                {
+                                    //string
+                                    var str = UshortToString(ushortOrStringOutputResult[(ushortOrStringOutputTag.StartIndex - ushortOrStringOutputStart)..(ushortOrStringOutputTag.StartIndex - ushortOrStringOutputStart + ushortOrStringOutputTag.Offset)], ushortOrStringOutputTag.StringReverse);
+                                    ushortOrStringOutputTag.SetValue(str);
+                                }
+                            }
+                            else
+                            {
+                                ushortOrStringOutputTag.SetValue(ushortOrStringOutputResult[(ushortOrStringOutputTag.StartIndex - ushortOrStringOutputStart)..(ushortOrStringOutputTag.StartIndex - ushortOrStringOutputStart + ushortOrStringOutputTag.Offset)]);
+                            }
+                        }
+                        outputRegisterStopwatch.Stop();
+                    }
+                    #endregion
                 }
+
+
+
+                await base.UpdateTags();
             }
-
-
-
-            await base.UpdateTags();
         }
 
         public sealed override async Task<RequestResult> UpdateTag(Tag tag)
@@ -156,20 +344,9 @@ namespace CommonLibraryP.MachinePKG
                                 {
                                     tmp_ushort = (await master?.ReadHoldingRegistersAsync(station, startIndex, offset));
                                 }
-                                string strList = string.Empty;
                                 bool b = BitConverter.IsLittleEndian;
-                                foreach (var twoUshort in tmp_ushort)
-                                {
-                                    var byteArray = BitConverter.GetBytes(twoUshort);
-                                    if (stringReverse)
-                                    {
-                                        byteArray = byteArray.Reverse().ToArray();
-                                    }
-
-                                    string s = Encoding.ASCII.GetString(byteArray.TakeWhile(x => x != 0).ToArray());
-                                    strList += s;
-                                }
-                                return tag.SetValue(strList);
+                                var strRes = UshortToString(tmp_ushort, b);
+                                return tag.SetValue(strRes);
                             case 11:
                                 var res_boolArray = Enumerable.Repeat(false, modbusTCPTag.Offset).ToArray();
                                 if (!output)
@@ -234,7 +411,7 @@ namespace CommonLibraryP.MachinePKG
         {
             if (tag is ModbusTCPTag modbusTCPTag)
             {
-                var output = !modbusTCPTag.InputOrOutput;
+                var output = modbusTCPTag.InputOrOutput;
                 var stringReverse = modbusTCPTag.StringReverse;
                 var station = modbusTCPTag.Station;
                 var startIndex = modbusTCPTag.StartIndex;
@@ -400,6 +577,24 @@ namespace CommonLibraryP.MachinePKG
                 }
             }
             return tmp.ToArray();
+        }
+
+        private string UshortToString(ushort[] ushorts, bool reverse)
+        {
+            string res = string.Empty;
+            bool b = BitConverter.IsLittleEndian;
+            foreach (var ushortNum in ushorts)
+            {
+                var byteArray = BitConverter.GetBytes(ushortNum);
+                if (reverse)
+                {
+                    byteArray = byteArray.Reverse().ToArray();
+                }
+
+                string s = Encoding.ASCII.GetString(byteArray.TakeWhile(x => x != 0).ToArray());
+                res += s;
+            }
+            return res;
         }
     }
 }

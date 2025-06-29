@@ -54,9 +54,24 @@
                             <DxFormLayoutItem Caption="Running" Field="@nameof(Machine.RunFlag)" ColSpanLg="4">
                                 <DxCheckBox Checked="@machine?.RunFlag" CheckType="CheckType.Switch" ReadOnly="true" />
                             </DxFormLayoutItem>
-                            <DxFormLayoutItem Caption="Retry" ColSpanLg="4">
-                                <DxButton RenderStyle="ButtonRenderStyle.Success" Enabled="@(machine.canManualRetryFlag)" IconCssClass="oi oi-reload"></DxButton>
-                            </DxFormLayoutItem>
+                            @if (machine is ModbusTCPMachine modbusTCPMachine)
+                            {
+                                <DxFormLayoutItem Caption="Input Coils Cost(ms)" ColSpanLg="6">
+                                    <DxSpinEdit Value="@(modbusTCPMachine?.InputCoilStopwatch.Elapsed.TotalMilliseconds)" ReadOnly="true"></DxSpinEdit>
+                                </DxFormLayoutItem>
+
+                                <DxFormLayoutItem Caption="Output Coils Cost(ms)" ColSpanLg="6">
+                                    <DxSpinEdit Value="@(modbusTCPMachine?.OutputCoilStopwatch.Elapsed.TotalMilliseconds)" ReadOnly="true"></DxSpinEdit>
+                                </DxFormLayoutItem>
+
+                                <DxFormLayoutItem Caption="Input Registers Cost(ms)" ColSpanLg="6">
+                                    <DxSpinEdit Value="@(modbusTCPMachine?.InputRegisterStopwatch.Elapsed.TotalMilliseconds)" ReadOnly="true"></DxSpinEdit>
+                                </DxFormLayoutItem>
+
+                                <DxFormLayoutItem Caption="Output Registers Cost(ms)" ColSpanLg="6">
+                                    <DxSpinEdit Value="@(modbusTCPMachine?.OutputRegisterStopwatch.Elapsed.TotalMilliseconds)" ReadOnly="true"></DxSpinEdit>
+                                </DxFormLayoutItem>
+                            }
                             <DxFormLayoutItem Caption="Error Message" Field="@nameof(Machine.ErrorMsg)" ColSpanLg="12" />
                         </DxFormLayoutGroup>
                     </DxFormLayout>
