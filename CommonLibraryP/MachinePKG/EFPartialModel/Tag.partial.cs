@@ -1,5 +1,6 @@
 ﻿using CommonLibraryP.API;
 using System.Collections;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CommonLibraryP.MachinePKG
 {
@@ -24,6 +25,16 @@ namespace CommonLibraryP.MachinePKG
             lastChangedTime = DateTime.Now;
             InitVal();
         }
+
+        [NotMapped]
+        public bool IsMultipleValue => DataType > 10;
+        [NotMapped]
+        public bool IsBoolean => DataType % 10 == 1;
+        [NotMapped]
+        public bool IsUshort => DataType % 10 == 2;
+        [NotMapped]
+        public bool IsString => DataType % 10 == 4;
+
 
         private DateTime lastUpdateTime;
         public DateTime LastUpdateTime => lastUpdateTime;

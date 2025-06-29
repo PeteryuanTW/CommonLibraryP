@@ -101,7 +101,7 @@ namespace CommonLibraryP.MachinePKG
         }
         public virtual Task<RequestResult> UpdateTag(Tag tag)
         {
-            return Task.FromResult(new RequestResult(3, "Not implement yet"));
+            throw new NotImplementedException();
         }
         public async Task<RequestResult> SetTag(string tagName, object val)
         {
@@ -124,7 +124,7 @@ namespace CommonLibraryP.MachinePKG
         }
         public virtual Task<RequestResult> SetTag(Tag tag, object val)
         {
-            return Task.FromResult(new RequestResult(3, "Not implement yet"));
+            throw new NotImplementedException();
         }
 
         public virtual Task ManualRun()
@@ -136,16 +136,10 @@ namespace CommonLibraryP.MachinePKG
         {
             return Task.CompletedTask;
         }
-        private async Task UpdateTags()
+        protected virtual Task UpdateTags()
         {
-            foreach (Tag tag in TagCategory.Tags)
-            {
-                if (tag.UpdateByTime)
-                {
-                    var res = await UpdateTag(tag);
-                }
-            }
             lastTagUpdateTime = DateTime.Now;
+            return Task.CompletedTask;
         }
         protected virtual Task UpdateStatus()
         {

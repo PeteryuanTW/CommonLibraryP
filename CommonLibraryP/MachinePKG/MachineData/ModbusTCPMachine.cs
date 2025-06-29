@@ -1,13 +1,15 @@
-﻿using System;
+﻿using CommonLibraryP.API;
+using CommonLibraryP.Data;
+using CommonLibraryP.ShopfloorPKG;
+using DevExpress.Blazor.Internal;
+using NModbus;
+using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
-using NModbus;
 using System.Text;
 using System.Threading.Tasks;
-using CommonLibraryP.API;
-using System.Buffers.Binary;
-using CommonLibraryP.Data;
 
 namespace CommonLibraryP.MachinePKG
 {
@@ -44,6 +46,63 @@ namespace CommonLibraryP.MachinePKG
                 Error(e.Message);
             }
         }
+
+        protected sealed override async Task UpdateTags()
+        {
+            if (!hasCategory)
+            {
+                return;
+            }
+            var modbusTagsByStation = TagCategory?.Tags.OfType<ModbusTCPTag>().GroupBy(x => x.Station);
+            foreach (var tagsByStation in modbusTagsByStation)
+            {
+                var updateBytimeTags = tagsByStation.Where(x => x.UpdateByTime).GroupBy(x => x.Station)
+                    .Select(x => new { station = x.Key, tags = x.ToList() }).ToList();
+                foreach (var stationAndTags in updateBytimeTags)
+                {
+                    var boolInputTags = stationAndTags.tags.Where(x => x.IsBoolean && x.InputOrOutput).ToList();
+                    if (boolInputTags is not null && boolInputTags.Count > 0)
+                    {
+                        var boolInputStart = boolInputTags.Select(x => x.StartIndex).Min();
+                        var boolInputEnd = boolInputTags.Select(x => x.StartIndex + x.Offset).Max();
+                        var boolInputValues = await master?.ReadInputsAsync(stationAndTags.station, boolInputStart, (ushort)(boolInputEnd - boolInputStart));
+                        foreach (var boolInputTag in boolInputTags)
+                        {
+                            if (!boolInputTag.IsMultipleValue)
+                            {
+                                boolInputTag.SetValue(boolInputValues[boolInputTag.StartIndex - boolInputStart]);
+                            }
+                            else
+                            {
+                                boolInputTag.SetValue(boolInputValues[(boolInputTag.StartIndex - boolInputStart)..(boolInputTag.StartIndex - boolInputStart + boolInputTag.Offset)]);
+                            }
+                        }
+                    }
+
+
+                    var booloutputTags = stationAndTags.tags.Where(x => x.IsBoolean && !x.InputOrOutput).ToList();
+                    var boolOutputStart = booloutputTags.Select(x => x.StartIndex).Min();
+                    var boolOutputEnd = booloutputTags.Select(x => x.StartIndex + x.Offset).Max();
+                    var boolOutputValues = await master?.ReadCoilsAsync(stationAndTags.station, boolOutputStart, (ushort)(boolOutputEnd - boolOutputStart));
+                    foreach (var boolOutputTag in booloutputTags)
+                    {
+                        if (!boolOutputTag.IsMultipleValue)
+                        {
+                            boolOutputTag.SetValue(boolOutputValues[boolOutputTag.StartIndex - boolOutputStart]);
+                        }
+                        else
+                        {
+                            boolOutputTag.SetValue(boolOutputValues[(boolOutputTag.StartIndex - boolOutputStart)..(boolOutputTag.StartIndex - boolOutputStart + boolOutputTag.Offset)]);
+                        }
+                    }
+                }
+            }
+
+
+
+            await base.UpdateTags();
+        }
+
         public sealed override async Task<RequestResult> UpdateTag(Tag tag)
         {
             try
@@ -53,7 +112,7 @@ namespace CommonLibraryP.MachinePKG
                     if (RunFlag)
                     {
                         bool output = modbusTCPTag.InputOrOutput;
-                        
+
                         var station = modbusTCPTag.Station;
                         var startIndex = modbusTCPTag.StartIndex;
                         var offset = modbusTCPTag.Offset;
@@ -175,7 +234,7 @@ namespace CommonLibraryP.MachinePKG
         {
             if (tag is ModbusTCPTag modbusTCPTag)
             {
-                var output = modbusTCPTag.InputOrOutput;
+                var output = !modbusTCPTag.InputOrOutput;
                 var stringReverse = modbusTCPTag.StringReverse;
                 var station = modbusTCPTag.Station;
                 var startIndex = modbusTCPTag.StartIndex;

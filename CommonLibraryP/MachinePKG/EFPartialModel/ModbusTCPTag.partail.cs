@@ -16,6 +16,7 @@ namespace CommonLibraryP.MachinePKG
         {
             //base(CategoryID);
         }
+
         protected override void InitVal()
         {
             switch (DataType)
