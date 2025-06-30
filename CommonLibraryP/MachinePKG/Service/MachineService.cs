@@ -33,7 +33,7 @@ namespace CommonLibraryP.MachinePKG
             {
                 try
                 {
-                    await slave.Init();
+                    //await slave.Init();
                 }
                 catch (Exception e)
                 {
@@ -230,20 +230,34 @@ namespace CommonLibraryP.MachinePKG
 
         public virtual Machine InitMachineToDerivesClass(Machine machine)
         {
-            Machine res;
-            switch (machine.ConnectionType)
+            var targetMachineType = MachineTypeEnumHelper.GetConnectionTypeWrapperClassByIndex(machine.ConnectionType);
+            if (targetMachineType is not null)
             {
-                case 0:
-                    res = new ModbusTCPMachine(machine);
-                    break;
-                case 1:
-                    res = new TMRobotModbusTCP(machine);
-                    break;
-                default:
-                    throw new NotImplementedException();
+                Machine res = Activator.CreateInstance(targetMachineType.Type) as Machine;
+                if (res is not null)
+                {
+                    CopyMachineAttributes(res, machine);
+                    res.MachineStatechangedRecordAct += MachineStatusChangedRecord;
+                    return res;
+                }
+                else
+                {
+                    throw new Exception($"Machine type error");
+                }
             }
-            res.MachineStatechangedRecordAct += MachineStatusChangedRecord;
-            return res;
+            throw new Exception($"Machine type not insert");
+        }
+
+        private void CopyMachineAttributes(Machine childMachine, Machine parentMachine)
+        {
+            foreach (var prop in typeof(Machine).GetProperties())
+            {
+                if (prop.CanRead && prop.CanWrite)
+                {
+                    prop.SetValue(childMachine, prop.GetValue(parentMachine));
+                }
+            }
+
         }
 
         public void MachineConfigChanged(Guid id, DataEditMode mode)
@@ -276,7 +290,7 @@ namespace CommonLibraryP.MachinePKG
             MachineConfigChanged(machine.Id, dataEditMode);
         }
 
-        public async void MachineStatusChangedRecord(Machine machine, MachineStatusRecordType machineStatusRecordType)
+        public async Task MachineStatusChangedRecord(Machine machine, MachineStatusRecordType machineStatusRecordType)
         {
             if (!machine.RecordStatusChanged)
             {
@@ -291,7 +305,7 @@ namespace CommonLibraryP.MachinePKG
                     {
                         Id = Guid.NewGuid(),
                         MachineID = machine.Id,
-                        Status = (int)machine.MachineStatus,
+                        Status = machine.StatusCode,
                         LogTime = DateTime.Now,
                     };
                     await dbContext.MachineStatusLogs.AddAsync(newRocord);
@@ -342,12 +356,12 @@ namespace CommonLibraryP.MachinePKG
                 if (i == totalCount - 1)
                 {
                     //res.Add(new(machineStatusLogs[i].LogTime, DateTime.Now, (Status)machineStatusLogs[i].Status));
-                    yield return new(machineStatusLogs[i].LogTime, DateTime.Now, (Status)machineStatusLogs[i].Status);
+                    yield return new(machineStatusLogs[i].LogTime, DateTime.Now, machineStatusLogs[i].Status);
                 }
                 else
                 {
                     //res.Add(new(machineStatusLogs[i].LogTime, machineStatusLogs[i + 1].LogTime, (Status)machineStatusLogs[i].Status));
-                    yield return new(machineStatusLogs[i].LogTime, machineStatusLogs[i + 1].LogTime, (Status)machineStatusLogs[i].Status);
+                    yield return new(machineStatusLogs[i].LogTime, machineStatusLogs[i + 1].LogTime, machineStatusLogs[i].Status);
                 }
                 await Task.Delay(delayMilliSec);
                 progress?.Report(i * 100 / totalCount);
@@ -399,6 +413,18 @@ namespace CommonLibraryP.MachinePKG
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
                 return Task.FromResult(dbContext.TagCategories.Include(x => x.Tags).AsNoTracking().ToList());
+            }
+        }
+
+        public async Task<List<TagCategory>> GetAllSuitableTags(int index)
+        {
+            var suitableCat = MachineTypeEnumHelper.GetSuitableConnectionTypeWrapperClasses(index).ToList();
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+                var tmp = await dbContext.TagCategories.AsNoTracking().ToListAsync();
+                var res = tmp.Where(x => suitableCat.Exists(y => y.Index == x.ConnectionType)).ToList();
+                return res;
             }
         }
 
@@ -496,77 +522,83 @@ namespace CommonLibraryP.MachinePKG
             }
         }
 
-        public async Task<RequestResult> UpsertTag(Tag tag)
+        public async Task<RequestResult> UpsertTagTPC(Tag tag)
         {
-            try
+            if (tag is ModbusTCPTag modbusTCPTag)
             {
-                using (var scope = scopeFactory.CreateScope())
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                    var targetTag = dbContext.Tags.FirstOrDefault(x => x.Id == tag.Id);
-                    if (targetTag != null)
-                    {
-                        targetTag.Name = tag.Name;
-                        targetTag.DataType = tag.DataType;
-                        targetTag.UpdateByTime = tag.UpdateByTime;
-                        targetTag.SpecialType = tag.SpecialType;
-
-                        targetTag.Bool1 = tag.Bool1;
-                        targetTag.Bool2 = tag.Bool2;
-                        targetTag.Bool3 = tag.Bool3;
-                        targetTag.Bool4 = tag.Bool4;
-                        targetTag.Bool5 = tag.Bool5;
-
-                        targetTag.Int1 = tag.Int1;
-                        targetTag.Int2 = tag.Int2;
-                        targetTag.Int3 = tag.Int3;
-                        targetTag.Int4 = tag.Int4;
-                        targetTag.Int5 = tag.Int5;
-
-                        targetTag.String1 = tag.String1;
-                        targetTag.String2 = tag.String2;
-                        targetTag.String3 = tag.String3;
-                        targetTag.String4 = tag.String4;
-                        targetTag.String5 = tag.String5;
-                    }
-                    else
-                    {
-                        await dbContext.Tags.AddAsync(tag);
-                    }
-                    await dbContext.SaveChangesAsync();
-                    return new(2, $"Upsert tag {tag.Name} success");
-                }
+                return await UpsertTag<ModbusTCPTag>(modbusTCPTag);
             }
-            catch (Exception ex)
+            else
             {
-                return new(4, ex.Message);
+                return new(4, $"upsert tag {tag.Name} fail(downcasting fail)");
             }
         }
 
-        public async Task<RequestResult> DeleteTag(Tag tag)
+        private async Task<RequestResult> UpsertTag<T>(T newTag) where T : Tag
         {
-            try
+            using (var scope = scopeFactory.CreateScope())
             {
-                using (var scope = scopeFactory.CreateScope())
+                try
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                    var targetTag = dbContext.Tags.FirstOrDefault(x => x.Id == tag.Id);
-                    if (targetTag != null)
+                    var targetTag = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == newTag.Id);
+                    if (targetTag is not null)
                     {
-                        dbContext.Tags.Remove(targetTag);
-                        await dbContext.SaveChangesAsync();
-                        return new(2, $"Delete tag {tag.Name} success");
+                        dbContext.Entry<T>(targetTag).CurrentValues.SetValues(newTag);
                     }
                     else
                     {
-                        return new(4, $"Tag {tag.Name} not found");
+                        dbContext.Set<T>().Add(newTag);
                     }
+                    await dbContext.SaveChangesAsync();
+                    return new(2, $"upsert tag {newTag.Name} success");
+                }
+                catch (Exception e)
+                {
+                    return new(4, $"upsert tag {newTag.Name} fail({e.Message})");
+                }
 
+            }
+        }
+
+        public async Task<RequestResult> DeleteTagTCP(Tag targetTag)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                if (targetTag is ModbusTCPTag modbusTCPTag)
+                {
+                    return await DeleteTag<ModbusTCPTag>(modbusTCPTag);
+                }
+                else
+                {
+                    return new(4, $"delete tag {targetTag.Name} fail(downcasting fail)");
                 }
             }
-            catch (Exception ex)
+        }
+
+        private async Task<RequestResult> DeleteTag<T>(T targetTag) where T : Tag
+        {
+            using (var scope = scopeFactory.CreateScope())
             {
-                return new(4, ex.Message);
+                try
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+                    var existingNode = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == targetTag.Id);
+                    if (existingNode is not null)
+                    {
+                        dbContext.Entry(existingNode).State = EntityState.Deleted;
+                    }
+                    else
+                    {
+                        return new(4, $"tag {targetTag.Name} not found");
+                    }
+                    await dbContext.SaveChangesAsync();
+                    return new(2, $"delete tag {targetTag.Name} success");
+                }
+                catch (Exception e)
+                {
+                    return new(4, $"delete tag {targetTag.Name} fail({e.Message})");
+                }
             }
         }
 
@@ -684,6 +716,22 @@ namespace CommonLibraryP.MachinePKG
                                     }
                                 case 4:
                                     return await SetMachineTag(machineName, targetTag.Name, valString);
+                                case 11:
+                                    var boolArrRegexRes = MachineTypeEnumHelper.VerifyValueStringWithDatatype(targetTag.DataType, valString);
+                                    if (!boolArrRegexRes)
+                                    {
+                                        return new(4, $"Boolean array {valString} regular expression invalid");
+                                    }
+                                    var boolArrVal = ConvertToBooleanArray(valString).ToArray();
+                                    return await SetMachineTag(machineName, targetTag.Name, boolArrVal);
+                                case 22:
+                                    var ushortArrRegexRes = MachineTypeEnumHelper.VerifyValueStringWithDatatype(targetTag.DataType, valString);
+                                    if (!ushortArrRegexRes)
+                                    {
+                                        return new(4, $"Ushort array {valString} regular expression invalid");
+                                    }
+                                    var ushortArrVal = ConvertToUshortArray(valString).ToArray();
+                                    return await SetMachineTag(machineName, targetTag.Name, ushortArrVal);
                                 default:
                                     return new(4, $"Set tag {targetTag.Name} fail({((DataType)targetTag.DataType)} not support yet)");
                             }
@@ -707,6 +755,36 @@ namespace CommonLibraryP.MachinePKG
             else
             {
                 return new(4, $"Machine {machineName} not found");
+            }
+        }
+
+        private IEnumerable<bool> ConvertToBooleanArray(string valString)
+        {
+            string val = valString.Trim('[', ']');
+            var boolArr = val.Split(",");
+            foreach (var boolString in boolArr)
+            {
+                bool boolVal;
+                bool boolParseRes = bool.TryParse(boolString, out boolVal);
+                if (boolParseRes)
+                {
+                    yield return boolVal;
+                }
+            }
+
+        }
+        private IEnumerable<ushort> ConvertToUshortArray(string valString)
+        {
+            string val = valString.Trim('[', ']');
+            var ushortArr = val.Split(",");
+            foreach (var ushortString in ushortArr)
+            {
+                ushort ushortVal;
+                bool ushortParseRes = ushort.TryParse(ushortString, out ushortVal);
+                if (ushortParseRes)
+                {
+                    yield return ushortVal;
+                }
             }
         }
 
@@ -745,351 +823,351 @@ namespace CommonLibraryP.MachinePKG
 
         #region condition
 
-        private List<Condition> conditions = new();
-        public List<Condition> Conditions => conditions;
-        public async Task InitConditions()
-        {
-            conditions = await InitAllConditionsHierarchical();
-            foreach (var condition in conditions)
-            {
-                if (condition.Enable)
-                {
-                    condition.StartMonitorThread(this);
-                }
+        //private List<Condition> conditions = new();
+        //public List<Condition> Conditions => conditions;
+        //public async Task InitConditions()
+        //{
+        //    conditions = await InitAllConditionsHierarchical();
+        //    foreach (var condition in conditions)
+        //    {
+        //        if (condition.Enable)
+        //        {
+        //            condition.StartMonitorThread(this);
+        //        }
 
-            }
-        }
+        //    }
+        //}
 
-        private async Task<List<Condition>> InitAllConditionsHierarchical()
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                return await dbContext.Conditions.Include(x => x.ConditionNodes.Where(x => x.ParentNodeId == null))
-                    .ThenInclude(x => x.ChildNodes)
-                    .Include(x => x.ConditionActions.OrderBy(x => x.Sequence))
-                    .AsSplitQuery()
-                    .AsNoTracking()
-                    .ToListAsync();
-            }
-        }
+        //private async Task<List<Condition>> InitAllConditionsHierarchical()
+        //{
+        //    using (var scope = scopeFactory.CreateScope())
+        //    {
+        //        var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+        //        return await dbContext.Conditions.Include(x => x.ConditionNodes.Where(x => x.ParentNodeId == null))
+        //            .ThenInclude(x => x.ChildNodes)
+        //            .Include(x => x.ConditionActions.OrderBy(x => x.Sequence))
+        //            .AsSplitQuery()
+        //            .AsNoTracking()
+        //            .ToListAsync();
+        //    }
+        //}
 
-        private async Task<Condition?> InitConditionsHierarchicalById(Guid id)
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                return await dbContext.Conditions.Include(x => x.ConditionNodes.Where(x => x.ParentNodeId == null))
-                    .ThenInclude(x => x.ChildNodes)
-                    .Include(x => x.ConditionActions.OrderBy(x => x.Sequence))
-                    .AsSplitQuery()
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Id == id);
-            }
-        }
+        //private async Task<Condition?> InitConditionsHierarchicalById(Guid id)
+        //{
+        //    using (var scope = scopeFactory.CreateScope())
+        //    {
+        //        var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+        //        return await dbContext.Conditions.Include(x => x.ConditionNodes.Where(x => x.ParentNodeId == null))
+        //            .ThenInclude(x => x.ChildNodes)
+        //            .Include(x => x.ConditionActions.OrderBy(x => x.Sequence))
+        //            .AsSplitQuery()
+        //            .AsNoTracking()
+        //            .FirstOrDefaultAsync(x => x.Id == id);
+        //    }
+        //}
 
-        public Condition? GetConditionById(Guid id)
-            => conditions.FirstOrDefault(x => x.Id == id);
+        //public Condition? GetConditionById(Guid id)
+        //    => conditions.FirstOrDefault(x => x.Id == id);
 
-        public async Task<List<Condition>> GetAllConditionsConfig()
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                return await dbContext.Conditions.Include(x => x.ConditionNodes.Where(x => x.ParentNodeId == null))
-                    .ThenInclude(x => x.ChildNodes)
-                    .Include(x => x.ConditionActions.OrderBy(x => x.Sequence))
-                    .AsSplitQuery()
-                    .AsNoTracking()
-                    .ToListAsync();
-            }
-        }
+        //public async Task<List<Condition>> GetAllConditionsConfig()
+        //{
+        //    using (var scope = scopeFactory.CreateScope())
+        //    {
+        //        var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+        //        return await dbContext.Conditions.Include(x => x.ConditionNodes.Where(x => x.ParentNodeId == null))
+        //            .ThenInclude(x => x.ChildNodes)
+        //            .Include(x => x.ConditionActions.OrderBy(x => x.Sequence))
+        //            .AsSplitQuery()
+        //            .AsNoTracking()
+        //            .ToListAsync();
+        //    }
+        //}
 
-        public async Task<List<ConditionNode>> GetConditionNodesFlatById(Guid conditionId)
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                return await dbContext.ConditionNodes.Where(x => x.ConditionId == conditionId)
-                    .AsNoTracking()
-                    .ToListAsync();
-            }
-        }
+        //public async Task<List<ConditionNode>> GetConditionNodesFlatById(Guid conditionId)
+        //{
+        //    using (var scope = scopeFactory.CreateScope())
+        //    {
+        //        var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+        //        return await dbContext.ConditionNodes.Where(x => x.ConditionId == conditionId)
+        //            .AsNoTracking()
+        //            .ToListAsync();
+        //    }
+        //}
 
-        public async Task<RequestResult> UpsertCondition(Condition condition)
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                try
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                    var target = dbContext.Conditions.FirstOrDefault(x => x.Id == condition.Id);
-                    bool exist = target is not null;
-                    if (exist)
-                    {
-                        target.Name = condition.Name;
-                        target.Enable = condition.Enable;
-                    }
-                    else
-                    {
-                        await dbContext.Conditions.AddAsync(condition);
-                    }
-                    await dbContext.SaveChangesAsync();
-                    //DataEditMode dataEditMode = exist ? DataEditMode.Update : DataEditMode.Insert;
-                    //await RefreshMachine(machine, dataEditMode);
-                    return new(2, $"upsert condition {condition.Name} success");
-                }
-                catch (Exception e)
-                {
-                    return new(4, $"upsert condition {condition.Name} fail({e.Message})");
-                }
+        //public async Task<RequestResult> UpsertCondition(Condition condition)
+        //{
+        //    using (var scope = scopeFactory.CreateScope())
+        //    {
+        //        try
+        //        {
+        //            var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+        //            var target = dbContext.Conditions.FirstOrDefault(x => x.Id == condition.Id);
+        //            bool exist = target is not null;
+        //            if (exist)
+        //            {
+        //                target.Name = condition.Name;
+        //                target.Enable = condition.Enable;
+        //            }
+        //            else
+        //            {
+        //                await dbContext.Conditions.AddAsync(condition);
+        //            }
+        //            await dbContext.SaveChangesAsync();
+        //            //DataEditMode dataEditMode = exist ? DataEditMode.Update : DataEditMode.Insert;
+        //            //await RefreshMachine(machine, dataEditMode);
+        //            return new(2, $"upsert condition {condition.Name} success");
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            return new(4, $"upsert condition {condition.Name} fail({e.Message})");
+        //        }
 
-            }
-        }
-        public async Task<RequestResult> DeleteCondition(Condition condition)
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                try
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                    var target = dbContext.Conditions.FirstOrDefault(x => x.Id == condition.Id);
-                    if (target != null)
-                    {
-                        dbContext.Remove(target);
-                        await dbContext.SaveChangesAsync();
-                        return new(2, $"Delete condition {target.Name} success");
-                    }
-                    else
-                    {
-                        return new(4, $"condition {condition.Name} not found");
-                    }
+        //    }
+        //}
+        //public async Task<RequestResult> DeleteCondition(Condition condition)
+        //{
+        //    using (var scope = scopeFactory.CreateScope())
+        //    {
+        //        try
+        //        {
+        //            var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+        //            var target = dbContext.Conditions.FirstOrDefault(x => x.Id == condition.Id);
+        //            if (target != null)
+        //            {
+        //                dbContext.Remove(target);
+        //                await dbContext.SaveChangesAsync();
+        //                return new(2, $"Delete condition {target.Name} success");
+        //            }
+        //            else
+        //            {
+        //                return new(4, $"condition {condition.Name} not found");
+        //            }
 
-                }
-                catch (Exception e)
-                {
-                    return new(4, $"Delete condition {condition.Name} fail({e.Message})");
-                }
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            return new(4, $"Delete condition {condition.Name} fail({e.Message})");
+        //        }
 
-            }
-        }
+        //    }
+        //}
 
-        public async Task<RequestResult> UpsertConditionNodeTPC(ConditionNode conditionNode)
-        {
-            if (conditionNode is ConditionLogicNode conditionLogicNode)
-            {
-                return await UpsertConditionNode<ConditionLogicNode>(conditionLogicNode);
-            }
-            else if (conditionNode is ConditionConstDataNode conditionConstDataNode)
-            {
-                return await UpsertConditionNode<ConditionConstDataNode>(conditionConstDataNode);
-            }
-            else if (conditionNode is ConditionTagDataNode conditionTagDataNode)
-            {
-                return await UpsertConditionNode<ConditionTagDataNode>(conditionTagDataNode);
-            }
-            else
-            {
-                return new(4, $"upsert condition node {conditionNode.Name} fail(downcasting fail)");
-            }
-        }
+        //public async Task<RequestResult> UpsertConditionNodeTPC(ConditionNode conditionNode)
+        //{
+        //    if (conditionNode is ConditionLogicNode conditionLogicNode)
+        //    {
+        //        return await UpsertConditionNode<ConditionLogicNode>(conditionLogicNode);
+        //    }
+        //    else if (conditionNode is ConditionConstDataNode conditionConstDataNode)
+        //    {
+        //        return await UpsertConditionNode<ConditionConstDataNode>(conditionConstDataNode);
+        //    }
+        //    else if (conditionNode is ConditionTagDataNode conditionTagDataNode)
+        //    {
+        //        return await UpsertConditionNode<ConditionTagDataNode>(conditionTagDataNode);
+        //    }
+        //    else
+        //    {
+        //        return new(4, $"upsert condition node {conditionNode.Name} fail(downcasting fail)");
+        //    }
+        //}
 
-        private async Task<RequestResult> UpsertConditionNode<T>(T conditionNode) where T : ConditionNode
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                try
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                    var existingNode = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == conditionNode.Id);
-                    if (existingNode is not null)
-                    {
-                        dbContext.Entry<T>(existingNode).CurrentValues.SetValues(conditionNode);
-                    }
-                    else
-                    {
-                        dbContext.Set<T>().Add(conditionNode);
-                    }
-                    await dbContext.SaveChangesAsync();
-                    return new(2, $"upsert condition node {conditionNode.Name} success");
-                }
-                catch (Exception e)
-                {
-                    return new(4, $"upsert condition node {conditionNode.Name} fail({e.Message})");
-                }
+        //private async Task<RequestResult> UpsertConditionNode<T>(T conditionNode) where T : ConditionNode
+        //{
+        //    using (var scope = scopeFactory.CreateScope())
+        //    {
+        //        try
+        //        {
+        //            var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+        //            var existingNode = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == conditionNode.Id);
+        //            if (existingNode is not null)
+        //            {
+        //                dbContext.Entry<T>(existingNode).CurrentValues.SetValues(conditionNode);
+        //            }
+        //            else
+        //            {
+        //                dbContext.Set<T>().Add(conditionNode);
+        //            }
+        //            await dbContext.SaveChangesAsync();
+        //            return new(2, $"upsert condition node {conditionNode.Name} success");
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            return new(4, $"upsert condition node {conditionNode.Name} fail({e.Message})");
+        //        }
 
-            }
-        }
+        //    }
+        //}
 
-        public async Task<RequestResult> DeleteConditionNodeTCP(ConditionNode conditionNode)
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                if (conditionNode is ConditionLogicNode conditionLogicNode)
-                {
-                    return await DeleteConditionNode<ConditionLogicNode>(conditionLogicNode);
-                }
-                else if (conditionNode is ConditionConstDataNode conditionConstDataNode)
-                {
-                    return await DeleteConditionNode<ConditionConstDataNode>(conditionConstDataNode);
-                }
-                else if (conditionNode is ConditionTagDataNode conditionTagDataNode)
-                {
-                    return await DeleteConditionNode<ConditionTagDataNode>(conditionTagDataNode);
-                }
-                else
-                {
-                    return new(4, $"delete condition node {conditionNode.Name} fail(downcasting fail)");
-                }
-            }
-        }
+        //public async Task<RequestResult> DeleteConditionNodeTCP(ConditionNode conditionNode)
+        //{
+        //    using (var scope = scopeFactory.CreateScope())
+        //    {
+        //        if (conditionNode is ConditionLogicNode conditionLogicNode)
+        //        {
+        //            return await DeleteConditionNode<ConditionLogicNode>(conditionLogicNode);
+        //        }
+        //        else if (conditionNode is ConditionConstDataNode conditionConstDataNode)
+        //        {
+        //            return await DeleteConditionNode<ConditionConstDataNode>(conditionConstDataNode);
+        //        }
+        //        else if (conditionNode is ConditionTagDataNode conditionTagDataNode)
+        //        {
+        //            return await DeleteConditionNode<ConditionTagDataNode>(conditionTagDataNode);
+        //        }
+        //        else
+        //        {
+        //            return new(4, $"delete condition node {conditionNode.Name} fail(downcasting fail)");
+        //        }
+        //    }
+        //}
 
-        private async Task<RequestResult> DeleteConditionNode<T>(T conditionNode) where T : ConditionNode
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                try
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                    var existingNode = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == conditionNode.Id);
-                    if (existingNode is not null)
-                    {
-                        dbContext.Entry(existingNode).State = EntityState.Deleted;
-                    }
-                    else
-                    {
-                        return new(4, $"condition node {conditionNode.Name} not found");
-                    }
-                    await dbContext.SaveChangesAsync();
-                    return new(2, $"delete condition node {conditionNode.Name} success");
-                }
-                catch (Exception e)
-                {
-                    return new(4, $"delete condition node {conditionNode.Name} fail({e.Message})");
-                }
-            }
-        }
+        //private async Task<RequestResult> DeleteConditionNode<T>(T conditionNode) where T : ConditionNode
+        //{
+        //    using (var scope = scopeFactory.CreateScope())
+        //    {
+        //        try
+        //        {
+        //            var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+        //            var existingNode = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == conditionNode.Id);
+        //            if (existingNode is not null)
+        //            {
+        //                dbContext.Entry(existingNode).State = EntityState.Deleted;
+        //            }
+        //            else
+        //            {
+        //                return new(4, $"condition node {conditionNode.Name} not found");
+        //            }
+        //            await dbContext.SaveChangesAsync();
+        //            return new(2, $"delete condition node {conditionNode.Name} success");
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            return new(4, $"delete condition node {conditionNode.Name} fail({e.Message})");
+        //        }
+        //    }
+        //}
 
-        public async Task<RequestResult> UpsertConditionActionTPC(ConditionAction conditionAction)
-        {
-            if (conditionAction is AwaitAction awaitAction)
-            {
-                return await UpsertConditionAction<AwaitAction>(awaitAction);
-            }
-            else if (conditionAction is SetTagAction setTagAction)
-            {
-                return await UpsertConditionAction<SetTagAction>(setTagAction);
-            }
-            else
-            {
-                return new(4, $"upsert condition action {conditionAction.Name} fail(downcasting fail)");
-            }
-        }
+        //public async Task<RequestResult> UpsertConditionActionTPC(ConditionAction conditionAction)
+        //{
+        //    if (conditionAction is AwaitAction awaitAction)
+        //    {
+        //        return await UpsertConditionAction<AwaitAction>(awaitAction);
+        //    }
+        //    else if (conditionAction is SetTagAction setTagAction)
+        //    {
+        //        return await UpsertConditionAction<SetTagAction>(setTagAction);
+        //    }
+        //    else
+        //    {
+        //        return new(4, $"upsert condition action {conditionAction.Name} fail(downcasting fail)");
+        //    }
+        //}
 
-        private async Task<RequestResult> UpsertConditionAction<T>(T conditionAction) where T : ConditionAction
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                try
-                {
+        //private async Task<RequestResult> UpsertConditionAction<T>(T conditionAction) where T : ConditionAction
+        //{
+        //    using (var scope = scopeFactory.CreateScope())
+        //    {
+        //        try
+        //        {
 
-                    var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                    var existingAction = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == conditionAction.Id);
-                    if (existingAction is not null)
-                    {
-                        dbContext.Entry<T>(existingAction).CurrentValues.SetValues(conditionAction);
-                    }
-                    else
-                    {
-                        dbContext.Set<T>().Add(conditionAction);
-                    }
-                    await dbContext.SaveChangesAsync();
-                    return new(2, $"upsert condition action {conditionAction.Name} success");
-                }
-                catch (Exception e)
-                {
-                    return new(4, $"upsert condition action {conditionAction.Name} fail({e.Message})");
-                }
+        //            var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+        //            var existingAction = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == conditionAction.Id);
+        //            if (existingAction is not null)
+        //            {
+        //                dbContext.Entry<T>(existingAction).CurrentValues.SetValues(conditionAction);
+        //            }
+        //            else
+        //            {
+        //                dbContext.Set<T>().Add(conditionAction);
+        //            }
+        //            await dbContext.SaveChangesAsync();
+        //            return new(2, $"upsert condition action {conditionAction.Name} success");
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            return new(4, $"upsert condition action {conditionAction.Name} fail({e.Message})");
+        //        }
 
-            }
-        }
+        //    }
+        //}
 
-        public async Task<RequestResult> DeleteConditionActionTPC(ConditionAction conditionAction)
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                if (conditionAction is AwaitAction awaitAction)
-                {
-                    return await DeleteConditionAction<AwaitAction>(awaitAction);
-                }
-                else if (conditionAction is SetTagAction setTagAction)
-                {
-                    return await DeleteConditionAction<SetTagAction>(setTagAction);
-                }
-                else
-                {
-                    return new(4, $"delete condition node {conditionAction.Name} fail(downcasting fail)");
-                }
-            }
-        }
+        //public async Task<RequestResult> DeleteConditionActionTPC(ConditionAction conditionAction)
+        //{
+        //    using (var scope = scopeFactory.CreateScope())
+        //    {
+        //        if (conditionAction is AwaitAction awaitAction)
+        //        {
+        //            return await DeleteConditionAction<AwaitAction>(awaitAction);
+        //        }
+        //        else if (conditionAction is SetTagAction setTagAction)
+        //        {
+        //            return await DeleteConditionAction<SetTagAction>(setTagAction);
+        //        }
+        //        else
+        //        {
+        //            return new(4, $"delete condition node {conditionAction.Name} fail(downcasting fail)");
+        //        }
+        //    }
+        //}
 
-        private async Task<RequestResult> DeleteConditionAction<T>(T conditionAction) where T : ConditionAction
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                try
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                    var existingNode = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == conditionAction.Id);
-                    if (existingNode is not null)
-                    {
-                        dbContext.Entry(existingNode).State = EntityState.Deleted;
-                    }
-                    else
-                    {
-                        return new(4, $"condition node {conditionAction.Name} not found");
-                    }
-                    await dbContext.SaveChangesAsync();
-                    return new(2, $"delete condition node {conditionAction.Name} success");
-                }
-                catch (Exception e)
-                {
-                    return new(4, $"delete condition node {conditionAction.Name} fail({e.Message})");
-                }
-            }
-        }
+        //private async Task<RequestResult> DeleteConditionAction<T>(T conditionAction) where T : ConditionAction
+        //{
+        //    using (var scope = scopeFactory.CreateScope())
+        //    {
+        //        try
+        //        {
+        //            var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+        //            var existingNode = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == conditionAction.Id);
+        //            if (existingNode is not null)
+        //            {
+        //                dbContext.Entry(existingNode).State = EntityState.Deleted;
+        //            }
+        //            else
+        //            {
+        //                return new(4, $"condition node {conditionAction.Name} not found");
+        //            }
+        //            await dbContext.SaveChangesAsync();
+        //            return new(2, $"delete condition node {conditionAction.Name} success");
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            return new(4, $"delete condition node {conditionAction.Name} fail({e.Message})");
+        //        }
+        //    }
+        //}
 
-        public async Task RefreshComdition(Condition condition, DataEditMode dataEditMode)
-        {
-            var target = GetConditionById(condition.Id);
-            if (target != null)
-            {
-                //update or delete
-                conditions.Remove(target);
-                target.StopMonitorThread();
+        //public async Task RefreshComdition(Condition condition, DataEditMode dataEditMode)
+        //{
+        //    var target = GetConditionById(condition.Id);
+        //    if (target != null)
+        //    {
+        //        //update or delete
+        //        conditions.Remove(target);
+        //        target.StopMonitorThread();
 
-                if (dataEditMode != DataEditMode.Delete)
-                {
-                    var tmp = await InitConditionsHierarchicalById(target.Id);
-                    if (tmp is not null)
-                    {
-                        conditions.Add(tmp);
-                    }
-                }
-                else
-                {
-                }
-            }
-            else
-            {
-                var tmp = await InitConditionsHierarchicalById(target.Id);
-                if (tmp is not null)
-                {
-                    conditions.Add(tmp);
-                }
-            }
-            //MachineConfigChanged(condition.Id, dataEditMode);
-        }
+        //        if (dataEditMode != DataEditMode.Delete)
+        //        {
+        //            var tmp = await InitConditionsHierarchicalById(target.Id);
+        //            if (tmp is not null)
+        //            {
+        //                conditions.Add(tmp);
+        //            }
+        //        }
+        //        else
+        //        {
+        //        }
+        //    }
+        //    else
+        //    {
+        //        var tmp = await InitConditionsHierarchicalById(target.Id);
+        //        if (tmp is not null)
+        //        {
+        //            conditions.Add(tmp);
+        //        }
+        //    }
+        //    //MachineConfigChanged(condition.Id, dataEditMode);
+        //}
 
         #endregion
     }

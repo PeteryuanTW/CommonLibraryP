@@ -129,7 +129,7 @@
   <data name="Connection Type" xml:space="preserve">
     <value>連接類型</value>
   </data>
-  <data name="Maxima Retry Count" xml:space="preserve">
+  <data name="Maximal Retry Count" xml:space="preserve">
     <value>最多嘗試次數</value>
   </data>
   <data name="Enable" xml:space="preserve">
@@ -146,5 +146,23 @@
   </data>
   <data name="Update By Time" xml:space="preserve">
     <value>隨時更新</value>
+  </data>
+  <data name="Station" xml:space="preserve">
+    <value>站號</value>
+  </data>
+  <data name="Input/Output" xml:space="preserve">
+    <value>輸入/輸出</value>
+  </data>
+  <data name="Start Index" xml:space="preserve">
+    <value>起始位置</value>
+  </data>
+  <data name="Offset" xml:space="preserve">
+    <value>偏移量</value>
+  </data>
+  <data name="String Reverse" xml:space="preserve">
+    <value>字串反轉</value>
+  </data>
+  <data name="Record Status Changed" xml:space="preserve">
+    <value>紀錄狀態變更</value>
   </data>
 </root>

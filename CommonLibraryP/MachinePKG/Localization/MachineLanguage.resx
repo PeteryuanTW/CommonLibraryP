@@ -110,8 +110,8 @@
   <data name="Connection Type" xml:space="preserve">
     <value>Connection Type</value>
   </data>
-  <data name="Maxima Retry Count" xml:space="preserve">
-    <value>MaxRetryCount</value>
+  <data name="Maximal Retry Count" xml:space="preserve">
+    <value>Maximal Retry Count</value>
   </data>
   <data name="Enable" xml:space="preserve">
     <value>Enable</value>
@@ -127,5 +127,23 @@
   </data>
   <data name="Update By Time" xml:space="preserve">
     <value>Update By Time</value>
+  </data>
+  <data name="Station" xml:space="preserve">
+    <value>Station</value>
+  </data>
+  <data name="Input/Output" xml:space="preserve">
+    <value>Input/Output</value>
+  </data>
+  <data name="Start Index" xml:space="preserve">
+    <value>Start Index</value>
+  </data>
+  <data name="Offset" xml:space="preserve">
+    <value>Offset</value>
+  </data>
+  <data name="String Reverse" xml:space="preserve">
+    <value>String Reverse</value>
+  </data>
+  <data name="Record Status Changed" xml:space="preserve">
+    <value>Record Status Changed</value>
   </data>
 </root>

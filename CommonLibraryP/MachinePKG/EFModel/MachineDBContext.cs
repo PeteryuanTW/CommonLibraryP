@@ -19,14 +19,15 @@ namespace CommonLibraryP.MachinePKG
         public virtual DbSet<Machine> Machines { get; set; }
         public virtual DbSet<MachineStatusLog> MachineStatusLogs { get; set; }
         public virtual DbSet<Tag> Tags { get; set; }
+        public virtual DbSet<ModbusTCPTag> ModbusTCPTags { get; set; }
 
         public virtual DbSet<TagCategory> TagCategories { get; set; }
 
-        public virtual DbSet<Condition> Conditions { get; set; }
+        //public virtual DbSet<Condition> Conditions { get; set; }
 
-        public virtual DbSet<ConditionNode> ConditionNodes { get; set; }
+        //public virtual DbSet<ConditionNode> ConditionNodes { get; set; }
 
-        public virtual DbSet<ConditionAction> ConditionActions { get; set; }
+        //public virtual DbSet<ConditionAction> ConditionActions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -44,7 +45,7 @@ namespace CommonLibraryP.MachinePKG
             modelBuilder.Entity<Machine>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.UseTpcMappingStrategy();
+                //entity.UseTpcMappingStrategy();
                 entity.ToTable("Machine");
 
                 entity.HasIndex(e => e.Name).IsUnique();
@@ -100,117 +101,98 @@ namespace CommonLibraryP.MachinePKG
             {
                 entity.HasKey(e => e.Id);
 
-                entity.ToTable("Tag");
+                //entity.ToTable("Tag");
+                entity.UseTpcMappingStrategy();
 
                 entity.HasIndex(e => e.Name).IsUnique();
 
                 entity.Property(e => e.Id)
-                    .ValueGeneratedNever()
                     .HasColumnName("ID");
-                entity.Property(e => e.Bool1).HasColumnName("Bool_1");
-                entity.Property(e => e.Bool2).HasColumnName("Bool_2");
-                entity.Property(e => e.Bool3).HasColumnName("Bool_3");
-                entity.Property(e => e.Bool4).HasColumnName("Bool_4");
-                entity.Property(e => e.Bool5).HasColumnName("Bool_5");
-                entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
-                entity.Property(e => e.Int1).HasColumnName("Int_1");
-                entity.Property(e => e.Int2).HasColumnName("Int_2");
-                entity.Property(e => e.Int3).HasColumnName("Int_3");
-                entity.Property(e => e.Int4).HasColumnName("Int_4");
-                entity.Property(e => e.Int5).HasColumnName("Int_5");
-                entity.Property(e => e.Name).HasMaxLength(50);
-                entity.Property(e => e.String1)
-                    .HasMaxLength(50)
-                    .HasColumnName("String_1");
-                entity.Property(e => e.String2)
-                    .HasMaxLength(50)
-                    .HasColumnName("String_2");
-                entity.Property(e => e.String3)
-                    .HasMaxLength(50)
-                    .HasColumnName("String_3");
-                entity.Property(e => e.String4)
-                    .HasMaxLength(50)
-                    .HasColumnName("String_4");
-                entity.Property(e => e.String5)
-                    .HasMaxLength(50)
-                    .HasColumnName("String_5");
+                
 
                 entity.HasOne(d => d.Category).WithMany(p => p.Tags)
                     .HasForeignKey(d => d.CategoryId)
                     .OnDelete(DeleteBehavior.ClientCascade);
             });
 
-            modelBuilder.Entity<Condition>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-
-                entity.ToTable("Conditions");
-
-                entity.HasIndex(e => e.Name).IsUnique();
-
-                entity.HasMany(e => e.ConditionNodes).WithOne(p => p.Condition)
-                    .HasForeignKey(q => q.ConditionId);
-            });
-
-            modelBuilder.Entity<ConditionNode>(entity =>
-            {
-                entity.UseTpcMappingStrategy();
-
-                entity.HasKey(e => e.Id);
-
-                //entity.ToTable("ConditionNodes");
-
-                entity.HasOne(e => e.Condition).WithMany(p => p.ConditionNodes);
-
-                entity.HasOne(e => e.ParentNode).WithMany(f => f.ChildNodes)
-                .HasForeignKey(g => g.ParentNodeId);
-            });
-
-            modelBuilder.Entity<ConditionLogicNode>(entity =>
+            modelBuilder.Entity<ModbusTCPTag>(entity =>
             {
 
-                entity.ToTable("ConditionLogicNodes");
+                //entity.ToTable("ModbusTCPTags");
 
             });
 
-            modelBuilder.Entity<ConditionConstDataNode>(entity =>
-            {
+            //modelBuilder.Entity<Condition>(entity =>
+            //{
+            //    entity.HasKey(e => e.Id);
 
-                entity.ToTable("ConditionConstDataNodes");
+            //    entity.ToTable("Conditions");
 
-            });
+            //    entity.HasIndex(e => e.Name).IsUnique();
 
-            modelBuilder.Entity<ConditionTagDataNode>(entity =>
-            {
+            //    entity.HasMany(e => e.ConditionNodes).WithOne(p => p.Condition)
+            //        .HasForeignKey(q => q.ConditionId);
+            //});
 
-                entity.ToTable("ConditionTagDataNodes");
+            //modelBuilder.Entity<ConditionNode>(entity =>
+            //{
+            //    entity.UseTpcMappingStrategy();
 
-            });
+            //    entity.HasKey(e => e.Id);
+
+            //    //entity.ToTable("ConditionNodes");
+
+            //    entity.HasOne(e => e.Condition).WithMany(p => p.ConditionNodes);
+
+            //    entity.HasOne(e => e.ParentNode).WithMany(f => f.ChildNodes)
+            //    .HasForeignKey(g => g.ParentNodeId);
+            //});
+
+            //modelBuilder.Entity<ConditionLogicNode>(entity =>
+            //{
+
+            //    entity.ToTable("ConditionLogicNodes");
+
+            //});
+
+            //modelBuilder.Entity<ConditionConstDataNode>(entity =>
+            //{
+
+            //    entity.ToTable("ConditionConstDataNodes");
+
+            //});
+
+            //modelBuilder.Entity<ConditionTagDataNode>(entity =>
+            //{
+
+            //    entity.ToTable("ConditionTagDataNodes");
+
+            //});
 
 
 
 
 
-            modelBuilder.Entity<ConditionAction>(entity =>
-            {
-                entity.UseTpcMappingStrategy();
+            //modelBuilder.Entity<ConditionAction>(entity =>
+            //{
+            //    entity.UseTpcMappingStrategy();
 
-                entity.HasKey(e => e.Id);
+            //    entity.HasKey(e => e.Id);
 
-                entity.HasOne(e => e.Condition).WithMany(p => p.ConditionActions);
-            });
-            modelBuilder.Entity<AwaitAction>(entity =>
-            {
+            //    entity.HasOne(e => e.Condition).WithMany(p => p.ConditionActions);
+            //});
+            //modelBuilder.Entity<AwaitAction>(entity =>
+            //{
 
-                entity.ToTable("AwaitActions");
+            //    entity.ToTable("AwaitActions");
 
-            });
-            modelBuilder.Entity<SetTagAction>(entity =>
-            {
+            //});
+            //modelBuilder.Entity<SetTagAction>(entity =>
+            //{
 
-                entity.ToTable("SetTagActions");
+            //    entity.ToTable("SetTagActions");
 
-            });
+            //});
 
         }
     }

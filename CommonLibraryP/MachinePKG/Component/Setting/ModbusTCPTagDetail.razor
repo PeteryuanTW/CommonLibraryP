@@ -1,0 +1,23 @@
+﻿@namespace CommonLibraryP.MachinePKG.Component
+
+@rendermode RenderMode.InteractiveServer
+@inject IStringLocalizer<MachineLanguage> localizer
+
+@inject MachineService machineService
+
+<DxFormLayout Data="@ModbusTCPTagParam" ReadOnly="true">
+    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.Station)" Caption="@($"{localizer["Station"]}")" />
+    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.InputOrOutput)" Caption="@($"{localizer["Input/Output"]}")">
+        <DxCheckBox CheckType="CheckType.Switch" ReadOnly="true" Checked="@(ModbusTCPTagParam.InputOrOutput)"/>
+    </DxFormLayoutItem>
+    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.StartIndex)" Caption="@($"{localizer["Start Index"]}")" />
+    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.Offset)" Caption="@($"{localizer["Offset"]}")" />
+    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.StringReverse)" Caption="@($"{localizer["String Reverse"]}")" >
+        <DxCheckBox CheckType="CheckType.Switch" ReadOnly="true" Checked="@(ModbusTCPTagParam.StringReverse)" />
+    </DxFormLayoutItem>
+</DxFormLayout>
+
+@code {
+    [Parameter]
+    public ModbusTCPTag ModbusTCPTagParam { get; set; } = null!;
+}

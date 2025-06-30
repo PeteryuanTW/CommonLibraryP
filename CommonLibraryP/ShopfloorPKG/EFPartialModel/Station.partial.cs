@@ -12,8 +12,6 @@ namespace CommonLibraryP.ShopfloorPKG
         public Station(Guid processId)
         {
             ProcessId = processId;
-            //Id = Guid.NewGuid();
-            //Enable = true;
         }
 
         public bool IsSingleWorkorder => ((StationType / 100) % 10) switch
@@ -38,12 +36,12 @@ namespace CommonLibraryP.ShopfloorPKG
         };
 
 
-        private Status stationStatus = Status.Init;
-        public Status StationStatus => stationStatus;
+        private int stationStatusCode = 0;
+        public int StationStatusCode => stationStatusCode;
 
-        protected void SetStationStatus(Status s, string msg = "Normal")
+        protected void SetStationStatus(int statusCode, string msg = "Normal")
         {
-            stationStatus = s;
+            stationStatusCode = statusCode;
             SetErrorMsg(msg);
             UIUpdate();
         }
@@ -53,28 +51,26 @@ namespace CommonLibraryP.ShopfloorPKG
 
         private void SetErrorMsg(string s)
         {
-            errorMsg = StationStatus is Status.Error ? s : "Normal";
+            errorMsg = stationStatusCode is 8 ? s : "Normal";
         }
         protected void UIUpdate()
         {
             UIUpdateAct?.Invoke();
         }
-        public Action? UIUpdateAct;
+        public Func<Task>? UIUpdateAct;
 
 
         public void InitStation()
         {
-            stationStatus = Status.Init;
+            stationStatusCode = 0;
             errorMsg = String.Empty;
             UIUpdate();
         }
 
         #region workorder
-        protected List<Workorder> workorders = new();
-        [NotMapped]
-        public List<Workorder> Workorders => workorders;
+        
         public virtual int WorkorderAmount => throw new NotImplementedException();
-        public virtual bool WorkorderAmountValid => throw new NotImplementedException();
+        //public virtual bool WorkorderAmountValid => throw new NotImplementedException();
         public virtual bool CanDeployWorkorder => throw new NotImplementedException();
         public virtual bool Canrun => throw new NotImplementedException();
         #endregion
@@ -92,39 +88,34 @@ namespace CommonLibraryP.ShopfloorPKG
         #endregion
 
         #region item
-        protected List<ItemDetail> wipItemDetails = new();
-        [NotMapped]
-        public List<ItemDetail> WIPItemDetails => wipItemDetails;
-        protected int ItemAmount => wipItemDetails.Count;
-        public virtual bool ItemAmountValid => throw new NotImplementedException();
+        public virtual int WIPItemAmount => throw new NotImplementedException();
         #endregion
 
         #region item operation
-        public virtual RequestResult CheckCanAddItem()
-        {
-            return new(4, "not implement yet");
-        }
+        public virtual RequestResult CheckCanAddItem() => throw new NotImplementedException();
         public bool CanStationIn => CheckCanAddItem().IsSuccess;
+        public virtual RequestResult AddItemDetail(ItemDetail itemDetail) => throw new NotImplementedException();
+        
+        
 
-        public virtual RequestResult AddItemDetail(ItemDetail itemDetail)
-        {
-            return new(4, "not implement yet");
-        }
-
-        public virtual RequestResult CheckCanRemoveItem()
-        {
-            return new(4, "not implement yet");
-        }
+        public virtual RequestResult CheckCanRemoveItem() => throw new NotImplementedException();
         public bool CanStationOut => CheckCanRemoveItem().IsSuccess;
-        public virtual RequestResult RemoveItemDetail()
-        {
-            return new(4, "not implement yet");
-        }
+        
         #endregion
 
         #region task
-        public int TaskAmount => wipItemDetails.SelectMany(x => x.TaskDetails).Count();
-        public bool TaskAmountValid => wipItemDetails.TrueForAll(x => x.OneTaskValid);
+        protected virtual int WIPTaskAmount => throw new NotImplementedException();
+        //public virtual bool TaskAmountValid => throw new NotImplementedException();
+        #endregion
+
+        #region task operation
+
+        public virtual RequestResult CheckCanAddTask() => throw new NotImplementedException();
+        public virtual RequestResult AddTaskDetail(TaskDetail taskDetail) => throw new NotImplementedException();
+
+        public virtual RequestResult CheckCanRemoveTask() => throw new NotImplementedException();
+        //ublic bool CanStationOut => CheckCanRemoveItem().IsSuccess;
+
         #endregion
 
         #region station status
@@ -132,8 +123,6 @@ namespace CommonLibraryP.ShopfloorPKG
         {
             return new(4, "not implement yet");
         }
-
-
 
         public virtual RequestResult Pause()
         {
@@ -147,7 +136,7 @@ namespace CommonLibraryP.ShopfloorPKG
 
         protected void Error(string s)
         {
-            stationStatus = Status.Error;
+            stationStatusCode = 8;
             SetErrorMsg(s);
             UIUpdate();
         }

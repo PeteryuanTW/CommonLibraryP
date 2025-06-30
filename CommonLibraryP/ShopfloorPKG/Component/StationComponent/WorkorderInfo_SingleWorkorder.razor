@@ -3,20 +3,19 @@
 @inject IStringLocalizer<ShopfloorLanguage> localizer
 @inherits WorkorderInfoComponent
 
-@if (StationParamFromRoot.WorkorderAmountValid)
+@if (StationParamFromRoot is not null)
 {
     <DxFormLayout>
         <DxFormLayoutItem Caption="@($"{localizer["Workorder No"]}")" CaptionPosition="CaptionPosition.Vertical">
-            <DxTextBox Text="@Workorder?.WorkorderNo" ReadOnly="true" />
+            <DxTextBox Text="@stationSingleWorkorder?.Workorder?.WorkorderNo" ReadOnly="true" />
         </DxFormLayoutItem>
         <DxFormLayoutItem Caption="@($"{localizer["Lot"]}")" CaptionPosition="CaptionPosition.Vertical">
-            <DxTextBox Text="@Workorder?.Lot" ReadOnly="true" />
+            <DxTextBox Text="@stationSingleWorkorder?.Workorder?.Lot" ReadOnly="true" />
         </DxFormLayoutItem>
     </DxFormLayout>
 }
 
 
 @code {
-    private Workorder? Workorder
-    => ToWorkorderLevelValid ? StationParamFromRoot.Workorders.FirstOrDefault() : null;
+    private StationSingleWorkorder? stationSingleWorkorder => StationParamFromRoot as StationSingleWorkorder;
 }

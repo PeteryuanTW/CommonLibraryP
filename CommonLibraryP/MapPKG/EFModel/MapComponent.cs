@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CommonLibraryP.MapPKG
 {
-    public abstract class MapComponent
+    public  abstract partial class MapComponent
     {
         public Guid Id { get; set; }
         public Guid MapId { get; set; }

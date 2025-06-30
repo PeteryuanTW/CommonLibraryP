@@ -3,11 +3,14 @@
 @rendermode RenderMode.InteractiveServer
 @inject IStringLocalizer<ShopfloorLanguage> localizer
 
-<EditForm Model="@singleSarialNo" OnValidSubmit="StationIn" Context="EditFormContext">
+<EditForm Model="@singleSarialNoStationInModel" OnValidSubmit="StationIn" Context="EditFormContext">
     <DataAnnotationsValidator />
     <DxFormLayout>
+        <DxFormLayoutItem Caption="@($"{localizer["Station"]}")" CaptionPosition="CaptionPosition.Vertical">
+            <DxTextBox @bind-Text="@singleSarialNoStationInModel.StationName" ReadOnly="true"/>
+        </DxFormLayoutItem>
         <DxFormLayoutItem Caption="@($"{localizer["Serial no"]}")" CaptionPosition="CaptionPosition.Vertical">
-            <DxTextBox @bind-Text="@singleSarialNo.serialNo" />
+            <DxTextBox @bind-Text="@singleSarialNoStationInModel.SerialNo" />
         </DxFormLayoutItem>
         <DxFormLayoutItem ColSpanLg="12">
             <hr />
@@ -22,14 +25,22 @@
     </DxFormLayout>
 </EditForm>
 @code {
+    [Parameter]
+    public string StationName { get; set; } = null!;
 
     [Parameter]
-    public EventCallback<string> StationInCallback { get; set; }
+    public EventCallback<SingleSarialNoStationInModel> StationInCallback { get; set; }
 
-    private SingleSarialNoStationInModel singleSarialNo = new();
+    private SingleSarialNoStationInModel singleSarialNoStationInModel = new();
+
+    protected override Task OnParametersSetAsync()
+    {
+        singleSarialNoStationInModel.StationName = StationName;
+        return base.OnParametersSetAsync();
+    }
 
     private async void StationIn()
     {
-        await StationInCallback.InvokeAsync(singleSarialNo.serialNo);
+        await StationInCallback.InvokeAsync(singleSarialNoStationInModel);
     }
 }

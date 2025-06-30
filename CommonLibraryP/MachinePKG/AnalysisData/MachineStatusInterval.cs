@@ -13,17 +13,17 @@ namespace CommonLibraryP.MachinePKG
 
         public DateTime End { get; set; }
 
-        public Status Status { get; set; }
+        public int StatusCode { get; set; }
 
         public TimeSpan Interval => End - Start;
 
         public DateTime MidTime => Start + Interval;
 
-        public MachineStatusInterval(DateTime start, DateTime end, Status status)
+        public MachineStatusInterval(DateTime start, DateTime end, int statusCode)
         {
             Start = start;
             End = end;
-            Status = status;
+            StatusCode = statusCode;
         }
     }
 }

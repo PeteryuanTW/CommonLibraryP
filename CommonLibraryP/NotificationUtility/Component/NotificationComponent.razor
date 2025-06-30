@@ -1,7 +1,7 @@
 ﻿@namespace CommonLibraryP.NotificationUtility
 @rendermode RenderMode.InteractiveServer
 @inject IToastNotificationService toastSetvice
-@inject NotificationService uiService
+@inject NotificationService notificationService
 
 <DxToastProvider
     VerticalAlignment="VerticalEdge.Bottom"
@@ -13,7 +13,7 @@
 
     protected override void OnInitialized()
     {
-        uiService.ToastAction += GetToastRequest;
+        notificationService.ToastAction += GetToastRequest;
     }
 
     private Task GetToastRequest(RequestResult req)

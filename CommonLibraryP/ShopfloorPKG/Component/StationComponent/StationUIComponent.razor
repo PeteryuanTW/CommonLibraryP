@@ -29,7 +29,7 @@
 {
     <DxPopup HeaderText="Error Message" @bind-Visible="@showErrorMsg" CloseOnOutsideClick="false" />
 
-    <div class="card shadow p-3 @sizeCss" style="border-color:@(statusStyle?.ColorRGBString)">
+    <div class="card shadow p-3 @sizeCss" style="border-color:@(statusDetail?.ColorRGBString)">
         <DxGridLayout RowSpacing="1rem">
             <Rows>
                 <DxGridLayoutRow Areas="title" Height="1fr" />
@@ -47,7 +47,7 @@
                             <DxButtonGroup RenderStyle="@statusBtnStyle" RenderStyleMode="@ButtonRenderStyleMode.Outline" Enabled="false" SizeMode="SizeMode.Large">
                                 <Items>
                                     <DxButtonGroupItem Text="@($"{StationParam?.Process?.Name}-{StationParam?.Name}")" />
-                                    <DxButtonGroupItem Text="@($"{localizer[StationParam?.StationStatus.ToString()]}")" />
+                                    <DxButtonGroupItem Text="@($"{localizer[CommonEnumHelper.GetStatusDetail(StationParam.StationStatusCode).DisplayName]}")" />
                                 </Items>
                             </DxButtonGroup>
                         </div>
@@ -106,7 +106,7 @@
                         @StationOutInfo
                     </div>
                 </DxTabPage>
-                <DxTabPage Text="@($"{localizer["Item Record"]}")" Visible="@StationParam.CanStationOut"></DxTabPage>
+                @* <DxTabPage Text="@($"{localizer["Item Record"]}")" Visible="@StationParam.CanStationOut"></DxTabPage> *@
             </DxTabs>
         </BodyContentTemplate>
     </DxPopup>
@@ -117,10 +117,10 @@
     public Station? StationParam { get; set; }
     protected bool hasStation => StationParam != null;
 
-    private StatusStyle? statusStyle => CommonEnumHelper.GetStatusStyle((int)(StationParam?.StationStatus));
+    private StatusDetailWrapperClass statusDetail => CommonEnumHelper.GetStatusDetail((int)(StationParam?.StationStatusCode));
 
     private ButtonRenderStyle statusBtnStyle
-        => statusStyle is null ? ButtonRenderStyle.None : statusStyle.buttonRenderStyle;
+        => statusDetail is null ? ButtonRenderStyle.None : statusDetail.buttonRenderStyle;
 
 
     private RenderFragment? WorkorderInfoArea => StationParam.IsSingleWorkorder ?
@@ -137,10 +137,10 @@
     @<DeployWorkorderInfo_SingleWorkorder StationParamFromRoot="@StationParam" WorkorderIdModelCallback="DeployWorkorder" /> : null;
 
     private RenderFragment? StationInInfo => StationParam.IsSingleItem ?
-    @<StationInInfo_SingleWorkorderWithSerialNo StationInCallback="StationInWithSerialNo" />: null;
+    @<StationInInfo_SingleWorkorderWithSerialNo StationName="@StationParam?.Name" StationInCallback="StationInWithSerialNo" />: null;
 
     private RenderFragment? StationOutInfo => StationParam.IsSingleItem ?
-    @<StationOutInfo_SingleWorkorderWithSerialNo StationOutCallback="StationOutWithSerialNo" />: null;
+    @<StationOutInfo_SingleWorkorderWithSerialNo StationName="@StationParam?.Name" StationOutCallback="StationOutWithoutSerialNo" />: null;
 
     private RenderFragment? ItemRecordInfo;
 
@@ -157,12 +157,12 @@
     private void CloseOperationPopup()
     => showOperation = false;
 
-    protected bool canedit => hasStation ? StationParam.StationStatus == Status.Init : false;
+    protected bool canedit => hasStation ? StationParam.StationStatusCode is 0 : false;
     protected bool canrun => hasStation ? StationParam.Canrun : false;
-    protected bool canoperate => hasStation ? StationParam.StationStatus == Status.Running : false;
-    protected bool canpause => hasStation ? StationParam.StationStatus == Status.Running : false;
-    protected bool canstop => hasStation ? StationParam.StationStatus == Status.Running : false;
-    protected bool iserror => hasStation ? StationParam.StationStatus == Status.Error : false;
+    protected bool canoperate => hasStation ? StationParam.StationStatusCode is 5 : false;
+    protected bool canpause => hasStation ? StationParam.StationStatusCode is 5 : false;
+    protected bool canstop => hasStation ? StationParam.StationStatusCode is 5 : false;
+    protected bool iserror => hasStation ? StationParam.StationStatusCode is 8 : false;
 
     protected override Task OnInitializedAsync()
     {
@@ -177,12 +177,13 @@
     {
         if (hasStation)
         {
-            StationParam.UIUpdateAct += UpdateUIFromStation;
+            StationParam.UIUpdateAct -= UpdateUIFromStation;
         }
     }
 
-    private async void UpdateUIFromStation()
+    private async Task UpdateUIFromStation()
     {
+        
         await InvokeAsync(StateHasChanged);
     }
 
@@ -210,9 +211,9 @@
 
     #region station in
 
-    private async Task StationInWithSerialNo(string serialNo)
+    private async Task StationInWithSerialNo(SingleSarialNoStationInModel SingleSarialNoStationInModel)
     {
-        var res = await shopfloorService.StationInByNameAndSerialNo(StationParam?.Name, serialNo);
+        var res = await shopfloorService.StationInByNameAndSerialNo(SingleSarialNoStationInModel.StationName, SingleSarialNoStationInModel.SerialNo);
         CloseOperationPopup();
         notificationService.ShowToast(res);
     }
@@ -221,9 +222,9 @@
 
     #region station out
 
-    private async Task StationOutWithSerialNo(bool pass)
+    private async Task StationOutWithoutSerialNo(FIFOStationOutModel fifoStationOutModel)
     {
-        var res = await shopfloorService.StationOutByFIFO(StationParam?.Name, pass);
+        var res = await shopfloorService.StationOutByFIFO(fifoStationOutModel.StationName, fifoStationOutModel.Pass);
         CloseOperationPopup();
         notificationService.ShowToast(res);
     }

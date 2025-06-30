@@ -20,7 +20,7 @@ namespace CommonLibraryP.MachinePKG.Service
             using (var scope = scopeFactory.CreateScope())
             {
                 var machineService = scope.ServiceProvider.GetRequiredService<MachineService>();
-                await machineService.InitConditions();
+                //await machineService.InitConditions();
             }
         }
     }

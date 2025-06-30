@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,7 +10,9 @@ namespace CommonLibraryP.MachinePKG
 {
     public partial class Machine
     {
-        public Guid Id { get; set; }
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         //public Guid? ProcessId { get; set; }
         [Required]
@@ -36,7 +39,7 @@ namespace CommonLibraryP.MachinePKG
 
         //public Guid? ErrorCodeCategoryId { get; set; }
 
-        public bool Enabled { get; set; }
+        public bool Enabled { get; set; } = true;
 
         [Required]
         [Range(100, 65535)]

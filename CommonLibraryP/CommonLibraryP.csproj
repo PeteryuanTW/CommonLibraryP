@@ -1,76 +1,89 @@
-<Project Sdk="Microsoft.NET.Sdk.Razor">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Authors>Peter Yuan</Authors>
-    <Version>8.0.2</Version>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="ShopfloorPKG\EFModel\RecipeItem.cs" />
-    <Compile Remove="ShopfloorPKG\EFModel\WorkorderRecipeConfig.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="ShopfloorPKG\EFModel\RecipeItem.cs" />
-    <None Include="ShopfloorPKG\EFModel\WorkorderRecipeConfig.cs" />
-  </ItemGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Authors>Peter Yuan</Authors>
+		<Version>8.0.2</Version>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<EnableDefaultContentItems>true</EnableDefaultContentItems>
+		<StaticWebAssetsEnabled>true</StaticWebAssetsEnabled>
 
 
-  <ItemGroup>
-    <SupportedPlatform Include="browser" />
-  </ItemGroup>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="DevExpress.Blazor" Version="24.2.8" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.11" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.12" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.12" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.12">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.12" />
-    <PackageReference Include="NModbus" Version="3.0.81" />
-    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
-    <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.1" />
-    <PackageReference Include="Z.Blazor.Diagrams" Version="3.0.3" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="ShopfloorPKG\EFModel\RecipeItem.cs" />
+		<Compile Remove="ShopfloorPKG\EFModel\WorkorderRecipeConfig.cs" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Compile Update="MachinePKG\Localization\MachineLanguage.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>MachineLanguage.resx</DependentUpon>
-    </Compile>
-    <Compile Update="ShopfloorPKG\Localization\ShopfloorLanguage.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>ShopfloorLanguage.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
+	<ItemGroup>
+		<Content Remove="MachinePKG\Component\Setting\ConditionSetting.razor" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Update="MachinePKG\Localization\MachineLanguage.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>MachineLanguage.Designer.cs</LastGenOutput>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Update="ShopfloorPKG\Localization\ShopfloorLanguage.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>ShopfloorLanguage.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="ShopfloorPKG\EFModel\RecipeItem.cs" />
+		<None Include="ShopfloorPKG\EFModel\WorkorderRecipeConfig.cs" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="MapPKG\EFPartialModel\" />
-    <Folder Include="ShopfloorPKG\Component\StationComponent\ItemRecordInfo\" />
-    <Folder Include="ShopfloorPKG\Component\StationComponent\WorkorderInfo\" />
-  </ItemGroup>
+
+	<ItemGroup>
+		<SupportedPlatform Include="browser" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DevExpress.Blazor" Version="24.2.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.11" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.12" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.12" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.12">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Localization" Version="8.0.12" />
+		<PackageReference Include="NModbus" Version="3.0.81" />
+		<PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+		<PackageReference Include="Serilog.Expressions" Version="5.0.0" />
+		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.1" />
+		<PackageReference Include="Z.Blazor.Diagrams" Version="3.0.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="MachinePKG\Localization\MachineLanguage.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>MachineLanguage.resx</DependentUpon>
+		</Compile>
+		<Compile Update="ShopfloorPKG\Localization\ShopfloorLanguage.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>ShopfloorLanguage.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Update="MachinePKG\Localization\MachineLanguage.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>MachineLanguage.Designer.cs</LastGenOutput>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<EmbeddedResource Update="ShopfloorPKG\Localization\ShopfloorLanguage.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>ShopfloorLanguage.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="ShopfloorPKG\Component\StationComponent\ItemRecordInfo\" />
+		<Folder Include="ShopfloorPKG\Component\StationComponent\WorkorderInfo\" />
+		<Folder Include="wwwroot\css\" />
+		<Folder Include="wwwroot\SVG\MapIcons\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="MachinePKG\Component\Setting\ConditionSetting.razor" />
+	</ItemGroup>
 
 </Project>

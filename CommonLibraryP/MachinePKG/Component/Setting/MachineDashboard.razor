@@ -4,6 +4,7 @@
 @implements IDisposable
 @inject IStringLocalizer<MachineLanguage> localizer
 @inject MachineService machineService
+@inject NotificationService notificationService
 
 @if (hasMachine)
 {
@@ -53,9 +54,24 @@
                             <DxFormLayoutItem Caption="Running" Field="@nameof(Machine.RunFlag)" ColSpanLg="4">
                                 <DxCheckBox Checked="@machine?.RunFlag" CheckType="CheckType.Switch" ReadOnly="true" />
                             </DxFormLayoutItem>
-                            <DxFormLayoutItem Caption="Retry" ColSpanLg="4">
-                                <DxButton RenderStyle="ButtonRenderStyle.Success" Enabled="@(machine.canManualRetryFlag)" IconCssClass="oi oi-reload"></DxButton>
-                            </DxFormLayoutItem>
+                            @if (machine is ModbusTCPMachine modbusTCPMachine)
+                            {
+                                <DxFormLayoutItem Caption="Input Coils Cost(ms)" ColSpanLg="6">
+                                    <DxSpinEdit Value="@(modbusTCPMachine?.InputCoilStopwatch.Elapsed.TotalMilliseconds)" ReadOnly="true"></DxSpinEdit>
+                                </DxFormLayoutItem>
+
+                                <DxFormLayoutItem Caption="Output Coils Cost(ms)" ColSpanLg="6">
+                                    <DxSpinEdit Value="@(modbusTCPMachine?.OutputCoilStopwatch.Elapsed.TotalMilliseconds)" ReadOnly="true"></DxSpinEdit>
+                                </DxFormLayoutItem>
+
+                                <DxFormLayoutItem Caption="Input Registers Cost(ms)" ColSpanLg="6">
+                                    <DxSpinEdit Value="@(modbusTCPMachine?.InputRegisterStopwatch.Elapsed.TotalMilliseconds)" ReadOnly="true"></DxSpinEdit>
+                                </DxFormLayoutItem>
+
+                                <DxFormLayoutItem Caption="Output Registers Cost(ms)" ColSpanLg="6">
+                                    <DxSpinEdit Value="@(modbusTCPMachine?.OutputRegisterStopwatch.Elapsed.TotalMilliseconds)" ReadOnly="true"></DxSpinEdit>
+                                </DxFormLayoutItem>
+                            }
                             <DxFormLayoutItem Caption="Error Message" Field="@nameof(Machine.ErrorMsg)" ColSpanLg="12" />
                         </DxFormLayoutGroup>
                     </DxFormLayout>
@@ -115,14 +131,23 @@
         </HeaderTemplate>
         <BodyContentTemplate Context="bodycontext">
             <EditForm Model="setMachineTagModel" OnValidSubmit="SetTagValue" Context="editformcontext">
-                <DxFormLayout>
+                <DataAnnotationsValidator/>
+                <DxFormLayout >
+                    @* <DxFormLayoutItem Caption="@($"Machine Name")" Field="@nameof(SetMachineTagModel.MachineName)" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6"/>
+                    <DxFormLayoutItem Caption="@($"Tag Name")" Field="@nameof(SetMachineTagModel.TagName)" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6" /> *@
+                    <DxFormLayoutItem Caption="@($"Machine Name")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6">
+                        <DxTextBox @bind-Text="@setMachineTagModel.MachineName" ShowValidationIcon="true" ReadOnly="true"></DxTextBox>
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="@($"Tag Name")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6">
+                        <DxTextBox @bind-Text="@setMachineTagModel.TagName" ShowValidationIcon="true" ReadOnly="true"></DxTextBox>
+                    </DxFormLayoutItem>
                     <DxFormLayoutItem Caption="@($"Value string")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
-                        <DxTextBox @bind-Text="@setMachineTagModel.ValueString"></DxTextBox>
+                        <DxTextBox @bind-Text="@setMachineTagModel.ValueString" ShowValidationIcon="true" ShowValidationSuccessState="true"></DxTextBox>
                     </DxFormLayoutItem>
                     <DxFormLayoutItem ColSpanLg="12">
                         <hr />
                     </DxFormLayoutItem>
-                    <DxFormLayoutItem>
+                    <DxFormLayoutItem ColSpanLg="12">
                         <DxToolbar ItemRenderStyleMode="@ToolbarRenderStyleMode.Contained" SizeMode="SizeMode.Large">
                             <Items>
                                 <DxToolbarItem RenderStyle="ButtonRenderStyle.Info" SubmitFormOnClick="true" IconCssClass="oi oi-share" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
@@ -157,9 +182,8 @@
         if (hasMachine)
         {
             await RetriveTagCategory();
-            machine.MachineStatechangedAct += StatusUpdate;
+            machine.MachineStatuschangedAct += StatusUpdate;
             machine.TagsStatechangedAct += UIUpdate;
-            machine.UIUpdateAct += UIUpdate;
         }
     }
 
@@ -167,9 +191,8 @@
     {
         if (hasMachine)
         {
-            machine.MachineStatechangedAct -= StatusUpdate;
+            machine.MachineStatuschangedAct -= StatusUpdate;
             machine.TagsStatechangedAct -= UIUpdate;
-            machine.UIUpdateAct -= UIUpdate;
         }
 
     }
@@ -179,12 +202,12 @@
         tagCategories = await machineService.GetAllTagCategories();
     }
 
-    private async void StatusUpdate(Status status)
+    private async Task StatusUpdate(int statusCode)
     {
         await InvokeAsync(StateHasChanged);
     }
 
-    private async void UIUpdate()
+    private async Task UIUpdate()
     {
         await InvokeAsync(StateHasChanged);
     }
@@ -197,9 +220,7 @@
 
     private void SetTagClicked(Object tagObj)
     {
-
-        targetTag = tagObj as Tag;
-        if (targetTag != null)
+        if (tagObj is Tag targetTag)
         {
             switch (targetTag.DataType)
             {
@@ -217,6 +238,8 @@
                 {
                     MachineName = machine.Name,
                     TagName = targetTag.Name,
+                    DataType = targetTag.DataType,
+                    //ValueString = string.Empty,
                 };
             ShowSetPopup();
         }
@@ -227,5 +250,6 @@
     {
         var setRes = await machineService.SetMachineTagByString(setMachineTagModel.MachineName, setMachineTagModel.TagName, setMachineTagModel.ValueString);
         CloseSetPopup();
+        notificationService.ShowToast(setRes);
     }
 }

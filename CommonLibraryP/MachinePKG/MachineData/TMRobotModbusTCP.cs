@@ -8,7 +8,7 @@ namespace CommonLibraryP.MachinePKG
 {
     public class TMRobotModbusTCP : ModbusTCPMachine
     {
-        public TMRobotModbusTCP(Machine machine) : base(machine)
+        public TMRobotModbusTCP() : base()
         {
 
         }

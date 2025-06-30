@@ -1,0 +1,99 @@
+﻿@namespace CommonLibraryP.MapPKG
+
+@using Blazor.Diagrams.Core.Models
+@using Blazor.Diagrams.Core.Models.Base
+@using MapPKG.Component;
+
+<script>
+    window.initializeResize = (elementId, handleId) => {
+        const element = document.getElementById(elementId);
+        const handle = document.getElementById(handleId);
+        let activeElement = null; // 記錄當前選中的元素
+
+        console.warn("!!!");
+
+        if (!element)
+        {
+            console.error("Element not found!");
+            return;
+        }
+
+        if (!handle)
+        {
+            console.error("Handle not found!");
+            return;
+        }
+
+
+        // handle.addEventListener("mousedown", (event) => {
+        //     event.preventDefault();
+            activeElement = element; // 記錄當前要改變大小的元素
+            document.addEventListener("mousemove", resize);
+            document.addEventListener("mouseup", stopResize);
+        //});
+
+        function resize(event) {
+            if (!activeElement)
+            return; // 確保只影響選中的物件
+
+            const rect = activeElement.getBoundingClientRect();
+            activeElement.style.width = (event.clientX - rect.left) + "px";
+            activeElement.style.height = (event.clientY - rect.top) + "px";
+        }
+
+        function stopResize() {
+            document.removeEventListener("mousemove", resize);
+            document.removeEventListener("mouseup", stopResize);
+            activeElement = null; // 清除選中狀態
+            console.log("Resizing stopped.");
+        }
+    };
+
+</script>
+
+<div id="@handleId" @onmousedown="@OnResizeClick" class="rounded-circle translate-middle" style="cursor:nwse-resize ;background-color:black; width:@($"{Control.Diameter}px"); height:@($"{Control.Diameter}px")">
+</div>
+
+
+@code {
+    [Inject]
+    IJSRuntime JS { get; set; }
+
+    [Parameter]
+    public ResizeControl Control { get; set; } = null!;
+
+    [Parameter]
+    public Model Model { get; set; } = null!;
+
+    public MapDiagramNode Node => (Model as MapDiagramNode)!;
+
+    public string nodeId = Guid.Empty.ToString();
+    public string handleId = Guid.Empty.ToString();
+
+    protected override Task OnInitializedAsync()
+    {
+        handleId = Guid.NewGuid().ToString();
+        return base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        
+    }
+
+    private async Task OnResizeClick()
+    {
+        if (nodeId != Node.MapComponent.Id.ToString())
+        {
+            nodeId = Node.MapComponent.Id.ToString();
+            //handleId = Node.MapComponent.Id + "-hdl";
+
+            await InvokeAsync(StateHasChanged);
+            await JS.InvokeVoidAsync("initializeResize", nodeId, handleId);
+        }
+    }
+
+
+
+
+}

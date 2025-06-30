@@ -88,6 +88,15 @@ namespace CommonLibraryP.MachinePKG.Localization {
         }
         
         /// <summary>
+        ///   查詢類似 Input/Output 的當地語系化字串。
+        /// </summary>
+        internal static string Input_Output {
+            get {
+                return ResourceManager.GetString("Input/Output", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 IP 的當地語系化字串。
         /// </summary>
         internal static string IP {
@@ -97,11 +106,11 @@ namespace CommonLibraryP.MachinePKG.Localization {
         }
         
         /// <summary>
-        ///   查詢類似 MaxRetryCount 的當地語系化字串。
+        ///   查詢類似 Maximal Retry Count 的當地語系化字串。
         /// </summary>
-        internal static string Maxima_Retry_Count {
+        internal static string Maximal_Retry_Count {
             get {
-                return ResourceManager.GetString("Maxima Retry Count", resourceCulture);
+                return ResourceManager.GetString("Maximal Retry Count", resourceCulture);
             }
         }
         
@@ -115,11 +124,56 @@ namespace CommonLibraryP.MachinePKG.Localization {
         }
         
         /// <summary>
+        ///   查詢類似 Offset 的當地語系化字串。
+        /// </summary>
+        internal static string Offset {
+            get {
+                return ResourceManager.GetString("Offset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Port 的當地語系化字串。
         /// </summary>
         internal static string Port {
             get {
                 return ResourceManager.GetString("Port", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Record Status Changed 的當地語系化字串。
+        /// </summary>
+        internal static string Record_Status_Changed {
+            get {
+                return ResourceManager.GetString("Record Status Changed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Start Index 的當地語系化字串。
+        /// </summary>
+        internal static string Start_Index {
+            get {
+                return ResourceManager.GetString("Start Index", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Station 的當地語系化字串。
+        /// </summary>
+        internal static string Station {
+            get {
+                return ResourceManager.GetString("Station", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 String Reverse 的當地語系化字串。
+        /// </summary>
+        internal static string String_Reverse {
+            get {
+                return ResourceManager.GetString("String Reverse", resourceCulture);
             }
         }
         

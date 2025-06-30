@@ -10,6 +10,8 @@ namespace CommonLibraryP.ShopfloorPKG
     public class SingleSarialNoStationInModel
     {
         [Required]
-        public string serialNo { get; set; } = string.Empty;
+        public string StationName { get; set; } = string.Empty;
+        [Required]
+        public string SerialNo { get; set; } = string.Empty;
     }
 }
