@@ -23,8 +23,8 @@ namespace CommonLibraryP.MachinePKG
 
 
         
-        private ushort coilBatch = 100;
-        private ushort registerBatch = 100;
+        private ushort coilBatch = 125;
+        private ushort registerBatch = 125;
 
         private Stopwatch inputCoilStopwatch = new();
         public Stopwatch InputCoilStopwatch => inputCoilStopwatch;
@@ -141,7 +141,7 @@ namespace CommonLibraryP.MachinePKG
                         while (boolOutputRemaining > 0)
                         {
                             ushort batchSize = Math.Min(boolOutputRemaining, coilBatch);
-                            bool[] partial = await master?.ReadInputsAsync(stationAndTags.station, (ushort)(boolOutputStart + boolOutputOffset), (ushort)batchSize);
+                            bool[] partial = await master?.ReadCoilsAsync(stationAndTags.station, (ushort)(boolOutputStart + boolOutputOffset), (ushort)batchSize);
 
                             if (partial == null || partial.Length != batchSize)
                             {
@@ -245,7 +245,7 @@ namespace CommonLibraryP.MachinePKG
                         while (ushortOrStringOutputRemaining > 0)
                         {
                             ushort batchSize = Math.Min(ushortOrStringOutputRemaining, registerBatch);
-                            ushort[] partial = await master?.ReadInputRegistersAsync(stationAndTags.station, (ushort)(ushortOrStringOutputStart + ushortOrStringOutputOffset), (ushort)batchSize);
+                            ushort[] partial = await master?.ReadHoldingRegistersAsync(stationAndTags.station, (ushort)(ushortOrStringOutputStart + ushortOrStringOutputOffset), (ushort)batchSize);
 
                             if (partial == null || partial.Length != batchSize)
                             {
