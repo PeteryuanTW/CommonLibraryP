@@ -46,7 +46,8 @@
                         <div class="w-100 h-100 d-flex flex-wrap justify-content-around align-items-center">
                             <DxButtonGroup RenderStyle="@statusBtnStyle" RenderStyleMode="@ButtonRenderStyleMode.Outline" Enabled="false" SizeMode="SizeMode.Large">
                                 <Items>
-                                    <DxButtonGroupItem Text="@($"{StationParam?.Process?.Name}-{StationParam?.Name}")" />
+                                    <DxButtonGroupItem Text="@($"{StationParam?.Process?.Name}")" />
+                                    <DxButtonGroupItem Text="@($"{StationParam?.Name}")" />
                                     <DxButtonGroupItem Text="@($"{localizer[CommonEnumHelper.GetStatusDetail(StationParam.StationStatusCode).DisplayName]}")" />
                                 </Items>
                             </DxButtonGroup>
@@ -213,7 +214,7 @@
 
     private async Task StationInWithSerialNo(SingleSarialNoStationInModel SingleSarialNoStationInModel)
     {
-        var res = await shopfloorService.StationInByNameAndSerialNo(SingleSarialNoStationInModel.StationName, SingleSarialNoStationInModel.SerialNo);
+        var res = await shopfloorService.StationInByNameAndSerialNo(SingleSarialNoStationInModel);
         CloseOperationPopup();
         notificationService.ShowToast(res);
     }
@@ -224,7 +225,7 @@
 
     private async Task StationOutWithoutSerialNo(FIFOStationOutModel fifoStationOutModel)
     {
-        var res = await shopfloorService.StationOutByFIFO(fifoStationOutModel.StationName, fifoStationOutModel.Pass);
+        var res = await shopfloorService.StationOutByFIFO(fifoStationOutModel);
         CloseOperationPopup();
         notificationService.ShowToast(res);
     }

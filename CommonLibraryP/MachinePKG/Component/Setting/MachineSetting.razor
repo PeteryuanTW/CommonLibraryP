@@ -4,15 +4,15 @@
 
 @inject IStringLocalizer<MachineLanguage> localizer
 @inject MachineService machineService
+@inject SerilogService serilogService
 @inject NotificationService notificationService
 
-<DxGrid @ref="grid" Data="@machines" @bind-SelectedDataItem="@targetMachineObj" FilterMenuButtonDisplayMode="GridFilterMenuButtonDisplayMode.Always" FilterCriteriaChanged="Test" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" DataItemDeleting="DeleteMachine" HighlightRowOnHover="true">
+<DxGrid @ref="grid" Data="@machines" @bind-SelectedDataItem="@targetMachineObj" FilterMenuButtonDisplayMode="GridFilterMenuButtonDisplayMode.Always"  AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" DataItemDeleting="DeleteMachine" HighlightRowOnHover="true">
     <ToolbarTemplate>
         <DxToolbar SizeMode="SizeMode.Large" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
-            <DxToolbarItem IconCssClass="oi oi-plus" Click="NewMachineClicked" BeginGroup="true" />
+            <DxToolbarItem IconCssClass="oi oi-plus"  Click="NewMachineClicked" BeginGroup="true" />
             <DxToolbarItem Enabled="@machineSelected" Click="ShowMachinePopup" IconCssClass="oi oi-pencil" Text="@(targetMachine?.Name)" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
-            <DxToolbarItem Enabled="@machineSelected" Click="ShowDelete" IconCssClass="oi oi-trash" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right"/>
-            <DxToolbarItem Click="ShowMachineTree" IconCssClass="oi oi-info" RenderStyle="ButtonRenderStyle.Link" BeginGroup="true" Alignment="ToolbarItemAlignment.Right"/>
+            <DxToolbarItem Enabled="@machineSelected" Click="ShowDelete" IconCssClass="oi oi-trash" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
         </DxToolbar>
     </ToolbarTemplate>
     <Columns>
@@ -95,27 +95,7 @@
     </BodyContentTemplate>
 </DxPopup>
 
-<DxPopup @bind-Visible="@machineTreePopupVisible" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
-    <HeaderTemplate>
-        <div class="w-100 p-3 border border-bottom">
-            <DxToolbar>
-                <Items>
-                    <DxToolbarItem IconCssClass="oi oi-x" Click="CloseMachineTree" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
-                </Items>
-            </DxToolbar>
-        </div>
-    </HeaderTemplate>
-    <BodyContentTemplate Context="bodycontext">
-        @* <DxTreeView @ref="@dxTreeView" Data="@(MachineTypeEnumHelper.GetConnectionTypeWrapperClasses())"
-        AnimationType="LayoutAnimationType.Slide">
-            <DataMappings>
-                <DxTreeViewDataMapping Text="@nameof(ConnectionTypeWrapperClass.DisplayName)"
-                Key="@nameof(ConnectionTypeWrapperClass.Index)"
-                ParentKey="@nameof(ConnectionTypeWrapperClass.ParentIndex)" />
-            </DataMappings>
-        </DxTreeView> *@
-    </BodyContentTemplate>
-</DxPopup>
+
 
 @code {
 
@@ -124,16 +104,13 @@
 
     IGrid? grid { get; set; }
     private DxPopup? machinePopup { get; set; }
-    private IEnumerable<Machine> machines;
+    private IEnumerable<Machine> machines = new List<Machine>();
     private Object? targetMachineObj;
     private Machine? targetMachine => targetMachineObj as Machine;
     private bool machineSelected => targetMachine != null;
 
-    
-    //private bool popupVisible;
 
-    private IEnumerable<TagCategory> tagCategories;
-    //private IEnumerable<TagCategory> tagCategoriesWithFilter => machineSelected ? tagCategories.Where(x => x.ConnectionType == taregtMachine.ConnectionType) : new List<TagCategory>();
+    private IEnumerable<TagCategory> tagCategories = new List<TagCategory>();
 
     private DxTreeView? dxTreeView { get; set; }
     private bool machineTreePopupVisible = false;
@@ -141,24 +118,20 @@
     protected override async Task OnInitializedAsync()
     {
         await InitParam();
+        serilogService.TextWarning("123");
+        serilogService.TextError("123");
         await base.OnInitializedAsync();
     }
     private async Task InitParam()
     {
         machines = await machineService.GetAllMachinesConfig();
-        if (machineSelected)
-        {
-            targetMachineObj = machines.FirstOrDefault(x => x.Id == targetMachine.Id);
-        }
-        //grid?.ClearSelection();
-        //await GetTagCategory();
-        //taregtMachineObj = machines.FirstOrDefault();
+        targetMachineObj = machineSelected ? machines.FirstOrDefault(x => x.Id == targetMachine.Id) : null;
     }
 
     private async Task GetTagCategory()
     {
         tagCategories = machineSelected ? await machineService.GetAllSuitableTags(targetMachine.ConnectionType) : new List<TagCategory> { };
-    } 
+    }
 
     private async Task ShowMachinePopup()
     {
@@ -196,14 +169,6 @@
         await InitParam();
         notificationService.ShowToast(res);
         //uiService.ShowToast(res);
-    }
-
-    private void ShowMachineTree() => machineTreePopupVisible = true;
-    private void CloseMachineTree() => machineTreePopupVisible = false;
-
-    private void Test(GridFilterCriteriaChangedEventArgs g)
-    {
-        
     }
 }
 

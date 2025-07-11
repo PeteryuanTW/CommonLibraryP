@@ -20,8 +20,6 @@ namespace CommonLibraryP.MachinePKG
             builder.Services.AddSingleton<MachineService>();
             builder.Services.AddHostedService<MachineInitHostingService>();
             builder.Services.TryAddScoped<NotificationService>();
-            //builder.Services.AddHostedService<ConditionHostService>();
-            //builder.Services.TryAddScoped<NotificationService>();
             builder.Services.AddLocalization();
             return builder;
         }

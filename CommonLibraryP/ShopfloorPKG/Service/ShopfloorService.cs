@@ -2,6 +2,7 @@
 using CommonLibraryP.Data;
 using CommonLibraryP.MachinePKG;
 using DevExpress.Data.Helpers;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
@@ -133,6 +134,13 @@ namespace CommonLibraryP.ShopfloorPKG
 
         private List<Station> stations = new List<Station>();
         public List<Station> Stations => stations;
+
+        public Func<Task>? StationStatuschangedAct;
+
+        protected void MachineStatechanged()
+        {
+            StationStatuschangedAct?.Invoke();
+        }
 
         public async Task<List<Station>> GetAllStationConfigs()
         {
@@ -322,8 +330,8 @@ namespace CommonLibraryP.ShopfloorPKG
             var station = stations.FirstOrDefault(x => x.Id == stationId);
             if (workorder is not null && station is not null)
             {
-                station.SetWorkorder(workorder);
-                return new(2, $"Deploy workorder {workorder.WorkorderNo}-{workorder.Lot} to station {station.Name} success");
+                return station.SetWorkorder(workorder);
+                //return new(2, $"Deploy workorder {workorder.WorkorderNo}-{workorder.Lot} to station {station.Name} success");
             }
             return new(4, $"Workorder or station not found");
         }
@@ -333,17 +341,19 @@ namespace CommonLibraryP.ShopfloorPKG
             var target = stations.FirstOrDefault(x => x.Id == id);
             if (target is not null)
             {
-                return Task.FromResult<RequestResult>(target.Run());
+                var res = target.Run();
+                MachineStatechanged();
+                return Task.FromResult<RequestResult>(res);
             }
             return Task.FromResult<RequestResult>(new(3, "Station not found"));
         }
 
-        public async Task<RequestResult> StationInByNameAndSerialNo(string stationName, string serialNo)
+        public async Task<RequestResult> StationInByNameAndSerialNo(SingleSarialNoStationInModel singleSarialNoStationInModel)
         {
-            Station? targetStation = GetStationByName(stationName);
+            Station? targetStation = GetStationByName(singleSarialNoStationInModel.StationName);
             if (targetStation is null)
             {
-                return new(3, $"station {stationName} not found");
+                return new(3, $"station {singleSarialNoStationInModel.StationName} not found");
             }
             var checkStationInRes = targetStation.CheckCanAddItem();
             if (!checkStationInRes.IsSuccess)
@@ -356,7 +366,7 @@ namespace CommonLibraryP.ShopfloorPKG
                     try
                     {
                         StationSingleWorkorder? stationSingleWorkorder = targetStation as StationSingleWorkorder;
-                        var itemDetail = await GetOrGenerateItem(stationSingleWorkorder.Workorder.Id, serialNo, stationSingleWorkorder.Id);
+                        var itemDetail = await GetOrGenerateItem(stationSingleWorkorder.Workorder.Id, singleSarialNoStationInModel.SerialNo, stationSingleWorkorder.Id);
                         var addItemRes = stationSingleWorkorder.AddItemDetail(itemDetail);
 
                         if (!addItemRes.IsSuccess)
@@ -378,16 +388,16 @@ namespace CommonLibraryP.ShopfloorPKG
                         return new(4, ex.Message);
                     }
                 default:
-                    return new(3, $"station {stationName} deosn't support this command");
+                    return new(3, $"station {singleSarialNoStationInModel.StationName} deosn't support this command");
             }
         }
 
-        public async Task<RequestResult> StationOutByFIFO(string stationName, bool pass)
+        public async Task<RequestResult> StationOutByFIFO(FIFOStationOutModel fIFOStationOutModel)
         {
-            Station? targetStation = GetStationByName(stationName);
+            Station? targetStation = GetStationByName(fIFOStationOutModel.StationName);
             if (targetStation is null)
             {
-                return new(3, $"station {stationName} not found");
+                return new(3, $"station {fIFOStationOutModel.StationName} not found");
             }
             var check = targetStation.CheckCanRemoveItem();
             if (!check.IsSuccess)
@@ -414,7 +424,7 @@ namespace CommonLibraryP.ShopfloorPKG
                             if (isLast)
                             {
                                 item.FinishedTime = DateTime.Now;
-                                if (pass)
+                                if (fIFOStationOutModel.Pass)
                                 {
                                     item.Okamount++;
                                 }
@@ -424,11 +434,11 @@ namespace CommonLibraryP.ShopfloorPKG
                                 }
                                 return await UpsertItemDetail(item);
                             }
-                            return new(2, $"Station {stationName} station out by FIFO success");
+                            return new(2, $"Station {fIFOStationOutModel.StationName} station out by FIFO success");
                         }
                         else
                         {
-                            return new(4, $"Station {stationName} type downcasting error");
+                            return new(4, $"Station {fIFOStationOutModel.StationName} type downcasting error");
                         }
 
                     }
@@ -437,7 +447,7 @@ namespace CommonLibraryP.ShopfloorPKG
                         return new(4, ex.Message);
                     }
                 default:
-                    return new(3, $"station {stationName} deosn't support this command");
+                    return new(3, $"station {fIFOStationOutModel.StationName} deosn't support this command");
             }
         }
 

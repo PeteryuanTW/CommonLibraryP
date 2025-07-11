@@ -1,0 +1,74 @@
+﻿@namespace CommonLibraryP.ShopfloorPKG.Component
+
+@rendermode RenderMode.InteractiveServer
+@implements IDisposable
+@inject IStringLocalizer<ShopfloorLanguage> localizer
+@inject ShopfloorService shopfloorService
+
+<DxPieChart @ref="@pieChart" Data="@stations"
+            T="@Station"
+            InnerDiameter="0.6"
+            CustomizeSeriesPoint="SetPointColor">
+    <DxPieChartSeries T="@(Station)"
+                      TArgument="@(int)"
+                      TValue="@(int)"
+                      ArgumentField="@(x=>x.StationStatusCode)"
+                      ValueField="@(x=>x.StationStatusCode)"
+                      SummaryMethod="Enumerable.Count">
+        <DxChartSeriesLabel Visible="true"
+                            Position="RelativePosition.Inside">
+            <DxChartSeriesLabelConnector Visible="true" />
+        </DxChartSeriesLabel>
+    </DxPieChartSeries>
+    <DxChartTooltip Enabled="true"
+                    Position="RelativePosition.Outside">
+        <div style="margin: 0.75rem">
+            <div>@($"{localizer[CommonEnumHelper.GetStatusDetail((int)context.Point.Argument).DisplayName]}: {context.Point.Value}")</div>
+        </div>
+    </DxChartTooltip>
+    <DxChartTitle Text="@($"{localizer["Stations Status"]}")" />
+    <DxChartLegend Visible="false" HorizontalAlignment="HorizontalAlignment.Center"
+                   VerticalAlignment="VerticalEdge.Bottom"
+                   Position="RelativePosition.Outside"
+                   Orientation="Orientation.Horizontal" />
+</DxPieChart>
+
+@code {
+    private DxPieChart<Station>? pieChart { get; set; }
+    public List<Station> stations = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateStations();
+        shopfloorService.StationStatuschangedAct += UpdateStations;
+    }
+
+    void IDisposable.Dispose()
+    {
+        shopfloorService.StationStatuschangedAct -= UpdateStations;
+    }
+
+    private async Task UpdateStations()
+    {
+        stations = shopfloorService.Stations;
+        if(pieChart is null)
+            return;
+        pieChart?.RefreshData();
+        await pieChart?.RedrawAsync();
+        //await InvokeAsync(StateHasChanged);
+    }
+
+    protected void SetPointColor(ChartSeriesPointCustomizationSettings pointSettings)
+    {
+        int statusCode = (int)pointSettings.Point.Argument;
+        var targetStyle = CommonEnumHelper.GetStatusDetail((statusCode));
+        if (targetStyle is not null)
+        {
+            pointSettings.PointAppearance.Color = targetStyle.StyleColor;
+        }
+        else
+        {
+            pointSettings.PointAppearance.Color = System.Drawing.Color.Black;
+        }
+    }
+}

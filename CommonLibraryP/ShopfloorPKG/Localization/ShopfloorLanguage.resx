@@ -139,4 +139,7 @@
   <data name="Ng" xml:space="preserve">
     <value>Ng</value>
   </data>
+  <data name="Stations Status" xml:space="preserve">
+    <value>Stations Status</value>
+  </data>
 </root>

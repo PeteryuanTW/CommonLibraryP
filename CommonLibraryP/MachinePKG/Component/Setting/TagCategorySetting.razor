@@ -231,8 +231,6 @@
         tagCategories = await machineService.GetAllTagCategoriesWithTags();
         targetCatObj = catSelected ? tagCategories.FirstOrDefault(x => x.Id == targetCat.Id) : null;
         targetTagObj = tagSelected && catSelected ? targetCat.Tags.FirstOrDefault(x => x.Id == targetTag.Id) : null;
-        //targetCatObj = tagCategories.FirstOrDefault();
-        //targetTagObj = tags.FirstOrDefault();
     }
     #region localization
 

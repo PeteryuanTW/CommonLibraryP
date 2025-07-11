@@ -43,12 +43,12 @@ namespace CommonLibraryP.LogPKG
                 var sanitizedNamespace = ns.Replace('.', '_'); // 替換非法字符
                 return new LoggerConfiguration()
                     .MinimumLevel.Debug()
-                    .WriteTo.File(
-                        path: $"logs/{sanitizedNamespace}/{sanitizedNamespace}_.log",
+                    .WriteTo.Async(x=>x.File(
+                        path: $"logs/{sanitizedNamespace}/{sanitizedNamespace}_.txt",
                         rollingInterval: RollingInterval.Day,
                         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}",
                         retainedFileCountLimit: 7
-                    )
+                    ))
                     .CreateLogger();
             });
 

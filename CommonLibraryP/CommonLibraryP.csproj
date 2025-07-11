@@ -14,6 +14,22 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Remove="MachinePKG\EFModel\AwaitAction.cs" />
+		<Compile Remove="MachinePKG\EFModel\Condition.cs" />
+		<Compile Remove="MachinePKG\EFModel\ConditionAction.cs" />
+		<Compile Remove="MachinePKG\EFModel\ConditionConstDataNode.cs" />
+		<Compile Remove="MachinePKG\EFModel\ConditionLogicNode.cs" />
+		<Compile Remove="MachinePKG\EFModel\ConditionNode.cs" />
+		<Compile Remove="MachinePKG\EFModel\ConditionTagDataNode.cs" />
+		<Compile Remove="MachinePKG\EFModel\SetTagAction.cs" />
+		<Compile Remove="MachinePKG\EFPartialModel\AwaitAction.partial.cs" />
+		<Compile Remove="MachinePKG\EFPartialModel\Condition.partial.cs" />
+		<Compile Remove="MachinePKG\EFPartialModel\ConditionAction.partial.cs" />
+		<Compile Remove="MachinePKG\EFPartialModel\ConditionConstDataNode.partial.cs" />
+		<Compile Remove="MachinePKG\EFPartialModel\ConditionLogicNode.partial.cs" />
+		<Compile Remove="MachinePKG\EFPartialModel\ConditionNode.partial.cs" />
+		<Compile Remove="MachinePKG\EFPartialModel\ConditionTagDataNode.partial.cs" />
+		<Compile Remove="MachinePKG\EFPartialModel\SetTagAction.partial.cs" />
 		<Compile Remove="ShopfloorPKG\EFModel\RecipeItem.cs" />
 		<Compile Remove="ShopfloorPKG\EFModel\WorkorderRecipeConfig.cs" />
 	</ItemGroup>
@@ -23,6 +39,22 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Include="MachinePKG\EFModel\AwaitAction.cs" />
+		<None Include="MachinePKG\EFModel\Condition.cs" />
+		<None Include="MachinePKG\EFModel\ConditionAction.cs" />
+		<None Include="MachinePKG\EFModel\ConditionConstDataNode.cs" />
+		<None Include="MachinePKG\EFModel\ConditionLogicNode.cs" />
+		<None Include="MachinePKG\EFModel\ConditionNode.cs" />
+		<None Include="MachinePKG\EFModel\ConditionTagDataNode.cs" />
+		<None Include="MachinePKG\EFModel\SetTagAction.cs" />
+		<None Include="MachinePKG\EFPartialModel\AwaitAction.partial.cs" />
+		<None Include="MachinePKG\EFPartialModel\Condition.partial.cs" />
+		<None Include="MachinePKG\EFPartialModel\ConditionAction.partial.cs" />
+		<None Include="MachinePKG\EFPartialModel\ConditionConstDataNode.partial.cs" />
+		<None Include="MachinePKG\EFPartialModel\ConditionLogicNode.partial.cs" />
+		<None Include="MachinePKG\EFPartialModel\ConditionNode.partial.cs" />
+		<None Include="MachinePKG\EFPartialModel\ConditionTagDataNode.partial.cs" />
+		<None Include="MachinePKG\EFPartialModel\SetTagAction.partial.cs" />
 		<None Include="ShopfloorPKG\EFModel\RecipeItem.cs" />
 		<None Include="ShopfloorPKG\EFModel\WorkorderRecipeConfig.cs" />
 	</ItemGroup>
@@ -33,7 +65,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="DevExpress.Blazor" Version="24.2.3" />
+		<PackageReference Include="DevExpress.Blazor" Version="25.1.3" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.11" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.12" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.12" />
@@ -46,6 +78,8 @@
 		<PackageReference Include="NModbus" Version="3.0.81" />
 		<PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
 		<PackageReference Include="Serilog.Expressions" Version="5.0.0" />
+		<PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
+		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="8.2.1" />
 		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.1" />
 		<PackageReference Include="Z.Blazor.Diagrams" Version="3.0.3" />
 	</ItemGroup>
@@ -76,6 +110,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Folder Include="MachinePKG\Controller\" />
 		<Folder Include="ShopfloorPKG\Component\StationComponent\ItemRecordInfo\" />
 		<Folder Include="ShopfloorPKG\Component\StationComponent\WorkorderInfo\" />
 		<Folder Include="wwwroot\css\" />

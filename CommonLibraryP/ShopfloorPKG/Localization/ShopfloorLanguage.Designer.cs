@@ -151,6 +151,15 @@ namespace CommonLibraryP.ShopfloorPKG.Localization {
         }
         
         /// <summary>
+        ///   查詢類似 Stations Status 的當地語系化字串。
+        /// </summary>
+        internal static string Stations_Status {
+            get {
+                return ResourceManager.GetString("Stations Status", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Workorder Deploy 的當地語系化字串。
         /// </summary>
         internal static string Workorder_Deploy {

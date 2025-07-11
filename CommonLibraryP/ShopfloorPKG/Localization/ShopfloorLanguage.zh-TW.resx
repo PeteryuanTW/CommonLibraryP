@@ -153,4 +153,7 @@
   <data name="Ng" xml:space="preserve">
     <value>不良品</value>
   </data>
+  <data name="Stations Status" xml:space="preserve">
+    <value>工站狀態</value>
+  </data>
 </root>
