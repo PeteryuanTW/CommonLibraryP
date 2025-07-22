@@ -1,0 +1,96 @@
+﻿@using CommonLibraryP.LogPKG
+@namespace CommonLibraryP.LogPKG.Component
+
+<DxGridLayout RowSpacing="1rem" ColumnSpacing="1rem">
+    <Rows>
+        <DxGridLayoutRow Height="5fr" />
+        <DxGridLayoutRow Height="5fr" />
+    </Rows>
+    <Columns>
+        <DxGridLayoutColumn Width="4fr" />
+        <DxGridLayoutColumn Width="8fr" />
+    </Columns>
+    <Items>
+        <DxGridLayoutItem Row="0" Column="0" ColumnSpan="2">
+            <Template>
+                <DxGrid Data="@serilogDatas">
+                    <ToolbarTemplate>
+                        <DxToolbar SizeMode="SizeMode.Large" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                            @OperationToolbar
+                        </DxToolbar>
+                    </ToolbarTemplate>
+                    <Columns>
+                        <DxGridDataColumn FieldName="@nameof(SerilogData.Timestamp)" />
+                        <DxGridDataColumn FieldName="@nameof(SerilogData.LogLevel)" />
+                        <DxGridDataColumn FieldName="@nameof(SerilogData.Message)" />
+                        <DxGridDataColumn FieldName="@nameof(SerilogData.CallerNameSpace)" />
+                        <DxGridDataColumn FieldName="@nameof(SerilogData.ClassName)" />
+                        <DxGridDataColumn FieldName="@nameof(SerilogData.MethodName)" />
+                        <DxGridDataColumn FieldName="@nameof(SerilogData.LineNumber)" />
+                    </Columns>
+                </DxGrid>
+            </Template>
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="1" Column="0">
+            <Template>
+                <DxPieChart Data="@serilogDatas"
+                            T="@SerilogData"
+                            InnerDiameter="0.6">
+                    <DxPieChartSeries T="@SerilogData"
+                                      TArgument="@(int)"
+                                      TValue="@(int)"
+                                      ArgumentField="@(x=>x.LogLevel)"
+                                      ValueField="@(x=>x.LogLevel)"
+                                      SummaryMethod="Enumerable.Count">
+                        <DxChartSeriesLabel Visible="true"
+                                            Position="RelativePosition.Inside">
+                            <DxChartSeriesLabelConnector Visible="true" />
+                        </DxChartSeriesLabel>
+                    </DxPieChartSeries>
+                    <DxChartTooltip Enabled="true"
+                                    Position="RelativePosition.Outside">
+                    </DxChartTooltip>
+                    <DxChartLegend Visible="false" HorizontalAlignment="HorizontalAlignment.Center"
+                                   VerticalAlignment="VerticalEdge.Bottom"
+                                   Position="RelativePosition.Outside"
+                                   Orientation="Orientation.Horizontal" />
+                </DxPieChart>
+            </Template>
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="1" Column="1">
+            <Template>
+                <DxChart Data="@serilogDatas">
+                    <DxChartArgumentAxis ArgumentType="ChartAxisDataType.DateTime" AggregationInterval="ChartAxisInterval.Hour" />
+                    <DxChartCrosshair Enabled="true" DashStyle="ChartDashStyle.Dot">
+                        <DxChartCrosshairLabel Visible="true" />
+                    </DxChartCrosshair>
+                    <DxChartCommonSeries NameField="@((SerilogData sd) => sd.LogLevel)"
+                                         ArgumentField="@((SerilogData sd) => new DateTime(sd.Timestamp.Year, sd.Timestamp.Month, sd.Timestamp.Day, sd.Timestamp.Hour, 0, 0))"
+                                         ValueField="@((SerilogData sd) => 1)"
+                                         SummaryMethod="Enumerable.Count">
+                        <SeriesTemplate Context="settings">
+                            <DxChartSplineSeries Settings="@settings"/>
+                        </SeriesTemplate>
+                    </DxChartCommonSeries>
+                    <DxChartLegend VerticalAlignment="VerticalEdge.Bottom"
+                                   Position="RelativePosition.Outside" />
+                </DxChart>
+            </Template>
+        </DxGridLayoutItem>
+    </Items>
+</DxGridLayout>
+
+@code {
+    [Parameter]
+    public virtual RenderFragment? OperationToolbar { get; set; }
+
+    private List<SerilogData> serilogDatas { get; set; } = new();
+
+    private IEnumerable<LogLevelTypeWrapperClass> logLevelTypeWrapperClasses => LogTypeEnumHelper.GetLogLevelsWrapperClass();
+
+    public async Task SetLogDatas(List<SerilogData> serilogDatas)
+    {
+        this.serilogDatas = serilogDatas;
+        await InvokeAsync(StateHasChanged);
+    }
+}

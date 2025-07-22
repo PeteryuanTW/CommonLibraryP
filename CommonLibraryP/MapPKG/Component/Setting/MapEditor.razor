@@ -1,0 +1,303 @@
+﻿@namespace CommonLibraryP.MapPKG.Component
+@rendermode RenderMode.InteractiveServer
+
+@using Blazor.Diagrams.Core.Controls.Default
+@using Blazor.Diagrams.Core.Events
+@using Blazor.Diagrams.Core.Models.Base
+@using Blazor.Diagrams.Core.Geometry
+@using Blazor.Diagrams.Core.Models
+@using Blazor.Diagrams.Core.PathGenerators
+@using Blazor.Diagrams.Core.Routers
+@using Blazor.Diagrams.Options
+@using Blazor.Diagrams
+@using Blazor.Diagrams.Components
+
+@inject MapService mapService
+@inject NotificationService notificationService
+
+<head>
+    <link href="_content/Z.Blazor.Diagrams/style.min.css" rel="stylesheet" />
+    <link href="_content/Z.Blazor.Diagrams/default.styles.min.css" rel="stylesheet" />
+</head>
+<body>
+    <script src="_content/Z.Blazor.Diagrams/script.min.js"></script>
+</body>
+
+<style>
+    .diagram-container {
+    width: 100%;
+    height: 100%;
+    border: 1px solid white;
+    overflow: hidden;
+    }
+
+    .img {
+    cursor: auto;
+    overflow: auto;
+    }
+</style>
+
+<link href="_content/CommonLibraryP/lib/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
+
+<div class="h-100">
+    <DxGridLayout CssClass="h-100">
+        <Rows>
+            <DxGridLayoutRow Height="1fr" />
+            <DxGridLayoutRow Height="10fr" />
+        </Rows>
+        <Columns>
+            <DxGridLayoutColumn />
+        </Columns>
+        <Items>
+            <DxGridLayoutItem Row="0" Column="0">
+                <Template>
+                    <div>
+                        <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                            <Items>
+                                @* <DxToolbarItem IconCssClass="bi bi-info-circle" RenderStyle="ButtonRenderStyle.Info" Enabled="hasContainer" Click="ShowMapInfo" BeginGroup="true" /> *@
+                                <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true">
+                                    <Items>
+                                        <DxToolbarItem Text="Machine" Click="NewMapComponentMachine" />
+                                        <DxToolbarItem Text="Station" Click="NewMapComponentStation" BeginGroup="true" />
+                                    </Items>
+                                </DxToolbarItem>
+                                <DxToolbarItem RenderStyle="ButtonRenderStyle.Info" IconCssClass="bi bi-floppy" Click="SaveMapWithComponents" BeginGroup="true" />
+                                <DxToolbarItem RenderStyle="ButtonRenderStyle.Danger" IconCssClass="oi oi-trash" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
+                            </Items>
+                        </DxToolbar>
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="1" Column="0">
+                <Template>
+                    @if (diagramInitialized)
+                    {
+                        <div class="diagram-container" style=@($"background-image: url('{imageDisplayByteString}'); background-size:contain; background-position:center ;background-repeat: no-repeat")>
+                            <CascadingValue Value="@Diagram">
+                                <DiagramCanvas></DiagramCanvas>
+                            </CascadingValue>
+                        </div>
+                    }
+                </Template>
+            </DxGridLayoutItem>
+        </Items>
+    </DxGridLayout>
+</div>
+
+
+
+<DxPopup @ref="@componentPopup" ShowCloseButton="true" Closing="InitParam" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <BodyContentTemplate Context="bodycontext">
+        <EditForm Model="@targetComponent" Context="EditFormContext" OnValidSubmit="UpsertComponent">
+            <DataAnnotationsValidator />
+            <DxFormLayout>
+                @if (targetComponent is MapComponentMachine mapComponentMachine)
+                {
+                    <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Target machine" ColSpanLg="6" BeginRow="true">
+                        <DxComboBox Data="@machines" @bind-Value="@mapComponentMachine.MachineId" TextFieldName="@nameof(Machine.Name)" ValueFieldName="@nameof(Machine.Id)" ShowValidationIcon="true" />
+                    </DxFormLayoutItem>
+                }
+                else if (targetComponent is MapComponentStation mapComponentStation)
+                {
+                    <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Target station" ColSpanLg="6" BeginRow="true">
+                        <DxComboBox Data="@stations" @bind-Value="@mapComponentStation.StationId" TextFieldName="@nameof(Station.Name)" ValueFieldName="@nameof(Station.Id)" ShowValidationIcon="true" />
+                    </DxFormLayoutItem>
+                }
+                <DxFormLayoutItem ColSpanLg="12">
+                    <hr />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Position X" ColSpanLg="6" BeginRow="true">
+                    <DxSpinEdit @bind-Value="@targetComponent.PositionX" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Position Y" ColSpanLg="6">
+                    <DxSpinEdit @bind-Value="@targetComponent.PositionY" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Height" ColSpanLg="6">
+                    <DxSpinEdit @bind-Value="@targetComponent.Height" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Width" ColSpanLg="6">
+                    <DxSpinEdit @bind-Value="@targetComponent.Width" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem ColSpanLg="12">
+                    <hr />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <DxToolbar>
+                        <Items>
+                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                        </Items>
+                    </DxToolbar>
+                </DxFormLayoutItem>
+            </DxFormLayout>
+        </EditForm>
+    </BodyContentTemplate>
+</DxPopup>
+
+@code {
+    [Parameter]
+    public string MapConfigId { get; set; }
+    private MapConfig? MapConfig;
+    private bool hasMapConfig => MapConfig is not null;
+
+    private DxPopup? componentPopup { get; set; }
+
+    private BlazorDiagram Diagram { get; set; } = null!;
+    private bool diagramInitialized = false;
+    private bool hasContainer => Diagram?.Container is not null;
+
+    private IEnumerable<Station> stations;
+    private IEnumerable<Machine> machines;
+    private IEnumerable<MapComponent>? mapComponents => hasMapConfig ? MapConfig?.MapComponents : new List<MapComponent>();
+    private MapComponent? targetComponent;
+    private bool mapComponentSelected => targetComponent is not null;
+
+    private readonly List<string> AllowedFileExtensions = new() { ".jpg", ".jpeg", ".png" };
+
+    private string imageDisplayByteString => GetImageDisplayByteString();
+
+    private string GetImageDisplayByteString()
+    {
+        try
+        {
+            return hasMapConfig ? $"data:{MapConfig.ImageType.ToString()};base64,{Convert.ToBase64String(MapConfig.ImageByte)}" : string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitParam();
+        await InitDiagram();
+        Diagram.ContainerChanged += () =>
+        {
+            _ = ContainerChanged();
+        };
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Diagram.PointerClick += OnDiagramClick;
+            Diagram.PointerUp += AlignNodeToComponent;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task InitParam()
+    {
+        MapConfig = await mapService.GetMapAndComponentsById(MapConfigId);
+        stations = await mapService.GetStationsFromShopfloorService();
+        machines = await mapService.GetMachinesFromMchineService();
+    }
+
+    private async Task InitDiagram()
+    {
+        diagramInitialized = false;
+        var options = new BlazorDiagramOptions
+            {
+                AllowMultiSelection = false,
+                Zoom =
+            {
+                Enabled = false,
+            },
+                AllowPanning = false,
+            };
+
+        Diagram = new BlazorDiagram(options);
+
+        Diagram.RegisterComponent<MapDiagramNode, MapDiagramNodeComponent>();
+        Diagram.RegisterComponent<ResizeControl, ResizeComponent>();
+        // Diagram.RegisterComponent<ResizeControlTop, ResizeTop>();
+        // Diagram.RegisterComponent<ResizeControl, ResizeBottom>();
+        // Diagram.RegisterComponent<ResizeControlLeft, ResizeLeft>();
+        // Diagram.RegisterComponent<ResizeControlRight, ResizeRight>();
+
+
+
+        diagramInitialized = true;
+        await Task.CompletedTask;
+        // await Task.Delay(1000);
+        // await InitNode();
+    }
+
+    private Task InitNode()
+    {
+        Diagram.Nodes.Clear();
+        var width = Diagram.Container.Width;
+        var height = Diagram.Container.Height;
+        foreach (var mapComponent in mapComponents)
+        {
+            var newNode = new MapDiagramNode(mapComponent, width, height);
+            //Diagram.Controls.AddFor(newNode).Add(new BoundaryControl());
+            Diagram.Controls.AddFor(newNode).Add(new ResizeControl());
+            Diagram.Nodes.Add(newNode);
+        }
+        return Task.CompletedTask;
+    }
+
+
+
+    private async Task ContainerChanged()
+    {
+        await InitNode();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ShowComponentPopup() => await componentPopup?.ShowAsync();
+    private async Task CloseComponentPopup()
+    {
+        await componentPopup?.CloseAsync();
+        await InitParam();
+    }
+
+    private async Task NewMapComponentStation()
+    {
+        targetComponent = new MapComponentStation { MapId = MapConfig.Id };
+        await ShowComponentPopup();
+    }
+
+    private async Task NewMapComponentMachine()
+    {
+        targetComponent = new MapComponentMachine { MapId = MapConfig.Id };
+        await ShowComponentPopup();
+    }
+
+    private async Task UpsertComponent()
+    {
+        var res = await mapService.UpsertMapComponentTPC(targetComponent);
+        await CloseComponentPopup();
+        notificationService.ShowToast(res);
+    }
+
+    private async void AlignNodeToComponent(Blazor.Diagrams.Core.Models.Base.Model? model, Blazor.Diagrams.Core.Events.PointerEventArgs args)
+    {
+        var nodes = Diagram.Nodes.ToList();
+        var updateList = new List<MapComponent>();
+        var width = Diagram.Container.Width;
+        var height = Diagram.Container.Height;
+        foreach (var node in nodes)
+        {
+            if (node is MapDiagramNode mapDiagramNode)
+            {
+                mapDiagramNode.UpdateNodeToComponent(width, height);
+                updateList.Add(mapDiagramNode.MapComponent);
+            }
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveMapWithComponents()
+    {
+        var res = await mapService.UpdateAllComponentsInMap(MapConfig, updateList);
+        notificationService.ShowToast(res);
+    }
+
+
+    private void OnDiagramClick(Model? model, Blazor.Diagrams.Core.Events.PointerEventArgs? pointerEventArgs)
+    {
+
+    }
+}

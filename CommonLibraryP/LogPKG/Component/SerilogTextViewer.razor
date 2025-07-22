@@ -1,0 +1,19 @@
+﻿@namespace CommonLibraryP.LogPKG.Component
+@implements ISerilogLogViewer
+@using Blazor.Diagrams.Components.Renderers
+
+<SerilogLogViewerBase @ref="@serilogLogViewerBase">
+    <OperationToolbar>
+        <DxToolbarItem Id="logfileimport" RenderStyle="ButtonRenderStyle.Primary" IconCssClass="oi oi-cloud-upload" BeginGroup="true"></DxToolbarItem>;
+    </OperationToolbar>
+</SerilogLogViewerBase>
+
+<DxFileInput ExternalSelectButtonCssSelector="#logfileimport"
+             MaxFileSize="15000000" FilesUploading="SetFiles" AllowMultiFileUpload="false" Visible="false">
+</DxFileInput>
+
+
+@code {
+    SerilogLogViewerBase? serilogLogViewerBase { get; set; }
+
+}

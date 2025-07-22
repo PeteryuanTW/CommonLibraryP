@@ -120,6 +120,9 @@
         await InitParam();
         serilogService.TextWarning("123");
         serilogService.TextError("123");
+        serilogService.TextError("123");
+        serilogService.TextInformation("123");
+        serilogService.TextInformation("123");
         await base.OnInitializedAsync();
     }
     private async Task InitParam()

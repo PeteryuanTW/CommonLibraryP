@@ -105,8 +105,7 @@ namespace CommonLibraryP.LogPKG
                         x => x.File(
                         path: $"logs/{callerns}_.txt",
                         rollingInterval: RollingInterval.Day,
-                        formatter: new ExpressionTemplate("{ {Timestamp: @t, Level: @l, Message: @m,CallerNameSpace ,ClassName, MethodName, LineNumber, LogLevel} }\n"),
-                        //outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}",
+                        formatter: new ExpressionTemplate("{ {Timestamp: @t, LogLevel, Message: @m,CallerNameSpace ,ClassName, MethodName, LineNumber} }\n"),
                         retainedFileCountLimit: 31
                     ))
                     .CreateLogger();

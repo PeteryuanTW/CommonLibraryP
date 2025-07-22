@@ -38,6 +38,14 @@ namespace CommonLibraryP.MapPKG
                 return await dbContext.MapConfigs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
             }
         }
+        public async Task<MapConfig?> GetMapAndComponentsById(string id)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<MapDBContext>();
+                return await dbContext.MapConfigs.Include(x=>x.MapComponents).AsNoTracking().FirstOrDefaultAsync(x => x.Id == new Guid(id));
+            }
+        }
         public async Task<RequestResult> UpsertMapConfig(MapConfig mapConfig)
         {
             using (var scope = scopeFactory.CreateScope())
@@ -186,7 +194,7 @@ namespace CommonLibraryP.MapPKG
             }
         }
 
-        public async Task<List<Station>> GetStationsFromMchineService()
+        public async Task<List<Station>> GetStationsFromShopfloorService()
         {
             using (var scope = scopeFactory.CreateScope())
             {
