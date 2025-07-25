@@ -1,0 +1,35 @@
+﻿@namespace CommonLibraryP.MapPKG
+
+@if (hasMapComponent)
+{
+    <DxFormLayoutGroup Caption="Component Info." ReadOnly="true">
+        @* <DxFormLayoutItem Caption="X">
+                <DxSpinEdit @bind-Value="@MapComponentParam.PositionX" DisplayFormat="p"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Y">
+            <DxSpinEdit @bind-Value="@MapComponentParam.PositionY" DisplayFormat="p"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Height">
+            <DxSpinEdit @bind-Value="@MapComponentParam.Height" DisplayFormat="p"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Width">
+            <DxSpinEdit @bind-Value="@MapComponentParam.Width" DisplayFormat="p"></DxSpinEdit>
+            </DxFormLayoutItem> *@
+        <DxFormLayoutItem Caption="X" Field="@nameof(MapComponent.PositionX)">
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="Y" Field="@nameof(MapComponent.PositionY)">
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="Height" Field="@nameof(MapComponent.Height)">
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="Width" Field="@nameof(MapComponent.Width)">
+        </DxFormLayoutItem>
+    </DxFormLayoutGroup>
+
+}
+
+@code {
+    [Parameter]
+    public MapComponent? MapComponentParam { get; set; }
+
+    private bool hasMapComponent => MapComponentParam != null;
+}

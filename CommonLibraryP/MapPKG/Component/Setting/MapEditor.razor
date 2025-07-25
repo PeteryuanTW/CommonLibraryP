@@ -25,31 +25,33 @@
 
 <style>
     .diagram-container {
-    width: 100%;
-    height: 100%;
-    border: 1px solid white;
-    overflow: hidden;
+        width: 100%;
+        height: 100%;
+        border: 1px solid white;
+        overflow: hidden;
     }
 
     .img {
-    cursor: auto;
-    overflow: auto;
+        cursor: auto;
+        overflow: auto;
     }
 </style>
 
 <link href="_content/CommonLibraryP/lib/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
 
 <div class="h-100">
-    <DxGridLayout CssClass="h-100">
+    <DxGridLayout CssClass="h-100" RowSpacing="1rem" ColumnSpacing="1rem">
         <Rows>
+            <DxGridLayoutRow Height="1fr" />
             <DxGridLayoutRow Height="1fr" />
             <DxGridLayoutRow Height="10fr" />
         </Rows>
         <Columns>
-            <DxGridLayoutColumn />
+            <DxGridLayoutColumn Width="9fr" />
+            <DxGridLayoutColumn Width="3fr" />
         </Columns>
         <Items>
-            <DxGridLayoutItem Row="0" Column="0">
+            <DxGridLayoutItem Row="0" Column="0" ColumnSpan="2">
                 <Template>
                     <div>
                         <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
@@ -68,7 +70,7 @@
                     </div>
                 </Template>
             </DxGridLayoutItem>
-            <DxGridLayoutItem Row="1" Column="0">
+            <DxGridLayoutItem Row="1" Column="0" RowSpan="2">
                 <Template>
                     @if (diagramInitialized)
                     {
@@ -78,6 +80,30 @@
                             </CascadingValue>
                         </div>
                     }
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="1" Column="1">
+                <Template>
+                    <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+                        <DxFormLayoutItem ColSpanLg="12" Caption="@(targetComponent?.GetType().Name)">
+                            <DxComboBox @bind-Value="@targetComponent" Data="@mapComponents" TextFieldName="@nameof(MapComponent.Name)"></DxComboBox>
+                        </DxFormLayoutItem>
+                    </DxFormLayout>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="2" Column="1">
+                <Template>
+                    <DxDrawer @bind-IsOpen="@showDrawer" Mode="DrawerMode.Shrink"
+                              Position="DrawerPosition.Right"
+                              PanelWidth="100%">
+                        <BodyTemplate>
+                            <DxFormLayout Data="@targetComponent" CaptionPosition="CaptionPosition.Vertical">
+                                <MapComponentDetail MapComponentParam="@targetComponent" />
+                            </DxFormLayout>
+                        </BodyTemplate>
+                        <TargetContent>
+                        </TargetContent>
+                    </DxDrawer>
                 </Template>
             </DxGridLayoutItem>
         </Items>
@@ -145,11 +171,33 @@
     private bool diagramInitialized = false;
     private bool hasContainer => Diagram?.Container is not null;
 
+    private bool showDrawer = false;
+
     private IEnumerable<Station> stations;
     private IEnumerable<Machine> machines;
     private IEnumerable<MapComponent>? mapComponents => hasMapConfig ? MapConfig?.MapComponents : new List<MapComponent>();
-    private MapComponent? targetComponent;
-    private bool mapComponentSelected => targetComponent is not null;
+    private MapComponent? _targetComponent;
+    private MapComponent? targetComponent
+    {
+        get => _targetComponent;
+        set
+        {
+            _targetComponent = value;
+            if (diagramInitialized)
+            {
+                var model = Diagram.Controls.Models.OfType<MapDiagramNode>().FirstOrDefault(x => x.MapComponent.Id == _targetComponent?.Id);
+                if (model is not null)
+                {
+                    Diagram.SelectModel(model, true);
+                }
+                else
+                {
+                    Diagram.UnselectAll();
+                }
+            }
+        }
+    }
+    private bool mapComponentSelected => _targetComponent is not null;
 
     private readonly List<string> AllowedFileExtensions = new() { ".jpg", ".jpeg", ".png" };
 
@@ -180,7 +228,8 @@
     {
         if (firstRender)
         {
-            Diagram.PointerClick += OnDiagramClick;
+            //Diagram.PointerClick += OnDiagramClick;
+            Diagram.PointerDown += OnDiagramClick;
             Diagram.PointerUp += AlignNodeToComponent;
             await InvokeAsync(StateHasChanged);
         }
@@ -197,14 +246,14 @@
     {
         diagramInitialized = false;
         var options = new BlazorDiagramOptions
-            {
-                AllowMultiSelection = false,
-                Zoom =
+        {
+            AllowMultiSelection = false,
+            Zoom =
             {
                 Enabled = false,
             },
-                AllowPanning = false,
-            };
+            AllowPanning = false,
+        };
 
         Diagram = new BlazorDiagram(options);
 
@@ -272,10 +321,10 @@
         notificationService.ShowToast(res);
     }
 
-    private async void AlignNodeToComponent(Blazor.Diagrams.Core.Models.Base.Model? model, Blazor.Diagrams.Core.Events.PointerEventArgs args)
+    private void AlignNodeToComponent(Blazor.Diagrams.Core.Models.Base.Model? model, Blazor.Diagrams.Core.Events.PointerEventArgs args)
     {
         var nodes = Diagram.Nodes.ToList();
-        var updateList = new List<MapComponent>();
+        //var updateList = new List<MapComponent>();
         var width = Diagram.Container.Width;
         var height = Diagram.Container.Height;
         foreach (var node in nodes)
@@ -283,21 +332,32 @@
             if (node is MapDiagramNode mapDiagramNode)
             {
                 mapDiagramNode.UpdateNodeToComponent(width, height);
-                updateList.Add(mapDiagramNode.MapComponent);
+                //updateList.Add(mapDiagramNode.MapComponent);
             }
         }
-        await InvokeAsync(StateHasChanged);
+        StateHasChanged();
+        //var res = await mapService.UpdateAllComponentsInMap(MapConfig, updateList);
+        //notificationService.ShowToast(res);
+        //await InvokeAsync(StateHasChanged);
     }
 
     private async Task SaveMapWithComponents()
     {
-        //var res = await mapService.UpdateAllComponentsInMap(MapConfig, updateList);
-        //notificationService.ShowToast(res);
+        var res = await mapService.UpdateAllComponentsInMap(MapConfig, mapComponents);
+        notificationService.ShowToast(res);
     }
-
 
     private void OnDiagramClick(Model? model, Blazor.Diagrams.Core.Events.PointerEventArgs? pointerEventArgs)
     {
-
+        if (model is MapDiagramNode mapDiagramNode)
+        {
+            showDrawer = true;
+            targetComponent = mapDiagramNode.MapComponent;
+        }
+        else
+        {
+            showDrawer = false;
+            targetComponent = null;
+        }
     }
 }

@@ -30,10 +30,10 @@ namespace CommonLibraryP.MapPKG
 
         public void UpdateNodeToComponent(double mapWidth, double mapHeight)
         {
-            mapComponent.PositionX = Position.X / mapWidth;
-            mapComponent.PositionY = Position.Y / mapHeight;
-            mapComponent.Width = Size.Width / mapWidth;
-            mapComponent.Height = Size.Height / mapHeight;
+            mapComponent.PositionX = Math.Round(Position.X / mapWidth, 3);
+            mapComponent.PositionY = Math.Round(Position.Y / mapHeight, 3);
+            mapComponent.Width = Math.Round(Size.Width / mapWidth, 3);
+            mapComponent.Height = Math.Round(Size.Height / mapHeight, 3);
         }
 
     }

@@ -30,12 +30,14 @@
 		<Compile Remove="MachinePKG\EFPartialModel\ConditionNode.partial.cs" />
 		<Compile Remove="MachinePKG\EFPartialModel\ConditionTagDataNode.partial.cs" />
 		<Compile Remove="MachinePKG\EFPartialModel\SetTagAction.partial.cs" />
+		<Compile Remove="MapPKG\Component\Setting\MapComponent\MapEditComponentBase.cs" />
 		<Compile Remove="ShopfloorPKG\EFModel\RecipeItem.cs" />
 		<Compile Remove="ShopfloorPKG\EFModel\WorkorderRecipeConfig.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Content Remove="MachinePKG\Component\Setting\ConditionSetting.razor" />
+		<Content Remove="MapPKG\Component\Setting\MapComponent\MapComponentEdit.razor" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -55,6 +57,8 @@
 		<None Include="MachinePKG\EFPartialModel\ConditionNode.partial.cs" />
 		<None Include="MachinePKG\EFPartialModel\ConditionTagDataNode.partial.cs" />
 		<None Include="MachinePKG\EFPartialModel\SetTagAction.partial.cs" />
+		<None Include="MapPKG\Component\Setting\MapComponent\MapComponentEdit.razor" />
+		<None Include="MapPKG\Component\Setting\MapComponent\MapEditComponentBase.cs" />
 		<None Include="ShopfloorPKG\EFModel\RecipeItem.cs" />
 		<None Include="ShopfloorPKG\EFModel\WorkorderRecipeConfig.cs" />
 	</ItemGroup>
@@ -111,6 +115,7 @@
 
 	<ItemGroup>
 		<Folder Include="MachinePKG\Controller\" />
+		<Folder Include="MapPKG\Component\Setting\MapDashboardComponent\" />
 		<Folder Include="ShopfloorPKG\Component\StationComponent\ItemRecordInfo\" />
 		<Folder Include="ShopfloorPKG\Component\StationComponent\WorkorderInfo\" />
 		<Folder Include="wwwroot\css\" />

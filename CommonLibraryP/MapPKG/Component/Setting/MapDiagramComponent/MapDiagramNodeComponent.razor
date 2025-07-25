@@ -17,21 +17,12 @@
     {
         <PortRenderer @key="port" Port="port" />
     }
-    @* <img src="@IconRoute" style="width: 100%; height: 100%; object-fit: contain;pointer-events: none;" /> *@
-    <span class="oi oi-basket icon-auto" style="@($"font-size:{Math.Min(Node.WidthInMap, Node.HeightInMap) * 0.6}px")" aria-hidden="true"></span>
+    @* <span class="oi oi-basket icon-auto" style="@($"font-size:{Math.Min(Node.WidthInMap, Node.HeightInMap) * 0.6}px")" aria-hidden="true"></span> *@
 </div>
 
 @code {
     [Parameter]
     public MapDiagramNode Node { get; set; } = null!;
-
-    public string IconRoute =>
-    Node.MapComponent switch
-    {
-        MapComponentMachine mapComponentMachine => "_content/CommonLibraryP/SVG/MachineIcons/robot.svg",
-        MapComponentStation mapComponentStation => "_content/CommonLibraryP/SVG/ShopfloorIcons/station.svg",
-        _ => "_content/CommonLibraryP/SVG/CommonIcons/question.svg"
-    };
 
 
 }
