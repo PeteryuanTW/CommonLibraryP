@@ -32,7 +32,7 @@ namespace CommonLibraryP.MachinePKG
             //}
             return connectionTypeWrapperClasses.Where(x => x.Type.IsAssignableFrom(target?.Type)).ToList();
         }
-        
+
         public static ConnectionTypeWrapperClass? GetConnectionTypeWrapperClassByIndex(int index)
         {
             return connectionTypeWrapperClasses.FirstOrDefault(x => x.Index == index);
@@ -155,62 +155,12 @@ namespace CommonLibraryP.MachinePKG
 
         }
         #endregion
+
         #region special tag type
         //public static IEnumerable<SpecialTagTypeWrapperClass> GetSpecialTagTypesWrapperClass()
         //{
         //    return Enum.GetValues(typeof(SpecialTagType)).OfType<SpecialTagType>()
         //        .Select(x => new SpecialTagTypeWrapperClass(x));
-        //}
-        #endregion
-        #region tag parameter
-        //private static List<TagParameter> TagParameterDict = new()
-        //{
-        //    //modbus tcp
-        //    new TagParameter( ConnectType.ModbusTCP, "Bool1", "Input/Output" ),
-        //    new TagParameter( ConnectType.ModbusTCP, "Bool2", "String Reverse" ),
-
-        //    new TagParameter( ConnectType.ModbusTCP, "Int1", "Station No" ),
-        //    new TagParameter( ConnectType.ModbusTCP, "Int2", "Start Index" ),
-        //    new TagParameter( ConnectType.ModbusTCP, "Int3", "Offset" ),
-
-        //    //tm robot
-        //    new TagParameter( ConnectType.TMRobot, "Bool1", "Input/Output" ),
-        //    new TagParameter( ConnectType.TMRobot, "Bool2", "String Reverse" ),
-
-        //    new TagParameter( ConnectType.TMRobot, "Int1", "Station No" ),
-        //    new TagParameter( ConnectType.TMRobot, "Int2", "Start Index" ),
-        //    new TagParameter( ConnectType.TMRobot, "Int3", "Offset"),
-
-        //    //conveyor
-        //    //new TagParameter( ConnectType.ConveyorMachine, "Bool1", "Input/Output" ),
-        //    //new TagParameter( ConnectType.ConveyorMachine, "Bool2", "String Reverse" ),
-
-        //    //new TagParameter( ConnectType.ConveyorMachine, "Int1", "Station No" ),
-        //    //new TagParameter( ConnectType.ConveyorMachine, "Int2", "Start Index" ),
-        //    //new TagParameter( ConnectType.ConveyorMachine, "Int3", "Offset" ),
-
-        //    //Wrapping
-        //    //new TagParameter( ConnectType.WrappingMachine, "Bool1", "Input/Output" ),
-        //    //new TagParameter( ConnectType.WrappingMachine, "Bool2", "String Reverse" ),
-
-        //    //new TagParameter( ConnectType.WrappingMachine, "Int1", "Station No" ),
-        //    //new TagParameter( ConnectType.WrappingMachine, "Int2", "Start Index" ),
-        //    //new TagParameter( ConnectType.WrappingMachine, "Int3", "Offset" ),
-
-
-        //    //Web api
-        //    new TagParameter( ConnectType.WebAPI, "String1", "Get Controller" ),
-        //    new TagParameter( ConnectType.WebAPI, "String2", "Post COntroller" ),
-
-        //    //rfid
-        //    //new TagParameter( ConnectType.RegalscanRFID, "String1", "Get Controller" ),
-        //    //new TagParameter( ConnectType.RegalscanRFID, "String2", "Post COntroller" ),
-        //};
-
-        //public static string GetTagParameterMeaning(ConnectType connectType, string varName)
-        //{
-        //    var target = TagParameterDict.FirstOrDefault(x => x.connectType == connectType && x.variableName == varName);
-        //    return target is null ? "Not Defined" : target.parameterName;
         //}
         #endregion
 
@@ -220,12 +170,32 @@ namespace CommonLibraryP.MachinePKG
         {
             new LogicalOperationWrapperClass(LogicalOperation.Equal, "=="),
             new LogicalOperationWrapperClass(LogicalOperation.NotEqual, "!="),
-            //new LogicalOperationWrapperClass(LogicalOperation.Large, ">"),
-            //new LogicalOperationWrapperClass(LogicalOperation.Less, "<"),
-            //new LogicalOperationWrapperClass(LogicalOperation.LargerThanOrEqualTo, ">="),
-            //new LogicalOperationWrapperClass(LogicalOperation.LessThanOrEqualTo, "<="),
+            new LogicalOperationWrapperClass(LogicalOperation.Large, ">"),
+            new LogicalOperationWrapperClass(LogicalOperation.Less, "<"),
+            new LogicalOperationWrapperClass(LogicalOperation.LargerThanOrEqualTo, ">="),
+            new LogicalOperationWrapperClass(LogicalOperation.LessThanOrEqualTo, "<="),
 
         };
+
+        public static List<LogicalOperationWrapperClass> GetLogicalOperationByDataType(Tag tag)
+        {
+            if (tag.IsMultipleValue || tag.IsString)
+            {
+                return new();
+            }
+            else if (tag.IsBoolean)
+            {
+                return LogicalOperationWrapperClassDict.Where(x => x.Index <= 2).ToList();
+            }
+            else if (tag.IsUshort)
+            {
+                return LogicalOperationWrapperClassDict.ToList();
+            }
+            else
+            {
+                return new();
+            }
+        }
 
         public static string GetLogicalOperationSymbol(int code)
         {
@@ -233,12 +203,12 @@ namespace CommonLibraryP.MachinePKG
             return target is null ? "?" : target.Symbol;
         }
 
-        public static List<ConditionCommandCodeWrapperClass> ConditionCommandCodeWrapperClassDict = new()
-        {
-            new ConditionCommandCodeWrapperClass(ConditionCommandCode.Await),
-            new ConditionCommandCodeWrapperClass(ConditionCommandCode.SetTagValue),
+        //public static List<ConditionCommandCodeWrapperClass> ConditionCommandCodeWrapperClassDict = new()
+        //{
+        //    new ConditionCommandCodeWrapperClass(ConditionCommandCode.Await),
+        //    new ConditionCommandCodeWrapperClass(ConditionCommandCode.SetTagValue),
 
-        };
+        //};
 
         #endregion
     }
@@ -294,12 +264,12 @@ namespace CommonLibraryP.MachinePKG
     #endregion
 
     #region editmode
-    public enum DataEditMode
-    {
-        Insert,
-        Update,
-        Delete,
-    }
+    //public enum DataEditMode
+    //{
+    //    Insert,
+    //    Update,
+    //    Delete,
+    //}
     #endregion
 
     #region special tag type
@@ -326,6 +296,7 @@ namespace CommonLibraryP.MachinePKG
     {
         Equal = 1,
         NotEqual = 2,
+
         Large = 3,
         Less = 4,
         LargerThanOrEqualTo = 5,
@@ -344,20 +315,20 @@ namespace CommonLibraryP.MachinePKG
         }
     }
 
-    public enum ConditionCommandCode
-    {
-        Await = 0,
-        SetTagValue = 1,
-    }
+    //public enum ConditionCommandCode
+    //{
+    //    Await = 0,
+    //    SetTagValue = 1,
+    //}
 
-    public class ConditionCommandCodeWrapperClass : EnumWrapper
-    {
-        public ConditionCommandCodeWrapperClass(ConditionCommandCode conditionCommandCode)
-        {
-            index = (int)conditionCommandCode;
-            displayName = conditionCommandCode.ToString();
-        }
-    }
+    //public class ConditionCommandCodeWrapperClass : EnumWrapper
+    //{
+    //    public ConditionCommandCodeWrapperClass(ConditionCommandCode conditionCommandCode)
+    //    {
+    //        index = (int)conditionCommandCode;
+    //        displayName = conditionCommandCode.ToString();
+    //    }
+    //}
 
     #endregion
 }

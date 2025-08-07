@@ -12,6 +12,7 @@ namespace CommonLibraryP.MachinePKG
         public int RetryCount => retryCount;
 
         public bool isAutoRetry => retryCount < MaxRetryCount;
+        private CancellationTokenSource cts = new();
 
         //private PeriodicTimer periodicTimer;
         //private CancellationToken _cts;
@@ -48,9 +49,14 @@ namespace CommonLibraryP.MachinePKG
         //{
         //    this.Id = id;
         //}
-        public bool hasCategory => TagCategory != null;
-        public bool hasTags => hasCategory && TagCategory?.Tags.Count > 0;
-        public bool hasTagsUpdateByTime => hasTags && TagCategory.Tags.Any(x => x.UpdateByTime);
+        public bool HasCategory => TagCategory != null;
+        public bool HasTags => HasCategory && TagCategory?.Tags.Count > 0;
+        public bool HasTagsUpdateByTime => HasTags && TagCategory.Tags.Any(x => x.UpdateByTime);
+
+        public bool HasWarning => HasTags && TagCategory?.Tags.Count(x => x.HasWarning) > 0;
+        public bool HasWarningTriggered => HasTags && TagCategory?.Tags.Count(x => x.HasWarningTriggered) > 0;
+
+        public string WarningMsg => HasWarningTriggered ? TagCategory?.Tags.Where(x => x.HasWarningTriggered).SelectMany(x => x.TagWarningConditions).Where(x => x.IsWarning).Select(x => $"{x.WarningMessage}").Aggregate((current, next) => $"{current}\n{next}") : string.Empty;
 
         private int statusCode;
         public int StatusCode => statusCode;
@@ -85,7 +91,7 @@ namespace CommonLibraryP.MachinePKG
         public void InitMachine()
         {
             statusCode = 0;
-            if (hasTags)
+            if (HasTags)
             {
                 foreach (var item in TagCategory.Tags)
                 {
@@ -105,7 +111,7 @@ namespace CommonLibraryP.MachinePKG
         }
         public async Task<RequestResult> SetTag(string tagName, object val)
         {
-            if (hasCategory)
+            if (HasCategory)
             {
                 Tag tag = TagCategory.Tags.FirstOrDefault(x => x.Name == tagName);
                 if (tag != null)
@@ -146,69 +152,66 @@ namespace CommonLibraryP.MachinePKG
             return Task.CompletedTask;
         }
 
-        public void StartUpdating()
+        public async Task StartUpdating()
         {
             try
             {
-                new Thread(async () =>
+                using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(UpdateDelay));
+
+                while (await timer.WaitForNextTickAsync(cts.Token))
                 {
-                    while (Enabled)
+                    try
                     {
-                        try
+                        if (runFlag)
                         {
-                            if (runFlag)
+                            await UpdateStatus();
+                            if (HasTagsUpdateByTime)
                             {
-                                await UpdateStatus();
-                                if (hasTagsUpdateByTime)
-                                {
-                                    await UpdateTags();
-                                    TagsStatechange();
-                                }
+                                await UpdateTags();
+                                TagsStatechange();
                             }
-                            else
+                        }
+                        else
+                        {
+                            if (statusCode is 0 || statusCode is 2)
                             {
-                                if (statusCode is 0 || statusCode is 2)
+                                if (MaxRetryCount is -1)
                                 {
-                                    if (MaxRetryCount is -1)
+                                    await ConnectAsync();
+
+                                }
+                                else
+                                {
+                                    if (retryCount < MaxRetryCount)
                                     {
                                         await ConnectAsync();
-
                                     }
-                                    else
-                                    {
-                                        if (retryCount < MaxRetryCount)
-                                        {
-                                            await ConnectAsync();
-                                        }
-                                    }
-
                                 }
-                                else if (statusCode is 1)
-                                {
 
-                                }
+                            }
+                            else if (statusCode is 1)
+                            {
+
                             }
                         }
-                        catch (IOException ex)
-                        {
-                            Disconnect(ex.Message);
-                        }
-                        catch (SocketException e)
-                        {
-                            Disconnect(e.Message);
-                        }
-                        catch (Exception e)
-                        {
-                            Error(e.Message);
-                        }
-                        finally
-                        {
-                            await Task.Delay(UpdateDelay);
-                        }
                     }
+                    catch (IOException ex)
+                    {
+                        Disconnect(ex.Message);
+                    }
+                    catch (SocketException e)
+                    {
+                        Disconnect(e.Message);
+                    }
+                    catch (Exception e)
+                    {
+                        Error(e.Message);
+                    }
+                    //finally
+                    //{
+                    //    await Task.Delay(UpdateDelay, cts.Token);
+                    //}
                 }
-                ).Start();
-
             }
             catch (Exception e)
             {
@@ -325,7 +328,9 @@ namespace CommonLibraryP.MachinePKG
         //dispose
         public void Dispose()
         {
-            Enabled = false;
+            cts.Cancel();
+            cts.Dispose();
+            //Enabled = false;
         }
     }
 }

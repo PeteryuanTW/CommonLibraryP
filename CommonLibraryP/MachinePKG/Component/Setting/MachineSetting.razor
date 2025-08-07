@@ -4,15 +4,16 @@
 
 @inject IStringLocalizer<MachineLanguage> localizer
 @inject MachineService machineService
-@inject SerilogService serilogService
 @inject NotificationService notificationService
+@inject NavigationManager nav
 
-<DxGrid @ref="grid" Data="@machines" @bind-SelectedDataItem="@targetMachineObj" FilterMenuButtonDisplayMode="GridFilterMenuButtonDisplayMode.Always"  AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" DataItemDeleting="DeleteMachine" HighlightRowOnHover="true">
+<DxGrid @ref="grid" Data="@machines" @bind-SelectedDataItem="@targetMachineObj" FilterMenuButtonDisplayMode="GridFilterMenuButtonDisplayMode.Always" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" DataItemDeleting="DeleteMachine" HighlightRowOnHover="true">
     <ToolbarTemplate>
-        <DxToolbar SizeMode="SizeMode.Large" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
-            <DxToolbarItem IconCssClass="oi oi-plus"  Click="NewMachineClicked" BeginGroup="true" />
-            <DxToolbarItem Enabled="@machineSelected" Click="ShowMachinePopup" IconCssClass="oi oi-pencil" Text="@(targetMachine?.Name)" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
-            <DxToolbarItem Enabled="@machineSelected" Click="ShowDelete" IconCssClass="oi oi-trash" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
+        <DxToolbar Title="@(targetMachine?.Name)" SizeMode="SizeMode.Large" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+            <DxToolbarItem IconCssClass="oi oi-plus" Click="@NewMachineClicked" BeginGroup="true" />
+            <DxToolbarItem Enabled="@machineSelected" Click="@ShowMachinePopup" IconCssClass="oi oi-pencil" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+            <DxToolbarItem Enabled="@machineSelected" Click="@NavToMachineDashboard" IconCssClass="bi bi-card-text" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" />
+            <DxToolbarItem Enabled="@machineSelected" Click="@ShowDelete" IconCssClass="oi oi-trash" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
         </DxToolbar>
     </ToolbarTemplate>
     <Columns>
@@ -21,7 +22,9 @@
         <DxGridDataColumn Caption="@($"{localizer["Port"]}")" FieldName="@nameof(Machine.Port)" />
         <DxGridDataColumn Caption="@($"{localizer["Connection Type"]}")" FieldName="@nameof(Machine.ConnectionType)">
             <CellDisplayTemplate>
-                <div>@(MachineTypeEnumHelper.GetConnectionTypeWrapperClassByIndex((int)context.Value)?.DisplayName)</div>
+                <div>
+                    @(MachineTypeEnumHelper.GetConnectionTypeWrapperClassByIndex((int)context.Value)?.DisplayName)
+                </div>
             </CellDisplayTemplate>
         </DxGridDataColumn>
         <DxGridDataColumn Caption="@($"{localizer["Maximal Retry Count"]}")" FieldName="@nameof(Machine.MaxRetryCount)" />
@@ -73,7 +76,7 @@
                     <DxComboBox Data="tagCategories" @bind-Value="@targetMachine.TagCategoryId" ValueFieldName="@nameof(TagCategory.Id)" TextFieldName="@nameof(TagCategory.Name)" />
                 </DxFormLayoutItem>
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["Update Delay"]}({localizer["ms"]})")" ColSpanLg="6" BeginRow="true">
-                    <DxSpinEdit @bind-Value="@targetMachine.UpdateDelay" MinValue="100" MaxValue="65535" />
+                    <DxSpinEdit @bind-Value="@targetMachine.UpdateDelay" MinValue="500" MaxValue="65535" />
                 </DxFormLayoutItem>
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["Record Status Changed"]}")" Visible ColSpanLg="6">
                     <DxCheckBox CheckType="CheckType.Switch" @bind-Checked="@targetMachine.RecordStatusChanged" />
@@ -98,9 +101,10 @@
 
 
 @code {
+    [Parameter]
+    public string DashboardRoute { get; set; } = "MachineDashboard";
 
     private IEnumerable<ConnectionTypeWrapperClass> ConnectTypes => MachineTypeEnumHelper.GetConnectionTypeWrapperClasses();
-
 
     IGrid? grid { get; set; }
     private DxPopup? machinePopup { get; set; }
@@ -118,11 +122,6 @@
     protected override async Task OnInitializedAsync()
     {
         await InitParam();
-        serilogService.TextWarning("123");
-        serilogService.TextError("123");
-        serilogService.TextError("123");
-        serilogService.TextInformation("123");
-        serilogService.TextInformation("123");
         await base.OnInitializedAsync();
     }
     private async Task InitParam()
@@ -171,7 +170,11 @@
         var res = await machineService.DeleteMachine(targetMachine);
         await InitParam();
         notificationService.ShowToast(res);
-        //uiService.ShowToast(res);
+    }
+
+    private void NavToMachineDashboard()
+    {
+        nav.NavigateTo($"/{DashboardRoute}/{targetMachine?.Id}");
     }
 }
 

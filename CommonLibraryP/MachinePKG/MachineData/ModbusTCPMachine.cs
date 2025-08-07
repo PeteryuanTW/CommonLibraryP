@@ -26,17 +26,17 @@ namespace CommonLibraryP.MachinePKG
         private ushort coilBatch = 125;
         private ushort registerBatch = 125;
 
-        private Stopwatch inputCoilStopwatch = new();
-        public Stopwatch InputCoilStopwatch => inputCoilStopwatch;
+        private Stopwatch discreteInputStopwatch = new ();
+        public Stopwatch DiscreteInputStopwatch => discreteInputStopwatch;
 
-        private Stopwatch outputCoilStopwatch = new();
-        public Stopwatch OutputCoilStopwatch => outputCoilStopwatch;
+        private Stopwatch coilStopwatch = new();
+        public Stopwatch CoilStopwatch => coilStopwatch;
 
         private Stopwatch inputRegisterStopwatch = new();
         public Stopwatch InputRegisterStopwatch => inputRegisterStopwatch;
 
-        private Stopwatch outputRegisterStopwatch = new();
-        public Stopwatch OutputRegisterStopwatch => outputRegisterStopwatch;
+        private Stopwatch holdingRegisterStopwatch = new();
+        public Stopwatch HoldingRegisterStopwatch => holdingRegisterStopwatch;
 
 
         public ModbusTCPMachine() : base()
@@ -70,7 +70,7 @@ namespace CommonLibraryP.MachinePKG
 
         protected sealed override async Task UpdateTags()
         {
-            if (!hasCategory)
+            if (!HasCategory)
             {
                 return;
             }
@@ -81,11 +81,11 @@ namespace CommonLibraryP.MachinePKG
                     .Select(x => new { station = x.Key, tags = x.ToList() }).ToList();
                 foreach (var stationAndTags in updateBytimeTags)
                 {
-                    #region input coils
+                    #region discrete input
                     var boolInputTags = stationAndTags.tags.Where(x => x.IsBoolean && !x.InputOrOutput).ToList();
                     if (boolInputTags is not null && boolInputTags.Count > 0)
                     {
-                        inputCoilStopwatch.Restart();
+                        discreteInputStopwatch.Restart();
                         var boolInputStart = boolInputTags.Select(x => x.StartIndex).Min();
                         var boolInputEnd = boolInputTags.Select(x => x.StartIndex + x.Offset).Max();
                         var boolInputAmount = (ushort)(boolInputEnd - boolInputStart);
@@ -121,15 +121,15 @@ namespace CommonLibraryP.MachinePKG
                                 boolInputTag.SetValue(boolInputResult[(boolInputTag.StartIndex - boolInputStart)..(boolInputTag.StartIndex - boolInputStart + boolInputTag.Offset)]);
                             }
                         }
-                        inputCoilStopwatch.Stop();
+                        discreteInputStopwatch.Stop();
                     }
                     #endregion
 
-                    #region output coils
+                    #region coils
                     var boolOutputTags = stationAndTags.tags.Where(x => x.IsBoolean && x.InputOrOutput).ToList();
                     if (boolOutputTags is not null && boolOutputTags.Count > 0)
                     {
-                        outputCoilStopwatch.Restart();
+                        coilStopwatch.Restart();
                         var boolOutputStart = boolOutputTags.Select(x => x.StartIndex).Min();
                         var boolOutputEnd = boolOutputTags.Select(x => x.StartIndex + x.Offset).Max();
                         var boolOutputAmount = (ushort)(boolOutputEnd - boolOutputStart);
@@ -166,7 +166,7 @@ namespace CommonLibraryP.MachinePKG
                                 boolOutputTag.SetValue(boolOutputResult[(boolOutputTag.StartIndex - boolOutputStart)..(boolOutputTag.StartIndex - boolOutputStart + boolOutputTag.Offset)]);
                             }
                         }
-                        outputCoilStopwatch.Stop();
+                        coilStopwatch.Stop();
                     }
                     #endregion
 
@@ -227,11 +227,11 @@ namespace CommonLibraryP.MachinePKG
                     }
                     #endregion
 
-                    #region output registers/strings
+                    #region holding registers/strings
                     var ushortOrStringOutputTags = stationAndTags.tags.Where(x => (x.IsUshort || x.IsString) && x.InputOrOutput).ToList();
                     if (ushortOrStringOutputTags is not null && ushortOrStringOutputTags.Count > 0)
                     {
-                        outputRegisterStopwatch.Restart();
+                        holdingRegisterStopwatch.Restart();
                         var ushortOrStringOutputStart = ushortOrStringOutputTags.Select(x => x.StartIndex).Min();
                         var ushortOrStringOutputEnd = ushortOrStringOutputTags.Select(x => x.StartIndex + x.Offset).Max();
                         var ushortOrStringOutputAmount = (ushort)(ushortOrStringOutputEnd - ushortOrStringOutputStart);
@@ -280,7 +280,7 @@ namespace CommonLibraryP.MachinePKG
                                 ushortOrStringOutputTag.SetValue(ushortOrStringOutputResult[(ushortOrStringOutputTag.StartIndex - ushortOrStringOutputStart)..(ushortOrStringOutputTag.StartIndex - ushortOrStringOutputStart + ushortOrStringOutputTag.Offset)]);
                             }
                         }
-                        outputRegisterStopwatch.Stop();
+                        holdingRegisterStopwatch.Stop();
                     }
                     #endregion
                 }

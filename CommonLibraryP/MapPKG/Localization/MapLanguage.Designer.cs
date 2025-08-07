@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace CommonLibraryP.ShopfloorPKG.Localization {
+namespace CommonLibraryP.MapPKG.Localization {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace CommonLibraryP.ShopfloorPKG.Localization {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class ShopfloorLanguage {
+    public class MapLanguage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal ShopfloorLanguage() {
+        internal MapLanguage() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace CommonLibraryP.ShopfloorPKG.Localization {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("CommonLibraryP.ShopfloorPKG.Localization.ShopfloorLanguage", typeof(ShopfloorLanguage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("CommonLibraryP.MapPKG.Localization.MapLanguage", typeof(MapLanguage).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,25 +61,61 @@ namespace CommonLibraryP.ShopfloorPKG.Localization {
         }
         
         /// <summary>
-        ///   查詢類似 Item Record 的當地語系化字串。
+        ///   查詢類似 Component Info 的當地語系化字串。
         /// </summary>
-        public static string Item_Record {
+        public static string Component_Info {
             get {
-                return ResourceManager.GetString("Item Record", resourceCulture);
+                return ResourceManager.GetString("Component Info", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   查詢類似 Lot 的當地語系化字串。
+        ///   查詢類似 Height 的當地語系化字串。
         /// </summary>
-        public static string Lot {
+        public static string Height {
             get {
-                return ResourceManager.GetString("Lot", resourceCulture);
+                return ResourceManager.GetString("Height", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   查詢類似 Name 的當地語系化字串。
+        ///   查詢類似 Image 的當地語系化字串。
+        /// </summary>
+        public static string Image {
+            get {
+                return ResourceManager.GetString("Image", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Image Name 的當地語系化字串。
+        /// </summary>
+        public static string Image_Name {
+            get {
+                return ResourceManager.GetString("Image Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Image Type 的當地語系化字串。
+        /// </summary>
+        public static string Image_Type {
+            get {
+                return ResourceManager.GetString("Image Type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Map 的當地語系化字串。
+        /// </summary>
+        public static string Map {
+            get {
+                return ResourceManager.GetString("Map", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Map Name 的當地語系化字串。
         /// </summary>
         public static string Name {
             get {
@@ -88,101 +124,56 @@ namespace CommonLibraryP.ShopfloorPKG.Localization {
         }
         
         /// <summary>
-        ///   查詢類似 Ng 的當地語系化字串。
+        ///   查詢類似 Selected Component 的當地語系化字串。
         /// </summary>
-        public static string Ng {
+        public static string Selected_Component {
             get {
-                return ResourceManager.GetString("Ng", resourceCulture);
+                return ResourceManager.GetString("Selected Component", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   查詢類似 Ok 的當地語系化字串。
+        ///   查詢類似 Target Machine 的當地語系化字串。
         /// </summary>
-        public static string Ok {
+        public static string Target_Machine {
             get {
-                return ResourceManager.GetString("Ok", resourceCulture);
+                return ResourceManager.GetString("Target Machine", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   查詢類似 Process 的當地語系化字串。
+        ///   查詢類似 Target Station 的當地語系化字串。
         /// </summary>
-        public static string Process {
+        public static string Target_Station {
             get {
-                return ResourceManager.GetString("Process", resourceCulture);
+                return ResourceManager.GetString("Target Station", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   查詢類似 Serial no 的當地語系化字串。
+        ///   查詢類似 Width 的當地語系化字串。
         /// </summary>
-        public static string Serial_no {
+        public static string Width {
             get {
-                return ResourceManager.GetString("Serial no", resourceCulture);
+                return ResourceManager.GetString("Width", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   查詢類似 Start time 的當地語系化字串。
+        ///   查詢類似 X position 的當地語系化字串。
         /// </summary>
-        public static string Start_time {
+        public static string X_Position {
             get {
-                return ResourceManager.GetString("Start time", resourceCulture);
+                return ResourceManager.GetString("X Position", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   查詢類似 Station 的當地語系化字串。
+        ///   查詢類似 Y position 的當地語系化字串。
         /// </summary>
-        public static string Station {
+        public static string Y_Position {
             get {
-                return ResourceManager.GetString("Station", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查詢類似 Station In 的當地語系化字串。
-        /// </summary>
-        public static string Station_In {
-            get {
-                return ResourceManager.GetString("Station In", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查詢類似 Station Out 的當地語系化字串。
-        /// </summary>
-        public static string Station_Out {
-            get {
-                return ResourceManager.GetString("Station Out", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查詢類似 Stations Status 的當地語系化字串。
-        /// </summary>
-        public static string Stations_Status {
-            get {
-                return ResourceManager.GetString("Stations Status", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查詢類似 Workorder Deploy 的當地語系化字串。
-        /// </summary>
-        public static string Workorder_Deploy {
-            get {
-                return ResourceManager.GetString("Workorder Deploy", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查詢類似 Workorder no 的當地語系化字串。
-        /// </summary>
-        public static string Workorder_No {
-            get {
-                return ResourceManager.GetString("Workorder No", resourceCulture);
+                return ResourceManager.GetString("Y Position", resourceCulture);
             }
         }
     }

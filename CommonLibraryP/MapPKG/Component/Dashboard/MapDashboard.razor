@@ -1,0 +1,116 @@
+﻿@namespace CommonLibraryP.MapPKG.Component
+@rendermode RenderMode.InteractiveServer
+@using CommonLibraryP.MachinePKG.Component
+
+@inject MachineService machineService
+
+<style>
+    .dashbosrd-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border: 1px solid white;
+        overflow: hidden;
+    }
+</style>
+
+<div class="h-100">
+    <DxGridLayout CssClass="h-100" RowSpacing="1rem" ColumnSpacing="1rem">
+        <Rows>
+            <DxGridLayoutRow Height="1fr" />
+            <DxGridLayoutRow Height="1fr" />
+            <DxGridLayoutRow Height="10fr" />
+        </Rows>
+        <Columns>
+            <DxGridLayoutColumn Width="9fr" />
+            <DxGridLayoutColumn Width="3fr" />
+        </Columns>
+        <Items>
+            <DxGridLayoutItem Row="0" Column="0" ColumnSpan="2">
+                <Template>
+                    <div class="alert alert-secondary" role="alert">
+                        @MapConfigParam?.Name
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="1" Column="0" RowSpan="2">
+                <Template>
+                    @if (MapConfigParam is not null)
+                    {
+                        <div class="w-100 h-100 dashbosrd-container" style="@GetBackground">
+                            @foreach (var mapComponent in MapConfigParam.MapComponents)
+                            {
+                                @DashboardComponentFactory(mapComponent)
+                            }
+                        </div>
+                    }
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="1" Column="1">
+                <Template>
+                    <div>
+                        @if (MapConfigParam is not null)
+                        {
+                            <MachineStatusSummaryPieChart MachineIds="@(MapConfigParam.MapComponents.OfType<MapComponentMachine>().Select(x=>x.MachineId))" />
+                        }
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="2" Column="1">
+                <Template>
+                </Template>
+            </DxGridLayoutItem>
+        </Items>
+    </DxGridLayout>
+</div>
+
+
+
+
+
+
+
+@code {
+    [Parameter]
+    public MapConfig MapConfigParam { get; set; } = null!;
+
+    private string GetBackground =>
+        $"background-image: url('data:{MapConfigParam.ImageType.ToString()};base64,{Convert.ToBase64String(MapConfigParam.ImageByte)}'); background-size:contain; background-position:center ;background-repeat: no-repeat";
+
+    private RenderFragment? DashboardComponentFactory(MapComponent mapComponent)
+    {
+        return mapComponent switch
+        {
+            MapComponentMachine mapComponentMachine => @<DashboordMachine MapComponentParam="@mapComponent" />,
+            _ => null,
+        };
+    }
+
+    private List<Machine> machines = new();
+
+    protected override Task OnParametersSetAsync()
+    {
+        if (MapConfigParam is not null)
+        {
+            foreach (var component in MapConfigParam?.MapComponents)
+            {
+                switch (component)
+                {
+                    case MapComponentMachine mapComponentMachine:
+                        var target = machineService.Machines.FirstOrDefault(x => x.Id == mapComponentMachine.MachineId);
+                        if (target is not null)
+                        {
+                            machines.Add(target);
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+
+            }
+
+        }
+        return base.OnParametersSetAsync();
+    }
+}

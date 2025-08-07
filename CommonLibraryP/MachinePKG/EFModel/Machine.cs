@@ -42,7 +42,7 @@ namespace CommonLibraryP.MachinePKG
         public bool Enabled { get; set; } = true;
 
         [Required]
-        [Range(100, 65535)]
+        [Range(500, 65535)]
         public int UpdateDelay { get; set; }
 
         [Required]

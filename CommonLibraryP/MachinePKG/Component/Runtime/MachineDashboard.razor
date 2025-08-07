@@ -1,0 +1,299 @@
+﻿@namespace CommonLibraryP.MachinePKG.Component
+
+@rendermode RenderMode.InteractiveServer
+@implements IDisposable
+@inject IStringLocalizer<MachineLanguage> localizer
+@inject MachineService machineService
+@inject NotificationService notificationService
+
+
+
+@if (hasMachine)
+{
+    <DxGridLayout ColumnSpacing="3rem" RowSpacing="1rem">
+        <Rows>
+            <DxGridLayoutRow Height="auto"></DxGridLayoutRow>
+        </Rows>
+        <Columns>
+            <DxGridLayoutColumn Width="4fr"></DxGridLayoutColumn>
+            <DxGridLayoutColumn Width="8fr"></DxGridLayoutColumn>
+        </Columns>
+        <Items>
+            <DxGridLayoutItem Row="0" Column="0">
+                <Template>
+                    <DxFormLayout CaptionPosition="CaptionPosition.Vertical" Data="@Machine" ReadOnly="true">
+                        <DxFormLayoutGroup Caption="@(localizer["Machine Config"])" CssClass="rounded">
+                            <DxFormLayoutItem Caption="@(localizer["Name"])">
+                                <DxTextBox Text="@Machine?.Name" ReadOnly="true" />
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@(localizer["Enable"])">
+                                <DxCheckBox Checked="@Machine?.Enabled" CheckType="CheckType.Switch" ReadOnly="true"></DxCheckBox>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@(localizer["Maximal Retry Count"])" ColSpanLg="4">
+                                <DxSpinEdit Value="@Machine?.MaxRetryCount" ReadOnly="true"></DxSpinEdit>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@(localizer["Retry Count"])" ColSpanLg="4">
+                                <DxSpinEdit Value="@Machine?.RetryCount" ReadOnly="true"></DxSpinEdit>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@(localizer["Auto Retrying"])" ColSpanLg="4">
+                                <DxCheckBox Checked="@Machine?.isAutoRetry" CheckType="CheckType.Switch" ReadOnly="true"></DxCheckBox>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@(localizer["IP"])">
+                                <DxTextBox Text="@Machine?.Ip" ReadOnly="true" />
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@(localizer["Port"])">
+                                <DxSpinEdit Value="@Machine?.Port" ReadOnly="true"></DxSpinEdit>
+                            </DxFormLayoutItem>
+                            @* <DxFormLayoutItem Caption="@($"{localizer["Connection Type"]}")">
+                                <DxComboBox Data="@(connectionType)" @bind-Value="@(machine.ConnectionType)" ReadOnly="true" ValueFieldName="@nameof(ConnectionTypeWrapperClass.Index)" TextFieldName="@nameof(ConnectionTypeWrapperClass.DisplayName)"></DxComboBox>
+                            </DxFormLayoutItem> *@
+                            <DxFormLayoutItem Caption="@(localizer["Tag Category"])">
+                                <DxComboBox Data="@tagCategories" @bind-Value="@Machine.TagCategoryId" ReadOnly="true" ValueFieldName="@nameof(TagCategory.Id)" TextFieldName="@nameof(TagCategory.Name)" ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto" />
+                            </DxFormLayoutItem>
+                        </DxFormLayoutGroup>
+                        <DxFormLayoutGroup Caption="@(localizer["Runtime data"])" CssClass="rounded">
+                            <DxFormLayoutItem Caption="@(localizer["Status"])" Field="@nameof(Machine.StatusStr)" ColSpanLg="4" />
+                            <DxFormLayoutItem Caption="@(localizer["Running"])" Field="@nameof(Machine.RunFlag)" ColSpanLg="4">
+                                <DxCheckBox Checked="@Machine?.RunFlag" CheckType="CheckType.Switch" ReadOnly="true" />
+                            </DxFormLayoutItem>
+                            @if (Machine is ModbusTCPMachine modbusTCPMachine)
+                            {
+                                <DxFormLayoutItem Caption="@($"{localizer["Discrete Input Cost"]}({localizer["ms"]})")" ColSpanLg="6">
+                                    <DxSpinEdit Value="@(modbusTCPMachine?.DiscreteInputStopwatch.Elapsed.TotalMilliseconds)" ReadOnly="true"></DxSpinEdit>
+                                </DxFormLayoutItem>
+
+                                <DxFormLayoutItem Caption="@($"{localizer["Coil Cost"]}({localizer["ms"]})")" ColSpanLg="6">
+                                    <DxSpinEdit Value="@(modbusTCPMachine?.CoilStopwatch.Elapsed.TotalMilliseconds)" ReadOnly="true"></DxSpinEdit>
+                                </DxFormLayoutItem>
+
+                                <DxFormLayoutItem Caption="@($"{localizer["Input Register Cost"]}({localizer["ms"]})")" ColSpanLg="6">
+                                    <DxSpinEdit Value="@(modbusTCPMachine?.InputRegisterStopwatch.Elapsed.TotalMilliseconds)" ReadOnly="true"></DxSpinEdit>
+                                </DxFormLayoutItem>
+
+                                <DxFormLayoutItem Caption="@($"{localizer["Holding Register Cost"]}({localizer["ms"]})")" ColSpanLg="6">
+                                    <DxSpinEdit Value="@(modbusTCPMachine?.HoldingRegisterStopwatch.Elapsed.TotalMilliseconds)" ReadOnly="true"></DxSpinEdit>
+                                </DxFormLayoutItem>
+                            }
+                            <DxFormLayoutItem Caption="@(localizer["Error Message"])" Field="@nameof(Machine.ErrorMsg)" ColSpanLg="12" />
+                        </DxFormLayoutGroup>
+                    </DxFormLayout>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="0" Column="1">
+                <Template>
+                    <div>
+                        <DxFormLayout>
+                            <DxFormLayoutTabPages>
+                                <DxFormLayoutTabPage Caption="Basic Tag" Visible="@(Machine.HasTags && Machine.RunFlag)">
+                                    <DxFormLayoutItem ColSpanLg="12">
+                                        <DxGrid Data="@Machine.TagCategory.Tags">
+                                            <Columns>
+                                                <DxGridDataColumn Caption="@(localizer["Tag Name"])" FieldName="@nameof(Tag.Name)" FilterMenuButtonDisplayMode="GridFilterMenuButtonDisplayMode.Always" />
+                                                <DxGridDataColumn Caption="@(localizer["Data Type"])" FieldName="@nameof(Tag.DataType)">
+                                                    <CellDisplayTemplate Context="datatypecontext">
+                                                        <div>@((DataType)((int)datatypecontext.Value))</div>
+                                                    </CellDisplayTemplate>
+                                                </DxGridDataColumn>
+                                                <DxGridDataColumn Caption="@(localizer["Update By Time"])" FieldName="@nameof(Tag.UpdateByTime)" />
+                                                <DxGridDataColumn Caption="@(localizer["Value String"])" FieldName="@nameof(Tag.ValueString)" />
+                                                <DxGridDataColumn Caption="@(localizer["Lastest Changed Time"])" FieldName="@nameof(Tag.LastChangedTime)" DisplayFormat="G" />
+                                                <DxGridDataColumn Caption="@(localizer["Lastest Update Time"])" FieldName="@nameof(Tag.LastUpdateTime)" DisplayFormat="G" />
+                                                <DxGridDataColumn>
+                                                    <CellDisplayTemplate Context="btncontext">
+                                                        <div class="d-flex justify-content-evenly">
+                                                            <DxButton Click="@(()=>SetTagClicked(btncontext.DataItem))" IconCssClass="bi bi-send"></DxButton>
+                                                        </div>
+                                                    </CellDisplayTemplate>
+                                                </DxGridDataColumn>
+                                                <DxGridDataColumn>
+                                                    <CellDisplayTemplate Context="btncontext">
+                                                        <div class="d-flex justify-content-evenly">
+                                                            <DxButton Visible="@((btncontext.DataItem as Tag).HasWarning)"
+                                                                      RenderStyleMode="@((btncontext.DataItem as Tag).HasWarningTriggered ? ButtonRenderStyleMode.Contained: ButtonRenderStyleMode.Outline)"
+                                                                      Enabled="@((btncontext.DataItem as Tag).HasWarningTriggered)"
+                                                                      Text="@($"{(btncontext.DataItem as Tag).WarningCount}")"
+                                                                      RenderStyle="ButtonRenderStyle.Warning" IconCssClass="bi bi-exclamation-triangle"
+                                                                      Click="@(()=>ShowWarningDetails(btncontext.DataItem))">
+                                                            </DxButton>
+                                                        </div>
+                                                    </CellDisplayTemplate>
+                                                </DxGridDataColumn>
+                                            </Columns>
+                                        </DxGrid>
+                                    </DxFormLayoutItem>
+                                </DxFormLayoutTabPage>
+                            </DxFormLayoutTabPages>
+                        </DxFormLayout>
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+        </Items>
+    </DxGridLayout>
+
+    <DxPopup @ref="@setTagPopup" CloseOnOutsideClick="false">
+        <BodyContentTemplate Context="bodycontext">
+            <EditForm Model="setMachineTagModel" OnValidSubmit="SetTagValue" Context="editformcontext">
+                <DataAnnotationsValidator />
+                <DxFormLayout>
+                    @* <DxFormLayoutItem Caption="@($"Machine Name")" Field="@nameof(SetMachineTagModel.MachineName)" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6"/>
+                    <DxFormLayoutItem Caption="@($"Tag Name")" Field="@nameof(SetMachineTagModel.TagName)" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6" /> *@
+                    <DxFormLayoutItem Caption="@(localizer["Machine Name"])" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6">
+                        <DxTextBox @bind-Text="@setMachineTagModel.MachineName" ShowValidationIcon="true" ReadOnly="true"></DxTextBox>
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="@(localizer["Tag Name"])" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6">
+                        <DxTextBox @bind-Text="@setMachineTagModel.TagName" ShowValidationIcon="true" ReadOnly="true"></DxTextBox>
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem Caption="@(localizer["Value String"])" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                        <DxTextBox @bind-Text="@setMachineTagModel.ValueString" ShowValidationIcon="true" ShowValidationSuccessState="true"></DxTextBox>
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem ColSpanLg="12">
+                        <hr />
+                    </DxFormLayoutItem>
+                    <DxFormLayoutItem ColSpanLg="12">
+                        <DxToolbar ItemRenderStyleMode="@ToolbarRenderStyleMode.Contained" SizeMode="SizeMode.Large">
+                            <Items>
+                                <DxToolbarItem RenderStyle="ButtonRenderStyle.Info" SubmitFormOnClick="true" IconCssClass="oi oi-share" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
+                            </Items>
+                        </DxToolbar>
+                    </DxFormLayoutItem>
+                </DxFormLayout>
+            </EditForm>
+        </BodyContentTemplate>
+    </DxPopup>
+
+    <DxPopup @ref="@warningPopup" CloseOnOutsideClick="false" Width="50rem">
+        <BodyContentTemplate Context="bodycontext">
+            <DxGrid Data="@tagWarningConditions">
+                <Columns>
+                    <DxGridDataColumn Caption="@($"{localizer["Is Warning"]}")" FieldName="@nameof(TagWarningCondition.IsWarning)">
+                        <CellDisplayTemplate>
+                            <div class="text-center">
+                                <i class="bi bi-exclamation-triangle@( ((bool)context.Value) ? "-fill text-warning" : string.Empty )"></i>
+                            </div>
+                        </CellDisplayTemplate>
+                    </DxGridDataColumn>
+                    <DxGridDataColumn Caption="@($"{localizer["Trigger Time"]}")" FieldName="@nameof(TagWarningCondition.WarningTime)" DisplayFormat="G" />
+                    <DxGridDataColumn Caption="@($"{localizer["Name"]}")" FieldName="@nameof(TagWarningCondition.Name)"></DxGridDataColumn>
+                    <DxGridDataColumn Caption="@($"{localizer["Logic Comparison"]}")" FieldName="@nameof(TagWarningCondition.ComparisonCode)">
+                        <CellDisplayTemplate>
+                            <div class="text-center">
+                                @(MachineTypeEnumHelper.GetLogicalOperationSymbol((int)context.Value))
+                            </div>
+                        </CellDisplayTemplate>
+                    </DxGridDataColumn>
+                    <DxGridDataColumn Caption="@($"{localizer["Target Value"]}")" FieldName="@nameof(TagWarningCondition.TargetValueString)"></DxGridDataColumn>
+                    <DxGridDataColumn Caption="@($"{localizer["Warning Message"]}")" FieldName="@nameof(TagWarningCondition.WarningMessage)"></DxGridDataColumn>
+                </Columns>
+            </DxGrid>
+        </BodyContentTemplate>
+    </DxPopup>
+}
+
+
+@code {
+    [Parameter]
+    public string MachineId { get; set; } = null!;
+    public Machine? Machine { get; set; } = null!;
+    private bool hasMachine => Machine is not null;
+
+    private IEnumerable<TagCategory> tagCategories = new List<TagCategory>();
+
+    DxPopup? setTagPopup { get; set; }
+    private Tag? targetTag;
+    private bool targetTagSelected => targetTag is not null;
+
+    private SetMachineTagModel setMachineTagModel = new SetMachineTagModel();
+
+    DxPopup? warningPopup { get; set; }
+    private List<TagWarningCondition> tagWarningConditions => targetTagSelected ? targetTag.TagWarningConditions.ToList() : new List<TagWarningCondition>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Machine = machineService.GetMachineByID(new Guid(MachineId));
+        if (hasMachine)
+        {
+            await RetriveTagCategory();
+            Machine.MachineStatuschangedAct += StatusUpdate;
+            Machine.TagsStatechangedAct += UIUpdate;
+        }
+    }
+
+    void IDisposable.Dispose()
+    {
+        if (hasMachine)
+        {
+            Machine.MachineStatuschangedAct -= StatusUpdate;
+            Machine.TagsStatechangedAct -= UIUpdate;
+        }
+
+    }
+
+    private async Task RetriveTagCategory()
+    {
+        tagCategories = await machineService.GetAllTagCategories();
+    }
+
+    private async Task StatusUpdate(int statusCode)
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task UIUpdate()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ShowSetPopup()
+    => await setTagPopup?.ShowAsync();
+
+    private async Task CloseSetPopup()
+    => await setTagPopup?.CloseAsync();
+
+    private void SetTargetTag(Object tagObj)
+    {
+        if (tagObj is Tag t)
+        {
+            targetTag = t;
+        }
+    }
+    private async Task InitSetTagModel()
+    {
+        if (targetTagSelected)
+        {
+            setMachineTagModel = new SetMachineTagModel
+                {
+                    MachineName = Machine.Name,
+                    TagName = targetTag.Name,
+                    DataType = targetTag.DataType,
+                    ValueString = targetTag.ValueString,
+                };
+            await ShowSetPopup();
+        }
+
+    }
+
+    private async Task SetTagClicked(Object tagObj)
+    {
+        SetTargetTag(tagObj);
+        await InitSetTagModel();
+    }
+
+    private async Task SetTagValue()
+    {
+        var setRes = await machineService.SetMachineTagByString(setMachineTagModel.MachineName, setMachineTagModel.TagName, setMachineTagModel.ValueString);
+        await CloseSetPopup();
+        notificationService.ShowToast(setRes);
+    }
+
+    private async Task ShowWarningDetails(Object tagObj)
+    {
+        SetTargetTag(tagObj);
+        await ShowWarningPopup();
+    }
+
+    private async Task ShowWarningPopup()
+    => await warningPopup?.ShowAsync();
+
+    private async Task CloseWarningPopup()
+    => await warningPopup?.CloseAsync();
+}

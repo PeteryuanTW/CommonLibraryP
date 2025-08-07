@@ -3,19 +3,24 @@
 @rendermode RenderMode.InteractiveServer
 @inject MapService mapService
 @inject NotificationService notificationService
+@inject NavigationManager nav
+
+@inject IStringLocalizer<MapLanguage> localizer
 
 <DxGrid @ref="@mapGrid" Data="@mapConfigs" @bind-SelectedDataItem="@taregtMapConfigObj" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" HighlightRowOnHover="true" DataItemDeleting="DeleteMap">
     <ToolbarTemplate>
-        <DxToolbar SizeMode="SizeMode.Large" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
-            <DxToolbarItem IconCssClass="oi oi-plus" Click="NewMap" BeginGroup="true" />
-            <DxToolbarItem IconCssClass="oi oi-pencil" Text="@(targetMapConfig?.Name)" Enabled="mapSelected" Click="ShowMapPopup" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
-            <DxToolbarItem IconCssClass="oi oi-trash" Enabled="mapSelected" Click="ShowMapDelete" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
+        <DxToolbar Title="@(targetMapConfig?.Name)" SizeMode="SizeMode.Large" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+            <DxToolbarItem IconCssClass="oi oi-plus" Click="@NewMap" BeginGroup="true" />
+            <DxToolbarItem IconCssClass="oi oi-pencil" Enabled="mapSelected" Click="@ShowMapPopup" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+            <DxToolbarItem IconCssClass="bi bi-pin-map-fill" Enabled="mapSelected" Click="@NavToEditor" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" />
+            <DxToolbarItem IconCssClass="bi bi-map" Enabled="mapSelected" Click="@NavToDashboard" RenderStyle="ButtonRenderStyle.Success" BeginGroup="true" />
+            <DxToolbarItem IconCssClass="oi oi-trash" Enabled="mapSelected" Click="@ShowMapDelete" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
         </DxToolbar>
     </ToolbarTemplate>
     <Columns>
-        <DxGridDataColumn FieldName="@nameof(MapConfig.Name)" />
-        <DxGridDataColumn FieldName="@nameof(MapConfig.ImageName)" />
-        <DxGridDataColumn FieldName="@nameof(MapConfig.ImageType)" />
+        <DxGridDataColumn Caption="@(localizer["Name"])" FieldName="@nameof(MapConfig.Name)" />
+        <DxGridDataColumn Caption="@(localizer["Image Name"])" FieldName="@nameof(MapConfig.ImageName)" />
+        <DxGridDataColumn Caption="@(localizer["Image Type"])" FieldName="@nameof(MapConfig.ImageType)" />
     </Columns>
 </DxGrid>
 
@@ -24,23 +29,23 @@
         <EditForm Model="@targetMapConfig" Context="EditFormContext" OnValidSubmit="UpsertMap">
             <DataAnnotationsValidator />
             <DxFormLayout>
-                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Map Name" ColSpanLg="6">
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@(localizer["Name"])" ColSpanLg="6">
                     <DxTextBox @bind-Text="@targetMapConfig.Name" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
                 <DxFormLayoutItem ColSpanLg="6">
                     <DxFileInput FilesUploading="OnFilesUploading"
-                                 AllowMultiFileUpload="false"
-                                 MaxFileSize="15000000"
-                                 AcceptedFileTypes="AllowedFileExtensions">
+                    AllowMultiFileUpload="false"
+                    MaxFileSize="15000000"
+                    AcceptedFileTypes="AllowedFileExtensions">
                     </DxFileInput>
                 </DxFormLayoutItem>
-                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Image Name" ColSpanLg="6" >
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@(localizer["Image Name"])" ColSpanLg="6">
                     <DxTextBox @bind-Text="@targetMapConfig.ImageName" ShowValidationIcon="true" Enabled="false" />
                 </DxFormLayoutItem>
-                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Image Type" ColSpanLg="6">
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@(localizer["Image Type"])" ColSpanLg="6">
                     <DxTextBox @bind-Text="@targetMapConfig.ImageType" Enabled="false" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
-                
+
                 <DxFormLayoutItem ColSpanLg="12">
                     <hr />
                 </DxFormLayoutItem>
@@ -57,6 +62,12 @@
 </DxPopup>
 
 @code {
+    [Parameter]
+    public string EditorRoute { get; set; } = "MapEditor";
+    [Parameter]
+    public string DashboardRoute { get; set; } = "MapDashboard";
+
+
     #region map
 
     IGrid? mapGrid { get; set; }
@@ -157,4 +168,14 @@
 
 
     #endregion
+
+    private void NavToEditor()
+    {
+        nav.NavigateTo($"/{EditorRoute}/{targetMapConfig?.Id}");
+    }
+    private void NavToDashboard()
+    {
+        nav.NavigateTo($"/{DashboardRoute}/{targetMapConfig?.Id}");
+
+    }
 }

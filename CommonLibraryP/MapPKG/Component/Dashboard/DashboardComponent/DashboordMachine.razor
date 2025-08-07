@@ -1,0 +1,103 @@
+﻿@namespace CommonLibraryP.MapPKG.Component
+@rendermode RenderMode.InteractiveServer
+@inject MachineService machineService
+
+@inherits DashboardComponentBase
+
+@if (isBinding)
+{
+    <div class="rounded" style="@($"{SizePositionStyle} background-color:{CommonEnumHelper.GetStatusDetail(machine?.StatusCode ?? 0).GetColorHTMLString(180)}; border: 2px solid {CommonEnumHelper.GetStatusDetail(machine?.StatusCode ?? 0).GetColorHTMLString(255)};")">
+        <DxGridLayout>
+            <Rows>
+                <DxGridLayoutRow />
+            </Rows>
+            <Columns>
+                <DxGridLayoutColumn />
+            </Columns>
+            <Items>
+                <DxGridLayoutItem Row="0" Column="0">
+                    <Template>
+                        <div class="d-flex justify-content-center align-items-center h-100 w-100">
+                            @* @CommonEnumHelper.GetStatusDetail(machine.StatusCode).DisplayName *@
+                            @machine?.Name
+                        </div>
+                    </Template>
+                </DxGridLayoutItem>
+            </Items>
+        </DxGridLayout>
+        @if (machine?.HasWarning ?? false)
+        {
+            <span id="@($"badge_{MapComponentParam?.Id}")" @onmouseenter="@ShowFlyout" @onmouseleave="@CloseFlyout"
+            class="position-absolute top-0 start-100 translate-middle p-2 border border-warning rounded-circle bg-@(machine.HasWarningTriggered?"warning":"light")">
+            </span>
+        }
+    </div>
+    <DxFlyout @ref="@dxFlyout"
+    PositionTarget=@($"#badge_{MapComponentParam?.Id}")
+    AnimationType=@FlyoutAnimationType.Fade
+    PreventCloseOnPositionTargetClick="true"
+    MinWidth="2rem"
+    MaxWidth="10rem"
+    Position=@(FlyoutPosition.Auto)>
+        <BodyContentTemplate>
+            <div class="custom-flyout-body">
+                @machine?.WarningMsg
+            </div>
+        </BodyContentTemplate>
+    </DxFlyout>
+}
+
+
+@code {
+    private Machine? machine;
+    private bool isBinding => machine is not null;
+
+    private DxFlyout? dxFlyout { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await BindingToTarget();
+    }
+
+    protected override async Task BindingToTarget()
+    {
+        if (MapComponentParam is MapComponentMachine mapComponentMachine)
+        {
+            machine = await machineService.GetMachineByIDAsync(mapComponentMachine.MachineId);
+            if (machine is not null)
+            {
+                machine.MachineStatuschangedAct += UpdateStatus;
+                machine.TagsStatechangedAct += UpdateTagStatus;
+            }
+        }
+
+    }
+
+    private async Task UpdateStatus(int i)
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task UpdateTagStatus()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ShowFlyout(MouseEventArgs args)
+    {
+        if (machine?.HasWarningTriggered ?? false)
+        {
+            await dxFlyout?.ShowAsync();
+        }
+
+    }
+
+    private async Task CloseFlyout(MouseEventArgs args)
+    {
+        if (machine?.HasWarningTriggered ?? false)
+        {
+            await dxFlyout?.CloseAsync();
+        }
+        
+    }
+}

@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using CommonLibraryP.Data;
 using System.Net;
 using static System.Formats.Asn1.AsnWriter;
+using System.Runtime.CompilerServices;
 
 namespace CommonLibraryP.MachinePKG
 {
@@ -84,7 +85,7 @@ namespace CommonLibraryP.MachinePKG
         #region machine
         private List<Machine> machines = new();
 
-        public Action<Guid, DataEditMode>? MachineConfigChangedAct { get; set; }
+        //public Action<Guid, DataEditMode>? MachineConfigChangedAct { get; set; }
 
         public List<Machine> Machines => machines;
 
@@ -102,7 +103,9 @@ namespace CommonLibraryP.MachinePKG
             using (var scope = scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                var tmp = dbContext.Machines.Include(x => x.TagCategory).ThenInclude(x => x.Tags)
+                var tmp = dbContext.Machines.Include(x => x.TagCategory)
+                    .ThenInclude(x => x.Tags)
+                    .ThenInclude(x => x.TagWarningConditions)
                     .AsSplitQuery()
                     .AsNoTracking()
                     .ToList();
@@ -110,12 +113,12 @@ namespace CommonLibraryP.MachinePKG
                 List<Task> tasks = new();
                 foreach (Machine machine in machines)
                 {
-                    tasks.Add(Task.Run(() =>
+                    tasks.Add(Task.Run(async () =>
                     {
                         machine.InitMachine();
                         if (machine.Enabled)
                         {
-                            machine.StartUpdating();
+                            await machine.StartUpdating();
                         }
                     }));
 
@@ -124,20 +127,20 @@ namespace CommonLibraryP.MachinePKG
             }
         }
 
-        public Machine? InitMachineFromDBById(Guid id)
+        public async Task<Machine?> InitMachineFromDBById(Guid id)
         {
             using (var scope = scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                var tmp = dbContext.Machines.Include(x => x.TagCategory).ThenInclude(x => x.Tags)
+                var tmp = await dbContext.Machines.Include(x => x.TagCategory).ThenInclude(x => x.Tags)
                     .AsSplitQuery()
                     .AsNoTracking()
-                    .FirstOrDefault(x => x.Id == id);
+                    .FirstOrDefaultAsync(x => x.Id == id);
                 tmp = InitMachineToDerivesClass(tmp);
                 tmp.InitMachine();
                 if (tmp.Enabled)
                 {
-                    tmp.StartUpdating();
+                    Task.Run(async () => await tmp.StartUpdating());
                 }
                 return tmp;
             }
@@ -155,14 +158,11 @@ namespace CommonLibraryP.MachinePKG
                     if (exist)
                     {
                         target.Name = machine.Name;
-                        //target.ProcessId = machine.ProcessId;
                         target.Ip = machine.Ip;
                         target.Port = machine.Port;
                         target.ConnectionType = machine.ConnectionType;
                         target.MaxRetryCount = machine.MaxRetryCount;
                         target.TagCategoryId = machine.TagCategoryId;
-                        //target.LogicStatusCategoryId = machine.LogicStatusCategoryId;
-                        //target.ErrorCodeCategoryId = machine.ErrorCodeCategoryId;
                         target.Enabled = machine.Enabled;
                         target.UpdateDelay = machine.UpdateDelay;
                         target.RecordStatusChanged = machine.RecordStatusChanged;
@@ -172,8 +172,13 @@ namespace CommonLibraryP.MachinePKG
                         await dbContext.Machines.AddAsync(machine);
                     }
                     await dbContext.SaveChangesAsync();
-                    DataEditMode dataEditMode = exist ? DataEditMode.Update : DataEditMode.Insert;
-                    await RefreshMachine(machine, dataEditMode);
+
+                    if (exist)
+                    {
+                        await RemoveMachineFromList(machine);
+                    }
+                    var newMachine = await InitMachineFromDBById(machine.Id);
+                    await AddMachineToList(newMachine);
                     return new(2, $"upsert machine {machine.Name} success");
                 }
                 catch (Exception e)
@@ -196,7 +201,7 @@ namespace CommonLibraryP.MachinePKG
                     {
                         dbContext.Remove(target);
                         await dbContext.SaveChangesAsync();
-                        await RefreshMachine(target, DataEditMode.Delete);
+                        await RemoveMachineFromList(target);
                         return new(2, $"Delete machine {machine.Name} success");
                     }
                     else
@@ -260,35 +265,54 @@ namespace CommonLibraryP.MachinePKG
 
         }
 
-        public void MachineConfigChanged(Guid id, DataEditMode mode)
-        {
-            MachineConfigChangedAct?.Invoke(id, mode);
-        }
+        //public void MachineConfigChanged(Guid id, DataEditMode mode)
+        //{
+        //    MachineConfigChangedAct?.Invoke(id, mode);
+        //}
 
-        public async Task RefreshMachine(Machine machine, DataEditMode dataEditMode)
+        //public async Task RefreshMachine(Machine machine, DataEditMode dataEditMode)
+        //{
+        //    var target = await GetMachineByIDAsync(machine.Id);
+        //    if (target != null)
+        //    {
+        //        //update or delete
+
+
+        //        if (dataEditMode != DataEditMode.Delete)
+        //        {
+        //            machines.Add(await InitMachineFromDBById(machine.Id));
+        //        }
+        //        else
+        //        {
+        //        }
+        //    }
+        //    else
+        //    {
+        //        machines.Add(await InitMachineFromDBById(machine.Id));
+        //    }
+        //    MachineConfigChanged(machine.Id, dataEditMode);
+        //}
+        private async Task RemoveMachineFromList(Machine machine)
         {
             var target = await GetMachineByIDAsync(machine.Id);
-            if (target != null)
+            if (target is not null)
             {
-                //update or delete
                 target.MachineStatechangedRecordAct -= MachineStatusChangedRecord;
                 machines.Remove(target);
                 target.Dispose();
-
-                if (dataEditMode != DataEditMode.Delete)
-                {
-                    machines.Add(InitMachineFromDBById(machine.Id));
-                }
-                else
-                {
-                }
             }
-            else
-            {
-                machines.Add(InitMachineFromDBById(machine.Id));
-            }
-            MachineConfigChanged(machine.Id, dataEditMode);
         }
+
+        private async Task AddMachineToList(Machine machine)
+        {
+            var target = await GetMachineByIDAsync(machine.Id);
+            if (target is null)
+            {
+                machines.Add(machine);
+            }
+        }
+
+
 
         public async Task MachineStatusChangedRecord(Machine machine, MachineStatusRecordType machineStatusRecordType)
         {
@@ -368,6 +392,46 @@ namespace CommonLibraryP.MachinePKG
             }
         }
 
+        public async IAsyncEnumerable<MachineStatusInterval> CalculateStatusIntervalsAsyncStream(List<MachineStatusLog> logs, IProgress<int>? progress = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            if (logs == null || logs.Count == 0)
+                yield break;
+
+            var orderedLogs = logs.OrderBy(log => log.LogTime).ToList();
+
+            DateTime currentStart = orderedLogs[0].LogTime;
+            int currentStatus = orderedLogs[0].Status;
+
+            int total = orderedLogs.Count;
+
+            for (int i = 1; i < total; i++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var currentLog = orderedLogs[i];
+
+                if (currentLog.Status != currentStatus)
+                {
+                    yield return new MachineStatusInterval(currentStart, currentLog.LogTime, currentStatus);
+                    currentStart = currentLog.LogTime;
+                    currentStatus = currentLog.Status;
+                }
+
+                // 模擬非同步處理
+                await Task.Yield();
+
+                // 回報進度（整數百分比）
+                int percent = (int)((i / (double)total) * 100);
+                progress?.Report(percent);
+            }
+
+            // 最後一段
+            yield return new MachineStatusInterval(currentStart, DateTime.Now, currentStatus);
+            progress?.Report(100);
+        }
+
+
+
         public Task<RequestResult> ClearMachineStatusLogBeforeSpecificTime(DateTime? time)
         {
             var t = time is null ? DateTime.Now : time.Value;
@@ -412,7 +476,7 @@ namespace CommonLibraryP.MachinePKG
             using (var scope = scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                return Task.FromResult(dbContext.TagCategories.Include(x => x.Tags).AsNoTracking().ToList());
+                return Task.FromResult(dbContext.TagCategories.Include(x => x.Tags).ThenInclude(x => x.TagWarningConditions).AsNoTracking().ToList());
             }
         }
 
@@ -607,7 +671,7 @@ namespace CommonLibraryP.MachinePKG
             Machine? targetMachine = await GetMachineByName(machineName);
             if (targetMachine != null)
             {
-                if (targetMachine.hasCategory)
+                if (targetMachine.HasCategory)
                 {
                     Tag? targetTag = targetMachine.TagCategory.Tags.FirstOrDefault(x => x.Name == tagName);
                     if (targetTag != null)
@@ -628,7 +692,7 @@ namespace CommonLibraryP.MachinePKG
             Machine? targetMachine = GetMachineByID(machineId);
             if (targetMachine != null)
             {
-                if (targetMachine.hasCategory)
+                if (targetMachine.HasCategory)
                 {
                     Tag? targetTag = targetMachine.TagCategory.Tags.FirstOrDefault(x => x.Id == tagId);
                     if (targetTag != null)
@@ -651,7 +715,7 @@ namespace CommonLibraryP.MachinePKG
                 {
                     return new(4, $"Machine {machineName} status {targetMachine.StatusStr} is not avaulable now");
                 }
-                if (targetMachine.hasCategory)
+                if (targetMachine.HasCategory)
                 {
                     Tag? targetTag = targetMachine.TagCategory.Tags.FirstOrDefault(x => x.Name == tagName);
                     if (targetTag != null)
@@ -683,7 +747,7 @@ namespace CommonLibraryP.MachinePKG
                 {
                     return new(4, $"Machine {machineName} status {targetMachine.StatusStr} is not avaulable now");
                 }
-                if (targetMachine.hasCategory)
+                if (targetMachine.HasCategory)
                 {
                     Tag? targetTag = targetMachine.TagCategory.Tags.FirstOrDefault(x => x.Name == tagName);
                     if (targetTag != null)
@@ -793,7 +857,7 @@ namespace CommonLibraryP.MachinePKG
             Machine? targetMachine = GetMachineByID(machineId);
             if (targetMachine != null)
             {
-                if (targetMachine.hasCategory)
+                if (targetMachine.HasCategory)
                 {
                     Tag? targetTag = targetMachine.TagCategory.Tags.FirstOrDefault(x => x.Id == tagId);
                     if (targetTag != null)
@@ -821,354 +885,88 @@ namespace CommonLibraryP.MachinePKG
 
         #endregion
 
-        #region condition
+        #region tag warning condition
+        public async Task<RequestResult> UpsertTagWarningConditionTPC(TagWarningCondition tagWarningCondition)
+        {
+            switch (tagWarningCondition)
+            {
+                case TagWarningUshortCondition tagWarningUshortCondition:
+                    return await UpsertTagWarningCondition<TagWarningUshortCondition>(tagWarningUshortCondition);
+                case TagWarningBoolCondition tagWarningBoolCondition:
+                    return await UpsertTagWarningCondition<TagWarningBoolCondition>(tagWarningBoolCondition);
+                default:
+                    return new(4, $"upsert tag warning condition {tagWarningCondition.Name} fail(downcasting fail)");
+            }
+        }
+        private async Task<RequestResult> UpsertTagWarningCondition<T>(T newWarningCondition) where T : TagWarningCondition
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                try
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+                    var targetWarningCondition = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == newWarningCondition.Id);
+                    if (targetWarningCondition is not null)
+                    {
+                        dbContext.Entry<T>(targetWarningCondition).CurrentValues.SetValues(newWarningCondition);
+                    }
+                    else
+                    {
+                        dbContext.Set<T>().Add(newWarningCondition);
+                    }
+                    await dbContext.SaveChangesAsync();
+                    return new(2, $"upsert tag warning condition {newWarningCondition.Name} success");
+                }
+                catch (Exception e)
+                {
+                    return new(4, $"upsert tag warning condition {newWarningCondition.Name} fail({e.Message})");
+                }
 
-        //private List<Condition> conditions = new();
-        //public List<Condition> Conditions => conditions;
-        //public async Task InitConditions()
-        //{
-        //    conditions = await InitAllConditionsHierarchical();
-        //    foreach (var condition in conditions)
-        //    {
-        //        if (condition.Enable)
-        //        {
-        //            condition.StartMonitorThread(this);
-        //        }
+            }
+        }
 
-        //    }
-        //}
 
-        //private async Task<List<Condition>> InitAllConditionsHierarchical()
-        //{
-        //    using (var scope = scopeFactory.CreateScope())
-        //    {
-        //        var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-        //        return await dbContext.Conditions.Include(x => x.ConditionNodes.Where(x => x.ParentNodeId == null))
-        //            .ThenInclude(x => x.ChildNodes)
-        //            .Include(x => x.ConditionActions.OrderBy(x => x.Sequence))
-        //            .AsSplitQuery()
-        //            .AsNoTracking()
-        //            .ToListAsync();
-        //    }
-        //}
+        public async Task<RequestResult> DeleteTagWarningConditionTCP(TagWarningCondition targetTagWarningCondition)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                switch (targetTagWarningCondition)
+                {
+                    case TagWarningUshortCondition tagWarningUshortCondition:
+                        return await DeleteTagWarningCondition<TagWarningUshortCondition>(tagWarningUshortCondition);
+                    case TagWarningBoolCondition tagWarningBoolCondition:
+                        return await DeleteTagWarningCondition<TagWarningBoolCondition>(tagWarningBoolCondition);
+                    default:
+                        return new(4, $"delete tag warning condition {targetTagWarningCondition.Name} fail(downcasting fail)");
+                }
+            }
+        }
 
-        //private async Task<Condition?> InitConditionsHierarchicalById(Guid id)
-        //{
-        //    using (var scope = scopeFactory.CreateScope())
-        //    {
-        //        var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-        //        return await dbContext.Conditions.Include(x => x.ConditionNodes.Where(x => x.ParentNodeId == null))
-        //            .ThenInclude(x => x.ChildNodes)
-        //            .Include(x => x.ConditionActions.OrderBy(x => x.Sequence))
-        //            .AsSplitQuery()
-        //            .AsNoTracking()
-        //            .FirstOrDefaultAsync(x => x.Id == id);
-        //    }
-        //}
-
-        //public Condition? GetConditionById(Guid id)
-        //    => conditions.FirstOrDefault(x => x.Id == id);
-
-        //public async Task<List<Condition>> GetAllConditionsConfig()
-        //{
-        //    using (var scope = scopeFactory.CreateScope())
-        //    {
-        //        var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-        //        return await dbContext.Conditions.Include(x => x.ConditionNodes.Where(x => x.ParentNodeId == null))
-        //            .ThenInclude(x => x.ChildNodes)
-        //            .Include(x => x.ConditionActions.OrderBy(x => x.Sequence))
-        //            .AsSplitQuery()
-        //            .AsNoTracking()
-        //            .ToListAsync();
-        //    }
-        //}
-
-        //public async Task<List<ConditionNode>> GetConditionNodesFlatById(Guid conditionId)
-        //{
-        //    using (var scope = scopeFactory.CreateScope())
-        //    {
-        //        var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-        //        return await dbContext.ConditionNodes.Where(x => x.ConditionId == conditionId)
-        //            .AsNoTracking()
-        //            .ToListAsync();
-        //    }
-        //}
-
-        //public async Task<RequestResult> UpsertCondition(Condition condition)
-        //{
-        //    using (var scope = scopeFactory.CreateScope())
-        //    {
-        //        try
-        //        {
-        //            var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-        //            var target = dbContext.Conditions.FirstOrDefault(x => x.Id == condition.Id);
-        //            bool exist = target is not null;
-        //            if (exist)
-        //            {
-        //                target.Name = condition.Name;
-        //                target.Enable = condition.Enable;
-        //            }
-        //            else
-        //            {
-        //                await dbContext.Conditions.AddAsync(condition);
-        //            }
-        //            await dbContext.SaveChangesAsync();
-        //            //DataEditMode dataEditMode = exist ? DataEditMode.Update : DataEditMode.Insert;
-        //            //await RefreshMachine(machine, dataEditMode);
-        //            return new(2, $"upsert condition {condition.Name} success");
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            return new(4, $"upsert condition {condition.Name} fail({e.Message})");
-        //        }
-
-        //    }
-        //}
-        //public async Task<RequestResult> DeleteCondition(Condition condition)
-        //{
-        //    using (var scope = scopeFactory.CreateScope())
-        //    {
-        //        try
-        //        {
-        //            var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-        //            var target = dbContext.Conditions.FirstOrDefault(x => x.Id == condition.Id);
-        //            if (target != null)
-        //            {
-        //                dbContext.Remove(target);
-        //                await dbContext.SaveChangesAsync();
-        //                return new(2, $"Delete condition {target.Name} success");
-        //            }
-        //            else
-        //            {
-        //                return new(4, $"condition {condition.Name} not found");
-        //            }
-
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            return new(4, $"Delete condition {condition.Name} fail({e.Message})");
-        //        }
-
-        //    }
-        //}
-
-        //public async Task<RequestResult> UpsertConditionNodeTPC(ConditionNode conditionNode)
-        //{
-        //    if (conditionNode is ConditionLogicNode conditionLogicNode)
-        //    {
-        //        return await UpsertConditionNode<ConditionLogicNode>(conditionLogicNode);
-        //    }
-        //    else if (conditionNode is ConditionConstDataNode conditionConstDataNode)
-        //    {
-        //        return await UpsertConditionNode<ConditionConstDataNode>(conditionConstDataNode);
-        //    }
-        //    else if (conditionNode is ConditionTagDataNode conditionTagDataNode)
-        //    {
-        //        return await UpsertConditionNode<ConditionTagDataNode>(conditionTagDataNode);
-        //    }
-        //    else
-        //    {
-        //        return new(4, $"upsert condition node {conditionNode.Name} fail(downcasting fail)");
-        //    }
-        //}
-
-        //private async Task<RequestResult> UpsertConditionNode<T>(T conditionNode) where T : ConditionNode
-        //{
-        //    using (var scope = scopeFactory.CreateScope())
-        //    {
-        //        try
-        //        {
-        //            var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-        //            var existingNode = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == conditionNode.Id);
-        //            if (existingNode is not null)
-        //            {
-        //                dbContext.Entry<T>(existingNode).CurrentValues.SetValues(conditionNode);
-        //            }
-        //            else
-        //            {
-        //                dbContext.Set<T>().Add(conditionNode);
-        //            }
-        //            await dbContext.SaveChangesAsync();
-        //            return new(2, $"upsert condition node {conditionNode.Name} success");
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            return new(4, $"upsert condition node {conditionNode.Name} fail({e.Message})");
-        //        }
-
-        //    }
-        //}
-
-        //public async Task<RequestResult> DeleteConditionNodeTCP(ConditionNode conditionNode)
-        //{
-        //    using (var scope = scopeFactory.CreateScope())
-        //    {
-        //        if (conditionNode is ConditionLogicNode conditionLogicNode)
-        //        {
-        //            return await DeleteConditionNode<ConditionLogicNode>(conditionLogicNode);
-        //        }
-        //        else if (conditionNode is ConditionConstDataNode conditionConstDataNode)
-        //        {
-        //            return await DeleteConditionNode<ConditionConstDataNode>(conditionConstDataNode);
-        //        }
-        //        else if (conditionNode is ConditionTagDataNode conditionTagDataNode)
-        //        {
-        //            return await DeleteConditionNode<ConditionTagDataNode>(conditionTagDataNode);
-        //        }
-        //        else
-        //        {
-        //            return new(4, $"delete condition node {conditionNode.Name} fail(downcasting fail)");
-        //        }
-        //    }
-        //}
-
-        //private async Task<RequestResult> DeleteConditionNode<T>(T conditionNode) where T : ConditionNode
-        //{
-        //    using (var scope = scopeFactory.CreateScope())
-        //    {
-        //        try
-        //        {
-        //            var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-        //            var existingNode = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == conditionNode.Id);
-        //            if (existingNode is not null)
-        //            {
-        //                dbContext.Entry(existingNode).State = EntityState.Deleted;
-        //            }
-        //            else
-        //            {
-        //                return new(4, $"condition node {conditionNode.Name} not found");
-        //            }
-        //            await dbContext.SaveChangesAsync();
-        //            return new(2, $"delete condition node {conditionNode.Name} success");
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            return new(4, $"delete condition node {conditionNode.Name} fail({e.Message})");
-        //        }
-        //    }
-        //}
-
-        //public async Task<RequestResult> UpsertConditionActionTPC(ConditionAction conditionAction)
-        //{
-        //    if (conditionAction is AwaitAction awaitAction)
-        //    {
-        //        return await UpsertConditionAction<AwaitAction>(awaitAction);
-        //    }
-        //    else if (conditionAction is SetTagAction setTagAction)
-        //    {
-        //        return await UpsertConditionAction<SetTagAction>(setTagAction);
-        //    }
-        //    else
-        //    {
-        //        return new(4, $"upsert condition action {conditionAction.Name} fail(downcasting fail)");
-        //    }
-        //}
-
-        //private async Task<RequestResult> UpsertConditionAction<T>(T conditionAction) where T : ConditionAction
-        //{
-        //    using (var scope = scopeFactory.CreateScope())
-        //    {
-        //        try
-        //        {
-
-        //            var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-        //            var existingAction = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == conditionAction.Id);
-        //            if (existingAction is not null)
-        //            {
-        //                dbContext.Entry<T>(existingAction).CurrentValues.SetValues(conditionAction);
-        //            }
-        //            else
-        //            {
-        //                dbContext.Set<T>().Add(conditionAction);
-        //            }
-        //            await dbContext.SaveChangesAsync();
-        //            return new(2, $"upsert condition action {conditionAction.Name} success");
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            return new(4, $"upsert condition action {conditionAction.Name} fail({e.Message})");
-        //        }
-
-        //    }
-        //}
-
-        //public async Task<RequestResult> DeleteConditionActionTPC(ConditionAction conditionAction)
-        //{
-        //    using (var scope = scopeFactory.CreateScope())
-        //    {
-        //        if (conditionAction is AwaitAction awaitAction)
-        //        {
-        //            return await DeleteConditionAction<AwaitAction>(awaitAction);
-        //        }
-        //        else if (conditionAction is SetTagAction setTagAction)
-        //        {
-        //            return await DeleteConditionAction<SetTagAction>(setTagAction);
-        //        }
-        //        else
-        //        {
-        //            return new(4, $"delete condition node {conditionAction.Name} fail(downcasting fail)");
-        //        }
-        //    }
-        //}
-
-        //private async Task<RequestResult> DeleteConditionAction<T>(T conditionAction) where T : ConditionAction
-        //{
-        //    using (var scope = scopeFactory.CreateScope())
-        //    {
-        //        try
-        //        {
-        //            var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-        //            var existingNode = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == conditionAction.Id);
-        //            if (existingNode is not null)
-        //            {
-        //                dbContext.Entry(existingNode).State = EntityState.Deleted;
-        //            }
-        //            else
-        //            {
-        //                return new(4, $"condition node {conditionAction.Name} not found");
-        //            }
-        //            await dbContext.SaveChangesAsync();
-        //            return new(2, $"delete condition node {conditionAction.Name} success");
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            return new(4, $"delete condition node {conditionAction.Name} fail({e.Message})");
-        //        }
-        //    }
-        //}
-
-        //public async Task RefreshComdition(Condition condition, DataEditMode dataEditMode)
-        //{
-        //    var target = GetConditionById(condition.Id);
-        //    if (target != null)
-        //    {
-        //        //update or delete
-        //        conditions.Remove(target);
-        //        target.StopMonitorThread();
-
-        //        if (dataEditMode != DataEditMode.Delete)
-        //        {
-        //            var tmp = await InitConditionsHierarchicalById(target.Id);
-        //            if (tmp is not null)
-        //            {
-        //                conditions.Add(tmp);
-        //            }
-        //        }
-        //        else
-        //        {
-        //        }
-        //    }
-        //    else
-        //    {
-        //        var tmp = await InitConditionsHierarchicalById(target.Id);
-        //        if (tmp is not null)
-        //        {
-        //            conditions.Add(tmp);
-        //        }
-        //    }
-        //    //MachineConfigChanged(condition.Id, dataEditMode);
-        //}
-
+        private async Task<RequestResult> DeleteTagWarningCondition<T>(T targetTagWarningCondition) where T : TagWarningCondition
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                try
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
+                    var existingNode = await dbContext.Set<T>().FirstOrDefaultAsync(x => x.Id == targetTagWarningCondition.Id);
+                    if (existingNode is not null)
+                    {
+                        dbContext.Entry(existingNode).State = EntityState.Deleted;
+                    }
+                    else
+                    {
+                        return new(4, $"tag warning condition {targetTagWarningCondition.Name} not found");
+                    }
+                    await dbContext.SaveChangesAsync();
+                    return new(2, $"delete tag warning condition {targetTagWarningCondition.Name} success");
+                }
+                catch (Exception e)
+                {
+                    return new(4, $"delete tag warning condition {targetTagWarningCondition.Name} fail({e.Message})");
+                }
+            }
+        }
         #endregion
     }
 }

@@ -14,14 +14,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Remove="MachinePKG\EFModel\AwaitAction.cs" />
-		<Compile Remove="MachinePKG\EFModel\Condition.cs" />
-		<Compile Remove="MachinePKG\EFModel\ConditionAction.cs" />
-		<Compile Remove="MachinePKG\EFModel\ConditionConstDataNode.cs" />
-		<Compile Remove="MachinePKG\EFModel\ConditionLogicNode.cs" />
-		<Compile Remove="MachinePKG\EFModel\ConditionNode.cs" />
-		<Compile Remove="MachinePKG\EFModel\ConditionTagDataNode.cs" />
-		<Compile Remove="MachinePKG\EFModel\SetTagAction.cs" />
 		<Compile Remove="MachinePKG\EFPartialModel\AwaitAction.partial.cs" />
 		<Compile Remove="MachinePKG\EFPartialModel\Condition.partial.cs" />
 		<Compile Remove="MachinePKG\EFPartialModel\ConditionAction.partial.cs" />
@@ -41,14 +33,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="MachinePKG\EFModel\AwaitAction.cs" />
-		<None Include="MachinePKG\EFModel\Condition.cs" />
-		<None Include="MachinePKG\EFModel\ConditionAction.cs" />
-		<None Include="MachinePKG\EFModel\ConditionConstDataNode.cs" />
-		<None Include="MachinePKG\EFModel\ConditionLogicNode.cs" />
-		<None Include="MachinePKG\EFModel\ConditionNode.cs" />
-		<None Include="MachinePKG\EFModel\ConditionTagDataNode.cs" />
-		<None Include="MachinePKG\EFModel\SetTagAction.cs" />
 		<None Include="MachinePKG\EFPartialModel\AwaitAction.partial.cs" />
 		<None Include="MachinePKG\EFPartialModel\Condition.partial.cs" />
 		<None Include="MachinePKG\EFPartialModel\ConditionAction.partial.cs" />
@@ -85,6 +69,7 @@
 		<PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
 		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="8.2.0" />
 		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.1" />
+		<PackageReference Include="System.Linq.Async" Version="6.0.3" />
 		<PackageReference Include="Z.Blazor.Diagrams" Version="3.0.3" />
 	</ItemGroup>
 
@@ -93,6 +78,11 @@
 			<DesignTime>True</DesignTime>
 			<AutoGen>True</AutoGen>
 			<DependentUpon>MachineLanguage.resx</DependentUpon>
+		</Compile>
+		<Compile Update="MapPKG\Localization\MapLanguage.Designer.cs">
+		  <DesignTime>True</DesignTime>
+		  <AutoGen>True</AutoGen>
+		  <DependentUpon>MapLanguage.resx</DependentUpon>
 		</Compile>
 		<Compile Update="ShopfloorPKG\Localization\ShopfloorLanguage.Designer.cs">
 			<DesignTime>True</DesignTime>
@@ -103,12 +93,16 @@
 
 	<ItemGroup>
 		<EmbeddedResource Update="MachinePKG\Localization\MachineLanguage.resx">
-			<Generator>ResXFileCodeGenerator</Generator>
+			<Generator>PublicResXFileCodeGenerator</Generator>
 			<LastGenOutput>MachineLanguage.Designer.cs</LastGenOutput>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</EmbeddedResource>
+		<EmbeddedResource Update="MapPKG\Localization\MapLanguage.resx">
+		  <Generator>PublicResXFileCodeGenerator</Generator>
+		  <LastGenOutput>MapLanguage.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
 		<EmbeddedResource Update="ShopfloorPKG\Localization\ShopfloorLanguage.resx">
-			<Generator>ResXFileCodeGenerator</Generator>
+			<Generator>PublicResXFileCodeGenerator</Generator>
 			<LastGenOutput>ShopfloorLanguage.Designer.cs</LastGenOutput>
 		</EmbeddedResource>
 	</ItemGroup>

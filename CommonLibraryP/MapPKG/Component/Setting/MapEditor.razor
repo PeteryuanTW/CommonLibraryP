@@ -14,6 +14,9 @@
 
 @inject MapService mapService
 @inject NotificationService notificationService
+@inject IStringLocalizer<MachineLanguage> machineLocalizer
+@inject IStringLocalizer<ShopfloorLanguage> shopfloorLocalizer
+@inject IStringLocalizer<MapLanguage> mapLocalizer
 
 <head>
     <link href="_content/Z.Blazor.Diagrams/style.min.css" rel="stylesheet" />
@@ -25,15 +28,15 @@
 
 <style>
     .diagram-container {
-        width: 100%;
-        height: 100%;
-        border: 1px solid white;
-        overflow: hidden;
+    width: 100%;
+    height: 100%;
+    border: 1px solid white;
+    overflow: hidden;
     }
 
     .img {
-        cursor: auto;
-        overflow: auto;
+    cursor: auto;
+    overflow: auto;
     }
 </style>
 
@@ -56,15 +59,14 @@
                     <div>
                         <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
                             <Items>
-                                @* <DxToolbarItem IconCssClass="bi bi-info-circle" RenderStyle="ButtonRenderStyle.Info" Enabled="hasContainer" Click="ShowMapInfo" BeginGroup="true" /> *@
                                 <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true">
                                     <Items>
-                                        <DxToolbarItem Text="Machine" Click="NewMapComponentMachine" />
-                                        <DxToolbarItem Text="Station" Click="NewMapComponentStation" BeginGroup="true" />
+                                        <DxToolbarItem Text="@(machineLocalizer["Machine"])" Click="NewMapComponentMachine" />
+                                        <DxToolbarItem Text="@(shopfloorLocalizer["Station"])" Click="NewMapComponentStation" BeginGroup="true" />
                                     </Items>
                                 </DxToolbarItem>
                                 <DxToolbarItem RenderStyle="ButtonRenderStyle.Info" IconCssClass="bi bi-floppy" Click="SaveMapWithComponents" BeginGroup="true" />
-                                <DxToolbarItem RenderStyle="ButtonRenderStyle.Danger" IconCssClass="oi oi-trash" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
+                                <DxToolbarItem RenderStyle="ButtonRenderStyle.Danger" IconCssClass="oi oi-trash" Click="@DeleteComponent" Enabled="@mapComponentSelected" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
                             </Items>
                         </DxToolbar>
                     </div>
@@ -85,7 +87,7 @@
             <DxGridLayoutItem Row="1" Column="1">
                 <Template>
                     <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
-                        <DxFormLayoutItem ColSpanLg="12" Caption="@(targetComponent?.GetType().Name)">
+                        <DxFormLayoutItem ColSpanLg="12" Caption="@(mapLocalizer["Selected Component"])">
                             <DxComboBox @bind-Value="@targetComponent" Data="@mapComponents" TextFieldName="@nameof(MapComponent.Name)"></DxComboBox>
                         </DxFormLayoutItem>
                     </DxFormLayout>
@@ -94,8 +96,8 @@
             <DxGridLayoutItem Row="2" Column="1">
                 <Template>
                     <DxDrawer @bind-IsOpen="@showDrawer" Mode="DrawerMode.Shrink"
-                              Position="DrawerPosition.Right"
-                              PanelWidth="100%">
+                    Position="DrawerPosition.Right"
+                    PanelWidth="100%">
                         <BodyTemplate>
                             <DxFormLayout Data="@targetComponent" CaptionPosition="CaptionPosition.Vertical">
                                 <MapComponentDetail MapComponentParam="@targetComponent" />
@@ -112,36 +114,39 @@
 
 
 
-<DxPopup @ref="@componentPopup" ShowCloseButton="true" Closing="InitParam" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+<DxPopup @ref="@componentPopup" ShowCloseButton="true" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
     <BodyContentTemplate Context="bodycontext">
         <EditForm Model="@targetComponent" Context="EditFormContext" OnValidSubmit="UpsertComponent">
             <DataAnnotationsValidator />
             <DxFormLayout>
                 @if (targetComponent is MapComponentMachine mapComponentMachine)
                 {
-                    <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Target machine" ColSpanLg="6" BeginRow="true">
+                    <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@(mapLocalizer["Target Machine"])" ColSpanLg="6" BeginRow="true">
                         <DxComboBox Data="@machines" @bind-Value="@mapComponentMachine.MachineId" TextFieldName="@nameof(Machine.Name)" ValueFieldName="@nameof(Machine.Id)" ShowValidationIcon="true" />
                     </DxFormLayoutItem>
                 }
                 else if (targetComponent is MapComponentStation mapComponentStation)
                 {
-                    <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Target station" ColSpanLg="6" BeginRow="true">
+                    <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@(mapLocalizer["Target Station"])" ColSpanLg="6" BeginRow="true">
                         <DxComboBox Data="@stations" @bind-Value="@mapComponentStation.StationId" TextFieldName="@nameof(Station.Name)" ValueFieldName="@nameof(Station.Id)" ShowValidationIcon="true" />
                     </DxFormLayoutItem>
                 }
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@(mapLocalizer["Name"])" ColSpanLg="6">
+                    <DxTextBox @bind-Text="@targetComponent.Name" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
                 <DxFormLayoutItem ColSpanLg="12">
                     <hr />
                 </DxFormLayoutItem>
-                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Position X" ColSpanLg="6" BeginRow="true">
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@(mapLocalizer["X Position"])" ColSpanLg="6" BeginRow="true">
                     <DxSpinEdit @bind-Value="@targetComponent.PositionX" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
-                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Position Y" ColSpanLg="6">
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@(mapLocalizer["Y Position"])" ColSpanLg="6">
                     <DxSpinEdit @bind-Value="@targetComponent.PositionY" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
-                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Height" ColSpanLg="6">
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@(mapLocalizer["Height"])" ColSpanLg="6">
                     <DxSpinEdit @bind-Value="@targetComponent.Height" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
-                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="Width" ColSpanLg="6">
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@(mapLocalizer["Width"])" ColSpanLg="6">
                     <DxSpinEdit @bind-Value="@targetComponent.Width" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
                 <DxFormLayoutItem ColSpanLg="12">
@@ -175,7 +180,7 @@
 
     private IEnumerable<Station> stations;
     private IEnumerable<Machine> machines;
-    private IEnumerable<MapComponent>? mapComponents => hasMapConfig ? MapConfig?.MapComponents : new List<MapComponent>();
+    private List<MapComponent> mapComponents = new List<MapComponent>();
     private MapComponent? _targetComponent;
     private MapComponent? targetComponent
     {
@@ -202,7 +207,6 @@
     private readonly List<string> AllowedFileExtensions = new() { ".jpg", ".jpeg", ".png" };
 
     private string imageDisplayByteString => GetImageDisplayByteString();
-
     private string GetImageDisplayByteString()
     {
         try
@@ -238,6 +242,9 @@
     private async Task InitParam()
     {
         MapConfig = await mapService.GetMapAndComponentsById(MapConfigId);
+        mapComponents = hasMapConfig ? MapConfig.MapComponents.ToList() : new List<MapComponent>();
+
+
         stations = await mapService.GetStationsFromShopfloorService();
         machines = await mapService.GetMachinesFromMchineService();
     }
@@ -259,10 +266,6 @@
 
         Diagram.RegisterComponent<MapDiagramNode, MapDiagramNodeComponent>();
         Diagram.RegisterComponent<ResizeControl, ResizeComponent>();
-        // Diagram.RegisterComponent<ResizeControlTop, ResizeTop>();
-        // Diagram.RegisterComponent<ResizeControl, ResizeBottom>();
-        // Diagram.RegisterComponent<ResizeControlLeft, ResizeLeft>();
-        // Diagram.RegisterComponent<ResizeControlRight, ResizeRight>();
 
 
 
@@ -299,7 +302,7 @@
     private async Task CloseComponentPopup()
     {
         await componentPopup?.CloseAsync();
-        await InitParam();
+        //await InitParam();
     }
 
     private async Task NewMapComponentStation()
@@ -316,9 +319,16 @@
 
     private async Task UpsertComponent()
     {
-        var res = await mapService.UpsertMapComponentTPC(targetComponent);
+        mapComponents.Add(targetComponent);
+        await InitNode();
         await CloseComponentPopup();
-        notificationService.ShowToast(res);
+    }
+
+    private async Task DeleteComponent()
+    {
+        mapComponents.Remove(targetComponent);
+        await InitNode();
+        await CloseComponentPopup();
     }
 
     private void AlignNodeToComponent(Blazor.Diagrams.Core.Models.Base.Model? model, Blazor.Diagrams.Core.Events.PointerEventArgs args)

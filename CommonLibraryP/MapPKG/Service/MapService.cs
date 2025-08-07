@@ -108,7 +108,7 @@ namespace CommonLibraryP.MapPKG
                     return new(4, "Components map id error");
                 }
                 var currentComponentsInMap = await GetComponentsInMapById(targetMap.Id);
-                var componentsDelete = currentComponentsInMap.ExceptBy(currentComponentsInMap.Select(p => p.Id), p => p.Id);
+                var componentsDelete = currentComponentsInMap.ExceptBy(mapComponents.Select(p => p.Id), p => p.Id).ToList();
 
                 var deleteTasks = componentsDelete.Select(x => DeleteMapComponentTPC(x));
                 var deleteTaskResults = await Task.WhenAll(deleteTasks);

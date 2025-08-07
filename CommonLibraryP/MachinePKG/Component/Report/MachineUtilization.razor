@@ -1,0 +1,190 @@
+﻿@namespace CommonLibraryP.MachinePKG.Component﻿
+
+@using DevExpress.Blazor
+@inject MachineService machineService
+@rendermode RenderMode.InteractiveServer
+
+
+<DxLoadingPanel Visible="@isProcessing" Text="@($"{percent}%")" IndicatorAnimationType="WaitIndicatorAnimationType.Pulse" ApplyBackgroundShading="true">
+    <DxGridLayout>
+        <Rows>
+            <DxGridLayoutRow Height="auto"></DxGridLayoutRow>
+            <DxGridLayoutRow></DxGridLayoutRow>
+        </Rows>
+        <Columns>
+            <DxGridLayoutColumn></DxGridLayoutColumn>
+            <DxGridLayoutColumn></DxGridLayoutColumn>
+            <DxGridLayoutColumn></DxGridLayoutColumn>
+            <DxGridLayoutColumn></DxGridLayoutColumn>
+        </Columns>
+        <Items>
+            <DxGridLayoutItem Row="0" Column="0" ColumnSpan="4">
+                <Template>
+                    <div>
+                        
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="1" Column="0" Visible="@hasMachineStatusIntervals" ColumnSpan="2">
+                <Template>
+                    <div>
+                        <DxPieChart @ref="@pieChart"
+                        T="@MachineStatusInterval"
+                        Data="@machineStatusIntervals"
+                        Diameter="1"
+                        InnerDiameter="0.6"
+                        CustomizeSeriesPoint="@CommonEnumHelper.SetDxChartPointColor">
+                            <DxPieChartSeries T="@MachineStatusInterval"
+                            TArgument="int"
+                            TValue="double"
+                            ArgumentField="x => x.StatusCode"
+                            ValueField="x => x.Interval.TotalSeconds"
+                            SummaryMethod="Enumerable.Sum">
+                                <DxChartSeriesLabel Visible="true"
+                                Position="RelativePosition.Outside"
+                                ValueFormat="ChartElementFormat.FixedPoint(0)">
+                                    <DxChartSeriesLabelConnector Visible="true" />
+                                </DxChartSeriesLabel>
+                                <DxChartSeriesLegendItem>
+                                    <TextTemplate>
+                                        @{
+                                            int code = int.TryParse(context, out var parsed) ? parsed : 100;
+                                            var style = CommonEnumHelper.GetStatusDetail(code);
+                                        }
+                                        <div style="color: @style.GetColorHTMLString()">
+                                            @style.DisplayName
+                                        </div>
+                                    </TextTemplate>
+                                </DxChartSeriesLegendItem>
+                            </DxPieChartSeries>
+                            <DxChartTooltip Context="tooltipcontext" Enabled="true"
+                            Position="RelativePosition.Outside">
+                                <div style="margin: 0.75rem">
+                                    <div class="fw-bold">@(Math.Round(TimeSpan.FromSeconds((double)tooltipcontext.Point.Value).TotalSeconds))s</div>
+                                </div>
+                            </DxChartTooltip>
+                            <DxChartLegend HorizontalAlignment="HorizontalAlignment.Center"
+                            VerticalAlignment="VerticalEdge.Bottom"
+                            Position="RelativePosition.Outside"
+                            Orientation="Orientation.Horizontal" />
+                        </DxPieChart>
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="1" Column="2" Visible="@hasMachineStatusIntervals" ColumnSpan="2">
+                <Template>
+                    <div>
+                        <DxChart Data="@machineStatusIntervals" Rotated="true" CssClass="p-3" CustomizeSeriesPoint="@CommonEnumHelper.SetDxChartPointColor">
+                            <DxChartRangeBarSeries T="@MachineStatusInterval"
+                            TArgument="int"
+                            ArgumentField="@(i=>i.StatusCode)"
+                            TValue="DateTime"
+                            StartValueField="@(i=>i.Start)"
+                            EndValueField="@(i=>i.End)">
+                                <DxChartTooltip Context="tooltipcontext" Enabled="true" Position="RelativePosition.Inside">
+                                    @tooltipcontext.GetRangePoint().Render(x =>
+                                        @<div>
+                                            @($"{x.StartValue}~{x.EndValue}")
+                                        </div>
+                                                               )
+                                </DxChartTooltip>
+                                <DxChartLegend Visible="false" />
+                            </DxChartRangeBarSeries>
+                        </DxChart>
+
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="1" Column="0" Visible="@(!hasMachineStatusIntervals && !isProcessing)" ColumnSpan="4">
+                <Template>
+                    <div class="alert alert-warning" role="alert">
+                        No data found
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+        </Items>
+    </DxGridLayout>
+</DxLoadingPanel>
+
+<DxPopup @ref="@SerachPopup">
+    <BodyContentTemplate Context="bodycontext">
+        <EditForm Model="@machineUtilizationDTO" Context="editformcontext" OnValidSubmit="GetLogData">
+            <DataAnnotationsValidator />
+            <DxFormLayout>
+                <DxFormLayoutItem Caption="Machine" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="4">
+                    <DxComboBox Data="machines" @bind-Value="@machineUtilizationDTO.MachineID" ValueFieldName="@nameof(Machine.Id)" TextFieldName="@nameof(Machine.Name)" ShowValidationIcon="true"></DxComboBox>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Range" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="4">
+                    <DxDateRangePicker @bind-StartDate="@machineUtilizationDTO.Start" @bind-EndDate="@machineUtilizationDTO.End" ShowValidationIcon="true"></DxDateRangePicker>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="4">
+                    <DxToolbar>
+                        <Items>
+                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Left" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                        </Items>
+                    </DxToolbar>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem ColSpanLg="12">
+                    <hr>
+                </DxFormLayoutItem>
+            </DxFormLayout>
+        </EditForm>
+    </BodyContentTemplate>
+</DxPopup>
+
+@code {
+
+    DxPopup? SerachPopup { get; set; }
+
+    DxPieChart<MachineStatusInterval>? pieChart;
+
+    private MachineUtilizationDTO? machineUtilizationDTO;
+
+    private IEnumerable<Machine>? machines;
+    private List<MachineStatusLog> machineStatusLogs = new();
+    private bool hasMachineStatusLogs => machineStatusLogs.Any();
+
+    private List<MachineStatusInterval> machineStatusIntervals = new();
+    private bool hasMachineStatusIntervals => machineStatusIntervals.Any();
+
+
+    private bool isProcessing = false;
+    private int percent = 0;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        machines = await machineService.GetAllMachinesConfig();
+        machineUtilizationDTO = new MachineUtilizationDTO { };
+    }
+
+    private async void SetPercent(int i)
+    {
+        percent = i;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetProcessing(bool b)
+    {
+        if (b)
+        {
+            machineStatusLogs.Clear();
+            machineStatusIntervals.Clear();
+        }
+        isProcessing = b;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task GetLogData()
+    {
+        await SetProcessing(true);
+        machineStatusLogs = await machineService.GetMachineStatusLogByID(machineUtilizationDTO);
+        var p = new Progress<int>((int i) =>
+        {
+            SetPercent(i);
+        });
+        machineStatusIntervals = await machineService.CalculateStatusIntervalsAsyncStream(machineStatusLogs, p).ToListAsync();
+        await SetProcessing(false);
+    }
+}

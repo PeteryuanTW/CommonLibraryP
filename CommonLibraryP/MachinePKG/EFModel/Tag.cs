@@ -10,7 +10,7 @@ namespace CommonLibraryP.MachinePKG
 {
     public abstract partial class Tag
     {
-        public Guid? Id { get; set; }
+        public Guid Id { get; set; }
 
         public Guid CategoryId { get; set; }
         [Required]
@@ -22,5 +22,7 @@ namespace CommonLibraryP.MachinePKG
         public bool UpdateByTime { get; set; } = true;
 
         public virtual TagCategory Category { get; set; } = null!;
+
+        public virtual ICollection<TagWarningCondition> TagWarningConditions { get; set; } = new List<TagWarningCondition>();
     }
 }

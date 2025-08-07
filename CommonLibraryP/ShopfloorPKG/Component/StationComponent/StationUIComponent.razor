@@ -29,7 +29,7 @@
 {
     <DxPopup HeaderText="Error Message" @bind-Visible="@showErrorMsg" CloseOnOutsideClick="false" />
 
-    <div class="card shadow p-3 @sizeCss" style="border-color:@(statusDetail?.ColorRGBString)">
+    <div class="card shadow p-3 @sizeCss" style="border-color:@(statusDetail?.GetColorRGBString())">
         <DxGridLayout RowSpacing="1rem">
             <Rows>
                 <DxGridLayoutRow Areas="title" Height="1fr" />

@@ -51,13 +51,29 @@ namespace CommonLibraryP.Data
             var target = statusDetailWrapperClasses.FirstOrDefault(x => x.Index == statusCode);
             return target is not null ? target : GetStatusDetail(100);
         }
+
+        public static void SetDxChartPointColor(ChartSeriesPointCustomizationSettings pointSettings)
+        {
+            int statusCode = (int)pointSettings.Point.Argument;
+            pointSettings.PointAppearance.Color = CommonEnumHelper.GetStatusDetail(statusCode).StyleColor;
+        }
     }
     public class StatusDetailWrapperClass : EnumWrapper
     {
         public ButtonRenderStyle buttonRenderStyle { get; init; }
         public Color StyleColor { get; init; }
-        public string ColorRGBString => $"RGB({StyleColor.R}, {StyleColor.G}, {StyleColor.B})";
-        public string ColorHTMLString => $"#{StyleColor.R:X2}{StyleColor.G:X2}{StyleColor.B:X2}";
+        //public string ColorRGBString => $"RGB({StyleColor.R}, {StyleColor.G}, {StyleColor.B})";
+        public string GetColorRGBString(float alpha = 1.0f)
+        {
+            float safeAlpha = alpha < 0 ? 0 : alpha > 1 ? 1 : alpha;
+            return $"RGBA({StyleColor.R}, {StyleColor.G}, {StyleColor.B}, {safeAlpha:0.##})";
+        }
+        //public string ColorHTMLString => $"#{StyleColor.R:X2}{StyleColor.G:X2}{StyleColor.B:X2}";
+        public string GetColorHTMLString(int alphaByte = 255)
+        {
+            int safeAlphaByte = alphaByte < 0 ? 0 : alphaByte > 255 ? 255 : alphaByte;
+            return $"#{StyleColor.R:X2}{StyleColor.G:X2}{StyleColor.B:X2}{safeAlphaByte:X2}";
+        }
         public StatusDetailWrapperClass(int index, string displayName, ButtonRenderStyle buttonRenderStyle, Color color)
         {
             this.index = index;
@@ -66,16 +82,4 @@ namespace CommonLibraryP.Data
             this.StyleColor = color;
         }
     }
-    //public enum Status
-    //{
-    //    Init,
-    //    TryConnecting,
-    //    Disconnect,
-
-    //    Idle,
-    //    Running,
-    //    Pause,
-    //    Stop,
-    //    Error,
-    //}
 }

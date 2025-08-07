@@ -146,4 +146,82 @@
   <data name="Record Status Changed" xml:space="preserve">
     <value>Record Status Changed</value>
   </data>
+  <data name="Connection" xml:space="preserve">
+    <value>Connection</value>
+  </data>
+  <data name="Tag" xml:space="preserve">
+    <value>Tag</value>
+  </data>
+  <data name="Machine" xml:space="preserve">
+    <value>Machine</value>
+  </data>
+  <data name="Tag Category" xml:space="preserve">
+    <value>Tag Category</value>
+  </data>
+  <data name="Logic Comparison" xml:space="preserve">
+    <value>Logic Comparison</value>
+  </data>
+  <data name="Target Value" xml:space="preserve">
+    <value>Target Value</value>
+  </data>
+  <data name="Warning Message" xml:space="preserve">
+    <value>Warning Message</value>
+  </data>
+  <data name="Machine Status Summury" xml:space="preserve">
+    <value>Machine Status Summury</value>
+  </data>
+  <data name="Retry Count" xml:space="preserve">
+    <value>Retry Count</value>
+  </data>
+  <data name="Auto Retrying" xml:space="preserve">
+    <value>Auto Retrying</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Discrete Input Cost" xml:space="preserve">
+    <value>Discrete Input Cost</value>
+  </data>
+  <data name="Coil Cost" xml:space="preserve">
+    <value>Coil Cost</value>
+  </data>
+  <data name="Input Register Cost" xml:space="preserve">
+    <value>Input Register Cost</value>
+  </data>
+  <data name="Holding Register Cost" xml:space="preserve">
+    <value>Holding Register Cost</value>
+  </data>
+  <data name="ms" xml:space="preserve">
+    <value>ms</value>
+  </data>
+  <data name="Machine Config" xml:space="preserve">
+    <value>Machine Config</value>
+  </data>
+  <data name="Runtime data" xml:space="preserve">
+    <value>Runtime data</value>
+  </data>
+  <data name="Error Message" xml:space="preserve">
+    <value>Error Message</value>
+  </data>
+  <data name="Machine Name" xml:space="preserve">
+    <value>Machine Name</value>
+  </data>
+  <data name="Tag Name" xml:space="preserve">
+    <value>Tag Name</value>
+  </data>
+  <data name="Value String" xml:space="preserve">
+    <value>Value String</value>
+  </data>
+  <data name="Lastest Changed Time" xml:space="preserve">
+    <value>Lastest Changed Time</value>
+  </data>
+  <data name="Lastest Update Time" xml:space="preserve">
+    <value>Lastest Update Time</value>
+  </data>
+  <data name="Is Warning" xml:space="preserve">
+    <value>Is Warning</value>
+  </data>
+  <data name="Trigger Time" xml:space="preserve">
+    <value>Trigger Time</value>
+  </data>
 </root>

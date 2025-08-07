@@ -156,4 +156,7 @@
   <data name="Stations Status" xml:space="preserve">
     <value>工站狀態</value>
   </data>
+  <data name="Station" xml:space="preserve">
+    <value>工站</value>
+  </data>
 </root>

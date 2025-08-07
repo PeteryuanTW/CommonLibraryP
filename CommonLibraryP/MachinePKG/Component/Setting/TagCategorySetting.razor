@@ -6,88 +6,134 @@
 @inject MachineService machineService
 @inject NotificationService notificationService
 
+<link href="_content/CommonLibraryP/lib/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
+
+<DxSplitter CssClass="w-100 h-100">
+    <Panes>
+        <DxSplitterPane Size="4fr" AllowCollapse="true">
+            <div>
+                <DxGrid @ref="@catGrid" @bind-SelectedDataItem="@targetCatObj" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" Data="@tagCategories" DataItemDeleting="DeleteTagCategory" HighlightRowOnHover="true">
+                    <ToolbarTemplate>
+                        <DxToolbar Title="@($"{targetCat?.Name}")" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                            <Items>
+                                <DxToolbarItem IconCssClass="oi oi-plus" Click="NewCatClicked" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-pencil" Click="ShowCatPopup" Enabled="@catSelected" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-trash" Click="ShowCatDelete" Enabled="@catSelected" RenderStyle="ButtonRenderStyle.Danger" Alignment="ToolbarItemAlignment.Right" BeginGroup="true" />
+                            </Items>
+                        </DxToolbar>
+                    </ToolbarTemplate>
+                    <Columns>
+                        <DxGridDataColumn Caption="@($"{localizer["Name"]}")" FieldName="@nameof(TagCategory.Name)"></DxGridDataColumn>
+                        <DxGridDataColumn Caption="@($"{localizer["Connection Type"]}")" FieldName="@nameof(TagCategory.ConnectionType)">
+                            <CellDisplayTemplate>
+                                <div>@(MachineTypeEnumHelper.GetConnectionTypeWrapperClassByIndex((int)context.Value)?.DisplayName)</div>
+                            </CellDisplayTemplate>
+                        </DxGridDataColumn>
+                        <DxGridDataColumn Caption="@($"{localizer["Tag Count"]}")" FieldName="@nameof(TagCategory.TagCount)"></DxGridDataColumn>
+                    </Columns>
+                </DxGrid>
+            </div>
+        </DxSplitterPane>
+        <DxSplitterPane Size="4fr" AllowCollapse="true">
+            <div>
+                <DxGrid @ref="@tagGrid" Data="@tags" DataItemDeleting="DeleteTag" @bind-SelectedDataItem="@targetTagObj" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" HighlightRowOnHover="true" DetailRowDisplayMode="@gridDetailRowDisplayMode">
+                    <ToolbarTemplate>
+                        <DxToolbar Title="@($"{targetTag?.Name}")" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                            <Items>
+                                <DxToolbarItem IconCssClass="oi oi-plus" Click="NewTagClicked" Enabled="@catSelected" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-pencil" Click="ShowTagPopup" Enabled="@tagSelected" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-eye" Click="SwitchTagDetailVisible" Enabled="@catSelected" RenderStyle="@detailStyle" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-trash" Click="ShowTagDelete" Enabled="@tagSelected" RenderStyle="ButtonRenderStyle.Danger" Alignment="ToolbarItemAlignment.Right" BeginGroup="true" />
+                            </Items>
+                        </DxToolbar>
+                    </ToolbarTemplate>
+                    <Columns>
+                        <DxGridDataColumn Caption="@($"{localizer["Name"]}")" FieldName="@nameof(Tag.Name)"></DxGridDataColumn>
+                        <DxGridDataColumn Caption="@($"{localizer["Data Type"]}")" FieldName="@nameof(Tag.DataType)">
+                            <CellDisplayTemplate>
+                                <div>@((DataType)((int)context.Value))</div>
+                            </CellDisplayTemplate>
+                        </DxGridDataColumn>
+                        <DxGridDataColumn Caption="@($"{localizer["Update By Time"]}")" FieldName="@nameof(Tag.UpdateByTime)">
+                            <CellDisplayTemplate>
+                                <DxCheckBox CheckType="CheckType.Switch" ReadOnly="true" Checked="@((bool)context.Value)" />
+                            </CellDisplayTemplate>
+                        </DxGridDataColumn>
+                    </Columns>
+                    <DetailRowTemplate>
+                        @{
+                            switch (context.DataItem)
+                            {
+                                case ModbusTCPTag modbusTCPTag:
+                                    <ModbusTCPTagDetail ModbusTCPTagParam="@modbusTCPTag" />
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    </DetailRowTemplate>
+                </DxGrid>
+            </div>
+        </DxSplitterPane>
+        <DxSplitterPane Size="4fr" AllowCollapse="true">
+            <div>
+                <DxGrid @ref="@warningConditionGrid" Data="@tagWarningConditions" DataItemDeleting="DeleteTagWarningCondition" @bind-SelectedDataItem="@targetWarningConditionObj" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" HighlightRowOnHover="true">
+                    <ToolbarTemplate>
+                        <DxToolbar Title="@($"{targetTagWarningCondition?.Name}")" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                            <Items>
+                                <DxToolbarItem IconCssClass="oi oi-plus" Click="@NewWarningConditionClicked" Enabled="@(tagSelected && targetTag.ConditionWarningAllow)" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-pencil" Click="@ShowWarningConditionPopup" Enabled="@warningConditionSelected" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-trash" Click="@ShowWarningDelete" Enabled="@warningConditionSelected" RenderStyle="ButtonRenderStyle.Danger" Alignment="ToolbarItemAlignment.Right" BeginGroup="true" />
+                            </Items>
+                        </DxToolbar>
+                    </ToolbarTemplate>
+                    <Columns>
+                        <DxGridDataColumn Caption="@($"{localizer["Name"]}")" FieldName="@nameof(TagWarningCondition.Name)"></DxGridDataColumn>
+                        <DxGridDataColumn Caption="@($"{localizer["Logic Comparison"]}")" FieldName="@nameof(TagWarningCondition.ComparisonCode)">
+                            <CellDisplayTemplate>
+                                <div class="text-center">
+                                    @(MachineTypeEnumHelper.GetLogicalOperationSymbol((int)context.Value))
+                                </div>
+                            </CellDisplayTemplate>
+                        </DxGridDataColumn>
+                        <DxGridDataColumn Caption="@($"{localizer["Target Value"]}")" FieldName="@nameof(TagWarningCondition.TargetValueString)"></DxGridDataColumn>
+                        <DxGridDataColumn Caption="@($"{localizer["Warning Message"]}")" FieldName="@nameof(TagWarningCondition.WarningMessage)"></DxGridDataColumn>
+                    </Columns>
+                </DxGrid>
+
+            </div>
+        </DxSplitterPane>
+    </Panes>
+</DxSplitter>
 
 
-<DxGridLayout RowSpacing="1rem" ColumnSpacing="1rem">
+@* <DxGridLayout RowSpacing="1rem" ColumnSpacing="1rem">
     <Rows>
         <DxGridLayoutRow></DxGridLayoutRow>
     </Rows>
     <Columns>
         <DxGridLayoutColumn Width="3fr"></DxGridLayoutColumn>
-        <DxGridLayoutColumn Width="8fr"></DxGridLayoutColumn>
+        <DxGridLayoutColumn Width="4fr"></DxGridLayoutColumn>
+        <DxGridLayoutColumn Width="4fr"></DxGridLayoutColumn>
     </Columns>
     <Items>
         <DxGridLayoutItem Row="0" Column="0">
             <Template>
-                <div>
-                    <DxGrid @ref="@catGrid" @bind-SelectedDataItem="@targetCatObj" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" Data="@tagCategories" DataItemDeleting="DeleteTagCategory" HighlightRowOnHover="true">
-                        <ToolbarTemplate>
-                            <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
-                                <Items>
-                                    <DxToolbarItem IconCssClass="oi oi-plus" Click="NewCatClicked" BeginGroup="true" />
-                                    <DxToolbarItem IconCssClass="oi oi-pencil" Text="@(targetCat?.Name)" Click="ShowCatPopup" Enabled="@catSelected" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
-                                    <DxToolbarItem IconCssClass="oi oi-trash" Click="ShowCatDelete" Enabled="@catSelected" RenderStyle="ButtonRenderStyle.Danger" Alignment="ToolbarItemAlignment.Right" BeginGroup="true" />
-                                </Items>
-                            </DxToolbar>
-                        </ToolbarTemplate>
-                        <Columns>
-                            <DxGridDataColumn Caption="@($"{localizer["Name"]}")" FieldName="@nameof(TagCategory.Name)"></DxGridDataColumn>
-                            <DxGridDataColumn Caption="@($"{localizer["Connection Type"]}")" FieldName="@nameof(TagCategory.ConnectionType)">
-                                <CellDisplayTemplate>
-                                    <div>@(MachineTypeEnumHelper.GetConnectionTypeWrapperClassByIndex((int)context.Value)?.DisplayName)</div>
-                                </CellDisplayTemplate>
-                            </DxGridDataColumn>
-                            <DxGridDataColumn Caption="@($"{localizer["Tag Count"]}")" FieldName="@nameof(TagCategory.TagCount)"></DxGridDataColumn>
-                        </Columns>
-                    </DxGrid>
-                </div>
+
             </Template>
         </DxGridLayoutItem>
         <DxGridLayoutItem Row="0" Column="1">
             <Template>
-                <div>
-                    <DxGrid @ref="@tagGrid" Data="@tags" DataItemDeleting="DeleteTag" @bind-SelectedDataItem="@targetTagObj" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" HighlightRowOnHover="true" DetailRowDisplayMode="@gridDetailRowDisplayMode">
-                        <ToolbarTemplate>
-                            <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
-                                <Items>
-                                    <DxToolbarItem IconCssClass="oi oi-plus" Click="NewTagClicked" Enabled="@catSelected" BeginGroup="true" />
-                                    <DxToolbarItem IconCssClass="oi oi-pencil" Text="@(targetTag?.Name)" Click="ShowTagPopup" Enabled="@tagSelected" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
-                                    <DxToolbarItem IconCssClass="oi oi-trash" Click="ShowTagDelete" Enabled="@tagSelected" RenderStyle="ButtonRenderStyle.Danger" Alignment="ToolbarItemAlignment.Right" BeginGroup="true" />
-                                    <DxToolbarItem IconCssClass="oi oi-eye" Click="SwitchTagDetailVisible" Enabled="@catSelected" RenderStyle="@detailStyle" BeginGroup="true" />
-                                </Items>
-                            </DxToolbar>
-                        </ToolbarTemplate>
-                        <Columns>
-                            <DxGridDataColumn Caption="@($"{localizer["Name"]}")" FieldName="@nameof(Tag.Name)"></DxGridDataColumn>
-                            <DxGridDataColumn Caption="@($"{localizer["Data Type"]}")" FieldName="@nameof(Tag.DataType)">
-                                <CellDisplayTemplate>
-                                    <div>@((DataType)((int)context.Value))</div>
-                                </CellDisplayTemplate>
-                            </DxGridDataColumn>
-                            <DxGridDataColumn Caption="@($"{localizer["Update By Time"]}")" FieldName="@nameof(Tag.UpdateByTime)">
-                                <CellDisplayTemplate>
-                                    <DxCheckBox CheckType="CheckType.Switch" ReadOnly="true" Checked="@((bool)context.Value)" />
-                                </CellDisplayTemplate>
-                            </DxGridDataColumn>
-                        </Columns>
-                        <DetailRowTemplate>
-                            @{
-                                switch (context.DataItem)
-                                {
-                                    case ModbusTCPTag modbusTCPTag:
-                                        <ModbusTCPTagDetail ModbusTCPTagParam="@modbusTCPTag" />
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        </DetailRowTemplate>
-                    </DxGrid>
-                </div>
+
+            </Template>
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="0" Column="2">
+            <Template>
+
             </Template>
         </DxGridLayoutItem>
     </Items>
-</DxGridLayout>
+</DxGridLayout> *@
 
 <DxPopup @ref="@catPopup" ShowCloseButton="true" Closing="@InitParameter" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
     @*     <HeaderTemplate>
@@ -125,15 +171,6 @@
 </DxPopup>
 
 <DxPopup @ref="@tagPopup" ShowCloseButton="true" Closing="@InitParameter" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
-    @*     <HeaderTemplate>
-        <div class="w-100 p-3 border border-bottom">
-            <DxToolbar>
-                <Items>
-                    <DxToolbarItem IconCssClass="oi oi-x" Click="CloseTagPopup" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
-                </Items>
-            </DxToolbar>
-        </div>
-    </HeaderTemplate> *@
     <BodyContentTemplate Context="bodycontext">
         <EditForm Model="@targetTag" Context="EditFormContext" OnValidSubmit="UpsertTag">
             <DataAnnotationsValidator />
@@ -189,6 +226,51 @@
     </BodyContentTemplate>
 </DxPopup>
 
+<DxPopup @ref="@warningConditionPopup" ShowCloseButton="true" Closing="@InitParameter" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <BodyContentTemplate Context="bodycontext">
+        <EditForm Model="@targetTagWarningCondition" Context="EditFormContext" OnValidSubmit="UpsertTagWarningCondition">
+            <DataAnnotationsValidator />
+            <DxFormLayout>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["Name"]}")" ColSpanLg="6">
+                    <DxTextBox @bind-Text="@targetTagWarningCondition.Name" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["Logic Comparison"]}")" ColSpanLg="6" BeginRow="true">
+                    <DxComboBox Data="@LogicalOperations" @bind-Value="@targetTagWarningCondition.ComparisonCode" ValueFieldName="@(nameof(LogicalOperationWrapperClass.Index))" TextFieldName="@(nameof(LogicalOperationWrapperClass.Symbol))"></DxComboBox>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["Target Value"]}")" ColSpanLg="6">
+
+                    @switch (targetTagWarningCondition)
+                    {
+                        case TagWarningBoolCondition tagWarningBoolCondition:
+                            <DxCheckBox @bind-Checked="@tagWarningBoolCondition.TargetBoolValue" />
+                            break;
+                        case TagWarningUshortCondition tagWarningUshortCondition:
+                            <DxSpinEdit @bind-Value="@tagWarningUshortCondition.TargetUshortValue" />
+                            break;
+                        default:
+                            break;
+                    }
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["Warning Message"]}")" ColSpanLg="12" BeginRow="true">
+                    <DxTextBox @bind-Text="@targetTagWarningCondition.WarningMessage" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <hr />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <Template>
+                        <DxToolbar>
+                            <Items>
+                                <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                            </Items>
+                        </DxToolbar>
+                    </Template>
+                </DxFormLayoutItem>
+            </DxFormLayout>
+        </EditForm>
+    </BodyContentTemplate>
+</DxPopup>
+
 
 @code {
 
@@ -209,16 +291,20 @@
     private bool tagSelected => targetTag != null;
 
 
-    //private bool catPopupVisible;
-    //private bool tagPopupVisible;
-
-
     private IEnumerable<ConnectionTypeWrapperClass> ConnectTypes => MachineTypeEnumHelper.GetConnectionTypeWrapperClasses();
     private IEnumerable<DataTypeWrapperClass> DataTypes => MachineTypeEnumHelper.GetDataTypesWrapperClass();
 
     private bool showTagDetails = false;
     private ButtonRenderStyle detailStyle => showTagDetails ? ButtonRenderStyle.Info : ButtonRenderStyle.Secondary;
     private GridDetailRowDisplayMode gridDetailRowDisplayMode => showTagDetails ? GridDetailRowDisplayMode.Always : GridDetailRowDisplayMode.Never;
+
+    IGrid? warningConditionGrid { get; set; }
+    DxPopup? warningConditionPopup { get; set; }
+    private List<TagWarningCondition> tagWarningConditions => tagSelected ? targetTag.TagWarningConditions.ToList() : new();
+    private Object? targetWarningConditionObj;
+    private TagWarningCondition? targetTagWarningCondition => targetWarningConditionObj as TagWarningCondition;
+    private bool warningConditionSelected => targetTagWarningCondition != null;
+    private IEnumerable<LogicalOperationWrapperClass> LogicalOperations => tagSelected ? MachineTypeEnumHelper.GetLogicalOperationByDataType(targetTag) : new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -229,44 +315,24 @@
     private async Task InitParameter()
     {
         tagCategories = await machineService.GetAllTagCategoriesWithTags();
+
         targetCatObj = catSelected ? tagCategories.FirstOrDefault(x => x.Id == targetCat.Id) : null;
+
         targetTagObj = tagSelected && catSelected ? targetCat.Tags.FirstOrDefault(x => x.Id == targetTag.Id) : null;
+
+        targetWarningConditionObj = warningConditionSelected && tagSelected ? targetTag.TagWarningConditions.FirstOrDefault(x => x.Id == targetTagWarningCondition.Id) : null;
     }
-    #region localization
 
-    // private string GetLocalization(string s)
-    // {
-    //     return targetCat is null ? string.Empty : localizer[MachineTypeEnumHelper.GetTagParameterMeaning((ConnectType)targetCat?.ConnectionType, s)];
-    // }
-
-    // private bool GetVariableDefined(string s)
-    // {
-    //     return targetCat is null ? false : MachineTypeEnumHelper.GetTagParameterMeaning((ConnectType)targetCat.ConnectionType, s) != "Not Defined";
-    // }
-
-    #endregion
     #region UI
-    // private void CatSelected(GridFocusedRowChangedEventArgs args)
-    // {
-    //     targetCat = args.DataItem as TagCategory;
-    // }
-
-    // private void TagSelected(GridFocusedRowChangedEventArgs args)
-    // {
-    //     targetTag = args.DataItem as Tag;
-    // }
 
     private async Task ShowCatPopup()
     {
-        //catPopupVisible = true;
         await catPopup?.ShowAsync();
     }
 
     private async Task CloseCatPopup()
     {
         await catPopup?.CloseAsync();
-        //catPopupVisible = false;
-        //await InitParameter();
     }
 
 
@@ -310,9 +376,27 @@
         //await InitParameter();
     }
 
+    private async Task ShowWarningConditionPopup()
+    {
+        await warningConditionPopup?.ShowAsync();
+    }
 
+    private async Task CloseWarningConditionPopup()
+    {
+        await warningConditionPopup?.CloseAsync();
+    }
+
+    private void ShowWarningDelete()
+    {
+        warningConditionGrid?.ShowDataItemDeleteConfirmation(targetTagWarningCondition);
+    }
+
+    private async Task NewWarningConditionClicked()
+    {
+        GenrateNewWarningCondition();
+        await ShowWarningConditionPopup();
+    }
     #endregion
-
 
     #region category
 
@@ -366,18 +450,55 @@
         await InitParameter();
         await CloseTagPopup();
         notificationService.ShowToast(res);
-        //await ActionCallback.InvokeAsync(res);
     }
-
-
 
     private async Task DeleteTag()
     {
         var res = await machineService.DeleteTagTCP(targetTag);
         await InitParameter();
         notificationService.ShowToast(res);
-        //await ActionCallback.InvokeAsync(res);
-        //uiService.ShowToast(res);
+    }
+
+    #endregion
+
+    #region tag warning condition
+
+    private void GenrateNewWarningCondition()
+    {
+        if (targetTag.ConditionWarningAllow)
+        {
+            if (targetTag.IsBoolean)
+            {
+                targetWarningConditionObj = new TagWarningBoolCondition
+                    {
+                        Id = Guid.NewGuid(),
+                        TagId = targetTag.Id,
+                    };
+            }
+            else
+            {
+                targetWarningConditionObj = new TagWarningUshortCondition
+                    {
+                        Id = Guid.NewGuid(),
+                        TagId = targetTag.Id,
+                    };
+            }
+        }
+    }
+
+    private async Task UpsertTagWarningCondition()
+    {
+        var res = await machineService.UpsertTagWarningConditionTPC(targetTagWarningCondition);
+        await InitParameter();
+        await CloseWarningConditionPopup();
+        notificationService.ShowToast(res);
+    }
+
+    private async Task DeleteTagWarningCondition()
+    {
+        var res = await machineService.DeleteTagWarningConditionTCP(targetTagWarningCondition);
+        await InitParameter();
+        notificationService.ShowToast(res);
     }
 
     #endregion

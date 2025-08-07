@@ -10,6 +10,6 @@ namespace CommonLibraryP.MapPKG
     public class MapComponentMachine : MapComponent
     {
         [Required(ErrorMessage = "Machine is required")]
-        public Guid? MachineId { get; set; }
+        public Guid MachineId { get; set; }
     }
 }

@@ -117,130 +117,43 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Map" xml:space="preserve">
+    <value>地圖</value>
+  </data>
+  <data name="Image" xml:space="preserve">
+    <value>圖片</value>
+  </data>
+  <data name="Image Type" xml:space="preserve">
+    <value>圖片類型</value>
+  </data>
+  <data name="Image Name" xml:space="preserve">
+    <value>圖片名稱</value>
+  </data>
   <data name="Name" xml:space="preserve">
     <value>名稱</value>
   </data>
-  <data name="IP" xml:space="preserve">
-    <value>網際網路協定地址</value>
+  <data name="Selected Component" xml:space="preserve">
+    <value>選擇元件</value>
   </data>
-  <data name="Port" xml:space="preserve">
-    <value>通訊埠號</value>
+  <data name="Height" xml:space="preserve">
+    <value>高度</value>
   </data>
-  <data name="Connection Type" xml:space="preserve">
-    <value>連接類型</value>
+  <data name="Width" xml:space="preserve">
+    <value>寬度</value>
   </data>
-  <data name="Maximal Retry Count" xml:space="preserve">
-    <value>最多嘗試次數</value>
+  <data name="X Position" xml:space="preserve">
+    <value>水平位置</value>
   </data>
-  <data name="Enable" xml:space="preserve">
-    <value>啟用</value>
+  <data name="Y Position" xml:space="preserve">
+    <value>垂直位置</value>
   </data>
-  <data name="Update Delay" xml:space="preserve">
-    <value>更新延遲</value>
+  <data name="Target Machine" xml:space="preserve">
+    <value>目標設備</value>
   </data>
-  <data name="Tag Count" xml:space="preserve">
-    <value>訊號數量</value>
+  <data name="Target Station" xml:space="preserve">
+    <value>目標工站</value>
   </data>
-  <data name="Data Type" xml:space="preserve">
-    <value>數據類型</value>
-  </data>
-  <data name="Update By Time" xml:space="preserve">
-    <value>即時更新</value>
-  </data>
-  <data name="Station" xml:space="preserve">
-    <value>站號</value>
-  </data>
-  <data name="Input/Output" xml:space="preserve">
-    <value>輸入/輸出</value>
-  </data>
-  <data name="Start Index" xml:space="preserve">
-    <value>起始位置</value>
-  </data>
-  <data name="Offset" xml:space="preserve">
-    <value>偏移量</value>
-  </data>
-  <data name="String Reverse" xml:space="preserve">
-    <value>字串反轉</value>
-  </data>
-  <data name="Record Status Changed" xml:space="preserve">
-    <value>紀錄狀態變更</value>
-  </data>
-  <data name="Connection" xml:space="preserve">
-    <value>連線</value>
-  </data>
-  <data name="Tag" xml:space="preserve">
-    <value>訊號</value>
-  </data>
-  <data name="Machine" xml:space="preserve">
-    <value>設備</value>
-  </data>
-  <data name="Tag Category" xml:space="preserve">
-    <value>訊號類型</value>
-  </data>
-  <data name="Logic Comparison" xml:space="preserve">
-    <value>邏輯判斷</value>
-  </data>
-  <data name="Target Value" xml:space="preserve">
-    <value>目標值</value>
-  </data>
-  <data name="Warning Message" xml:space="preserve">
-    <value>警示訊息</value>
-  </data>
-  <data name="Machine Status Summury" xml:space="preserve">
-    <value>設備狀態總覽</value>
-  </data>
-  <data name="Retry Count" xml:space="preserve">
-    <value>嘗試次數</value>
-  </data>
-  <data name="Auto Retrying" xml:space="preserve">
-    <value>自動重新嘗試中</value>
-  </data>
-  <data name="Status" xml:space="preserve">
-    <value>狀態</value>
-  </data>
-  <data name="Discrete Input Cost" xml:space="preserve">
-    <value>離散輸入耗時</value>
-  </data>
-  <data name="Coil Cost" xml:space="preserve">
-    <value>線圈耗時</value>
-  </data>
-  <data name="Input Register Cost" xml:space="preserve">
-    <value>輸入暫存器耗時</value>
-  </data>
-  <data name="Holding Register Cost" xml:space="preserve">
-    <value>保持暫存器耗時</value>
-  </data>
-  <data name="ms" xml:space="preserve">
-    <value>毫秒</value>
-  </data>
-  <data name="Machine Config" xml:space="preserve">
-    <value>設備設定檔</value>
-  </data>
-  <data name="Runtime data" xml:space="preserve">
-    <value>執行期資訊</value>
-  </data>
-  <data name="Error Message" xml:space="preserve">
-    <value>錯誤訊息</value>
-  </data>
-  <data name="Machine Name" xml:space="preserve">
-    <value>設備名稱</value>
-  </data>
-  <data name="Tag Name" xml:space="preserve">
-    <value>訊號名稱</value>
-  </data>
-  <data name="Value String" xml:space="preserve">
-    <value>數值字串</value>
-  </data>
-  <data name="Lastest Changed Time" xml:space="preserve">
-    <value>最後改變時間</value>
-  </data>
-  <data name="Lastest Update Time" xml:space="preserve">
-    <value>最新更新時間</value>
-  </data>
-  <data name="Is Warning" xml:space="preserve">
-    <value>警告中</value>
-  </data>
-  <data name="Trigger Time" xml:space="preserve">
-    <value>觸發時間</value>
+  <data name="Component Info" xml:space="preserve">
+    <value>元件資訊</value>
   </data>
 </root>

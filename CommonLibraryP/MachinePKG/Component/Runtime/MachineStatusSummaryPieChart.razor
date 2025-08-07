@@ -1,0 +1,90 @@
+﻿@namespace CommonLibraryP.MachinePKG.Component
+
+@implements IDisposable
+@inject MachineService machineService
+@inject IStringLocalizer<MachineLanguage> localizer
+
+
+<DxPieChart @ref="@pieChart"
+            Data="@machines"
+            Diameter="1"
+            InnerDiameter="0.5"
+            T="Machine"
+            CustomizeSeriesPoint="@CommonEnumHelper.SetDxChartPointColor">
+    <DxPieChartSeries T="Machine"
+                      TArgument="int"
+                      TValue="int"
+                      ValueField="x => 1"
+                      ArgumentField="x => x.StatusCode"
+                      SummaryMethod="Enumerable.Count">
+        <DxChartSeriesLabel Visible="true" Position="RelativePosition.Outside">
+            <DxChartSeriesLabelConnector Visible="true" />
+        </DxChartSeriesLabel>
+        <DxChartSeriesLegendItem>
+            <TextTemplate>
+                @{
+                    int code = int.TryParse(context, out var parsed) ? parsed : 100;
+                    var style = CommonEnumHelper.GetStatusDetail(code);
+                }
+                <div style="color: @style.GetColorHTMLString()">
+                    @style.DisplayName
+                </div>
+            </TextTemplate>
+        </DxChartSeriesLegendItem>
+    </DxPieChartSeries>
+    <DxChartTooltip Enabled="true"
+                    Position="RelativePosition.Outside">
+        <div style="margin: 0.75rem">
+            <div class="fw-bold">
+                @($"{CommonEnumHelper.GetStatusDetail((int)context.Point.Argument).DisplayName}:{context.Point.Value}")
+            </div>
+        </div>
+    </DxChartTooltip>
+    <DxChartTitle Text="@(localizer["Machine Status Summury"])" />
+    <DxChartLegend HorizontalAlignment="HorizontalAlignment.Center"
+                   VerticalAlignment="VerticalEdge.Bottom"
+                   Position="RelativePosition.Outside"
+                   Orientation="Orientation.Horizontal">
+    </DxChartLegend>
+</DxPieChart>
+
+@code {
+    [Parameter]
+    public IEnumerable<Guid> MachineIds { get; set; } = new List<Guid>();
+    DxPieChart<Machine>? pieChart { get; set; }
+    private List<Machine> machines = new();
+
+    protected override Task OnInitializedAsync()
+    {
+        foreach (var id in MachineIds)
+        {
+            var targetMachine = machineService.Machines.FirstOrDefault(x => x.Id == id);
+            if (targetMachine is not null)
+            {
+                machines.Add(targetMachine);
+                targetMachine.MachineStatuschangedAct += UIUpdate;
+            }
+        }
+        return base.OnInitializedAsync();
+    }
+
+    void IDisposable.Dispose()
+    {
+        foreach (var id in MachineIds)
+        {
+            var target = machineService.Machines.FirstOrDefault(x => x.Id == id);
+            if (target != null)
+            {
+                target.MachineStatuschangedAct -= UIUpdate;
+            }
+        }
+    }
+
+    private async Task UIUpdate(int statusCode)
+    {
+        pieChart?.RefreshData();
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+}

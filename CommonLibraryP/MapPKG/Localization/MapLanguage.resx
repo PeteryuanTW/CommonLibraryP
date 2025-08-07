@@ -97,52 +97,43 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Process" xml:space="preserve">
-    <value>Process</value>
-    <comment>Process</comment>
+  <data name="Map" xml:space="preserve">
+    <value>Map</value>
   </data>
-  <data name="Workorder No" xml:space="preserve">
-    <value>Workorder no</value>
-    <comment>Workorder no</comment>
+  <data name="Image" xml:space="preserve">
+    <value>Image</value>
   </data>
-  <data name="Lot" xml:space="preserve">
-    <value>Lot</value>
-    <comment>Lot</comment>
+  <data name="Image Type" xml:space="preserve">
+    <value>Image Type</value>
   </data>
-  <data name="Serial no" xml:space="preserve">
-    <value>Serial no</value>
-    <comment>Serial no</comment>
-  </data>
-  <data name="Start time" xml:space="preserve">
-    <value>Start time</value>
-    <comment>Start time</comment>
+  <data name="Image Name" xml:space="preserve">
+    <value>Image Name</value>
   </data>
   <data name="Name" xml:space="preserve">
-    <value>Name</value>
-    <comment>Name</comment>
+    <value>Map Name</value>
   </data>
-  <data name="Station In" xml:space="preserve">
-    <value>Station In</value>
+  <data name="Selected Component" xml:space="preserve">
+    <value>Selected Component</value>
   </data>
-  <data name="Station Out" xml:space="preserve">
-    <value>Station Out</value>
+  <data name="Height" xml:space="preserve">
+    <value>Height</value>
   </data>
-  <data name="Item Record" xml:space="preserve">
-    <value>Item Record</value>
+  <data name="Width" xml:space="preserve">
+    <value>Width</value>
   </data>
-  <data name="Workorder Deploy" xml:space="preserve">
-    <value>Workorder Deploy</value>
+  <data name="X Position" xml:space="preserve">
+    <value>X position</value>
   </data>
-  <data name="Ok" xml:space="preserve">
-    <value>Ok</value>
+  <data name="Y Position" xml:space="preserve">
+    <value>Y position</value>
   </data>
-  <data name="Ng" xml:space="preserve">
-    <value>Ng</value>
+  <data name="Target Machine" xml:space="preserve">
+    <value>Target Machine</value>
   </data>
-  <data name="Stations Status" xml:space="preserve">
-    <value>Stations Status</value>
+  <data name="Target Station" xml:space="preserve">
+    <value>Target Station</value>
   </data>
-  <data name="Station" xml:space="preserve">
-    <value>Station</value>
+  <data name="Component Info" xml:space="preserve">
+    <value>Component Info</value>
   </data>
 </root>

@@ -18,10 +18,12 @@ namespace CommonLibraryP.MachinePKG
 
         public virtual DbSet<Machine> Machines { get; set; }
         public virtual DbSet<MachineStatusLog> MachineStatusLogs { get; set; }
+
+        public virtual DbSet<TagCategory> TagCategories { get; set; }
         public virtual DbSet<Tag> Tags { get; set; }
         public virtual DbSet<ModbusTCPTag> ModbusTCPTags { get; set; }
 
-        public virtual DbSet<TagCategory> TagCategories { get; set; }
+        public virtual DbSet<TagWarningCondition> TagWarningConditions { get; set; }
 
         //public virtual DbSet<Condition> Conditions { get; set; }
 
@@ -122,77 +124,31 @@ namespace CommonLibraryP.MachinePKG
 
             });
 
-            //modelBuilder.Entity<Condition>(entity =>
-            //{
-            //    entity.HasKey(e => e.Id);
+            modelBuilder.Entity<TagWarningCondition>(entity =>
+            {
 
-            //    entity.ToTable("Conditions");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Name).IsUnique();
 
-            //    entity.HasIndex(e => e.Name).IsUnique();
+                entity.UseTpcMappingStrategy();
 
-            //    entity.HasMany(e => e.ConditionNodes).WithOne(p => p.Condition)
-            //        .HasForeignKey(q => q.ConditionId);
-            //});
+                entity.HasOne(d => d.Tag).WithMany(p => p.TagWarningConditions)
+                    .HasForeignKey(d => d.TagId)
+                    .OnDelete(DeleteBehavior.ClientCascade);
+            });
 
-            //modelBuilder.Entity<ConditionNode>(entity =>
-            //{
-            //    entity.UseTpcMappingStrategy();
+            modelBuilder.Entity<TagWarningUshortCondition>(entity =>
+            {
 
-            //    entity.HasKey(e => e.Id);
+                entity.ToTable("TagWarningUshortConditions");
 
-            //    //entity.ToTable("ConditionNodes");
+            });
+            modelBuilder.Entity<TagWarningBoolCondition>(entity =>
+            {
 
-            //    entity.HasOne(e => e.Condition).WithMany(p => p.ConditionNodes);
+                entity.ToTable("TagWarningBoolConditions");
 
-            //    entity.HasOne(e => e.ParentNode).WithMany(f => f.ChildNodes)
-            //    .HasForeignKey(g => g.ParentNodeId);
-            //});
-
-            //modelBuilder.Entity<ConditionLogicNode>(entity =>
-            //{
-
-            //    entity.ToTable("ConditionLogicNodes");
-
-            //});
-
-            //modelBuilder.Entity<ConditionConstDataNode>(entity =>
-            //{
-
-            //    entity.ToTable("ConditionConstDataNodes");
-
-            //});
-
-            //modelBuilder.Entity<ConditionTagDataNode>(entity =>
-            //{
-
-            //    entity.ToTable("ConditionTagDataNodes");
-
-            //});
-
-
-
-
-
-            //modelBuilder.Entity<ConditionAction>(entity =>
-            //{
-            //    entity.UseTpcMappingStrategy();
-
-            //    entity.HasKey(e => e.Id);
-
-            //    entity.HasOne(e => e.Condition).WithMany(p => p.ConditionActions);
-            //});
-            //modelBuilder.Entity<AwaitAction>(entity =>
-            //{
-
-            //    entity.ToTable("AwaitActions");
-
-            //});
-            //modelBuilder.Entity<SetTagAction>(entity =>
-            //{
-
-            //    entity.ToTable("SetTagActions");
-
-            //});
+            });
 
         }
     }

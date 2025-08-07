@@ -5,14 +5,14 @@
 
 @inject MachineService machineService
 
-<DxFormLayout Data="@ModbusTCPTagParam" ReadOnly="true">
-    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.Station)" Caption="@($"{localizer["Station"]}")" />
-    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.InputOrOutput)" Caption="@($"{localizer["Input/Output"]}")">
+<DxFormLayout Data="@ModbusTCPTagParam" ReadOnly="true" CaptionPosition="CaptionPosition.Vertical">
+    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.Station)" Caption="@($"{localizer["Station"]}")" ColSpanLg="2"/>
+    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.InputOrOutput)" Caption="@($"{localizer["Input/Output"]}")" ColSpanLg="2">
         <DxCheckBox CheckType="CheckType.Switch" ReadOnly="true" Checked="@(ModbusTCPTagParam.InputOrOutput)"/>
     </DxFormLayoutItem>
-    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.StartIndex)" Caption="@($"{localizer["Start Index"]}")" />
-    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.Offset)" Caption="@($"{localizer["Offset"]}")" />
-    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.StringReverse)" Caption="@($"{localizer["String Reverse"]}")" >
+    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.StartIndex)" Caption="@($"{localizer["Start Index"]}")" ColSpanLg="3" />
+    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.Offset)" Caption="@($"{localizer["Offset"]}")" ColSpanLg="3" />
+    <DxFormLayoutItem Field="@nameof(ModbusTCPTag.StringReverse)" Caption="@($"{localizer["String Reverse"]}")" ColSpanLg="2">
         <DxCheckBox CheckType="CheckType.Switch" ReadOnly="true" Checked="@(ModbusTCPTagParam.StringReverse)" />
     </DxFormLayoutItem>
 </DxFormLayout>

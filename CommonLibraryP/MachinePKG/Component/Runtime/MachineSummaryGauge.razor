@@ -1,0 +1,88 @@
+﻿@namespace CommonLibraryP.MachinePKG.Component
+
+@rendermode RenderMode.InteractiveServer
+@implements IDisposable
+@inject IStringLocalizer<MachineLanguage> localizer
+@inject MachineService machineService
+
+<DxBarGauge Width="100%"
+Height="100%"
+StartValue="0"
+EndValue="@(Machines.Count)"
+Palette="@(machineStatusSummuries.Select(x=>x.Color).ToArray())"
+Values="@(machineStatusSummuries.Select(x=>x.Amount * 1.0))">
+    <DxGaugeAnimationSettings Duration="200" />
+    <DxBarGaugeLabelSettings Indent="30"></DxBarGaugeLabelSettings>
+    <DxBarGaugeLegendSettings Visible="true"
+    ItemCaptions="@(machineStatusSummuries.Select(x=>x.StatusName).ToArray())"
+    VerticalAlignment="VerticalEdge.Bottom"
+    HorizontalAlignment="HorizontalAlignment.Center">
+    </DxBarGaugeLegendSettings>
+    <DxTitleSettings Text="Machines Status Summary">
+        <DxFontSettings Size="28" Weight="600" />
+    </DxTitleSettings>
+    <DxTooltipSettings Enabled="true" Color="lightyellow">
+        <DxTextFormatSettings LdmlString="@LabelFormat" />
+    </DxTooltipSettings>
+</DxBarGauge>
+
+@code {
+    [Parameter]
+    public List<Machine> Machines { get; set; } = new();
+    string LabelFormat = "## unit(s)";
+
+
+    private List<MachineStatusSummury> machineStatusSummuries =>
+        Machines.GroupBy(x => x.StatusCode)
+        .Select(y =>
+        {
+            return new MachineStatusSummury
+                {
+                    StatusCode = y.Key,
+                    StatusName = CommonEnumHelper.GetStatusDetail(y.Key).DisplayName,
+                    Amount = y.Count(),
+                    Color = CommonEnumHelper.GetStatusDetail(y.Key).GetColorHTMLString(),
+                };
+        })
+        .ToList();
+
+    public class MachineStatusSummury
+    {
+        public int StatusCode { get; set; }
+
+        public string StatusName { get; set; } = string.Empty;
+
+        public int Amount { get; set; }
+
+        public string Color { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        foreach (var m in Machines)
+        {
+            var target = await machineService.GetMachineByName(m.Name);
+            if (target != null)
+            {
+                target.MachineStatuschangedAct += UIUpdate;
+            }
+        }
+    }
+
+    private async Task UIUpdate(int statusCode)
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void IDisposable.Dispose()
+    {
+        foreach (var m in Machines)
+        {
+            var target = machineService.Machines.FirstOrDefault(x => x.Id == m.Id);
+            if (target != null)
+            {
+                target.MachineStatuschangedAct -= UIUpdate;
+            }
+        }
+    }
+}

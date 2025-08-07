@@ -15,8 +15,8 @@ namespace CommonLibraryP.MapPKG
         public string Name { get; set; } = null!;
         public double PositionX { get; set; }
         public double PositionY { get; set; }
-        public double Height { get; set; }
-        public double Width { get; set; }
+        public double Height { get; set; } = 0.2f;
+        public double Width { get; set; } = 0.2f;
         public virtual MapConfig? MapConfig { get; set; }
     }
 }

@@ -22,7 +22,7 @@ namespace CommonLibraryP.MachinePKG.Localization {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class MachineLanguage {
+    public class MachineLanguage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -36,7 +36,7 @@ namespace CommonLibraryP.MachinePKG.Localization {
         ///   傳回這個類別使用的快取的 ResourceManager 執行個體。
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager {
+        public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("CommonLibraryP.MachinePKG.Localization.MachineLanguage", typeof(MachineLanguage).Assembly);
@@ -51,7 +51,7 @@ namespace CommonLibraryP.MachinePKG.Localization {
         ///   使用這個強類型資源類別的資源查閱。
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture {
+        public static global::System.Globalization.CultureInfo Culture {
             get {
                 return resourceCulture;
             }
@@ -61,9 +61,36 @@ namespace CommonLibraryP.MachinePKG.Localization {
         }
         
         /// <summary>
+        ///   查詢類似 Auto Retrying 的當地語系化字串。
+        /// </summary>
+        public static string Auto_Retrying {
+            get {
+                return ResourceManager.GetString("Auto Retrying", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Coil Cost 的當地語系化字串。
+        /// </summary>
+        public static string Coil_Cost {
+            get {
+                return ResourceManager.GetString("Coil Cost", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Connection 的當地語系化字串。
+        /// </summary>
+        public static string Connection {
+            get {
+                return ResourceManager.GetString("Connection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Connection Type 的當地語系化字串。
         /// </summary>
-        internal static string Connection_Type {
+        public static string Connection_Type {
             get {
                 return ResourceManager.GetString("Connection Type", resourceCulture);
             }
@@ -72,52 +99,169 @@ namespace CommonLibraryP.MachinePKG.Localization {
         /// <summary>
         ///   查詢類似 Data Type 的當地語系化字串。
         /// </summary>
-        internal static string Data_Type {
+        public static string Data_Type {
             get {
                 return ResourceManager.GetString("Data Type", resourceCulture);
             }
         }
         
         /// <summary>
+        ///   查詢類似 Discrete Input Cost 的當地語系化字串。
+        /// </summary>
+        public static string Discrete_Input_Cost {
+            get {
+                return ResourceManager.GetString("Discrete Input Cost", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Enable 的當地語系化字串。
         /// </summary>
-        internal static string Enable {
+        public static string Enable {
             get {
                 return ResourceManager.GetString("Enable", resourceCulture);
             }
         }
         
         /// <summary>
+        ///   查詢類似 Error Message 的當地語系化字串。
+        /// </summary>
+        public static string Error_Message {
+            get {
+                return ResourceManager.GetString("Error Message", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Holding Register Cost 的當地語系化字串。
+        /// </summary>
+        public static string Holding_Register_Cost {
+            get {
+                return ResourceManager.GetString("Holding Register Cost", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Input/Output 的當地語系化字串。
         /// </summary>
-        internal static string Input_Output {
+        public static string Input_Output {
             get {
                 return ResourceManager.GetString("Input/Output", resourceCulture);
             }
         }
         
         /// <summary>
+        ///   查詢類似 Input Register Cost 的當地語系化字串。
+        /// </summary>
+        public static string Input_Register_Cost {
+            get {
+                return ResourceManager.GetString("Input Register Cost", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 IP 的當地語系化字串。
         /// </summary>
-        internal static string IP {
+        public static string IP {
             get {
                 return ResourceManager.GetString("IP", resourceCulture);
             }
         }
         
         /// <summary>
+        ///   查詢類似 Is Warning 的當地語系化字串。
+        /// </summary>
+        public static string Is_Warning {
+            get {
+                return ResourceManager.GetString("Is Warning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Lastest Changed Time 的當地語系化字串。
+        /// </summary>
+        public static string Lastest_Changed_Time {
+            get {
+                return ResourceManager.GetString("Lastest Changed Time", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Lastest Update Time 的當地語系化字串。
+        /// </summary>
+        public static string Lastest_Update_Time {
+            get {
+                return ResourceManager.GetString("Lastest Update Time", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Logic Comparison 的當地語系化字串。
+        /// </summary>
+        public static string Logic_Comparison {
+            get {
+                return ResourceManager.GetString("Logic Comparison", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Machine 的當地語系化字串。
+        /// </summary>
+        public static string Machine {
+            get {
+                return ResourceManager.GetString("Machine", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Machine Config 的當地語系化字串。
+        /// </summary>
+        public static string Machine_Config {
+            get {
+                return ResourceManager.GetString("Machine Config", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Machine Name 的當地語系化字串。
+        /// </summary>
+        public static string Machine_Name {
+            get {
+                return ResourceManager.GetString("Machine Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Machine Status Summury 的當地語系化字串。
+        /// </summary>
+        public static string Machine_Status_Summury {
+            get {
+                return ResourceManager.GetString("Machine Status Summury", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Maximal Retry Count 的當地語系化字串。
         /// </summary>
-        internal static string Maximal_Retry_Count {
+        public static string Maximal_Retry_Count {
             get {
                 return ResourceManager.GetString("Maximal Retry Count", resourceCulture);
             }
         }
         
         /// <summary>
+        ///   查詢類似 ms 的當地語系化字串。
+        /// </summary>
+        public static string ms {
+            get {
+                return ResourceManager.GetString("ms", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Name 的當地語系化字串。
         /// </summary>
-        internal static string Name {
+        public static string Name {
             get {
                 return ResourceManager.GetString("Name", resourceCulture);
             }
@@ -126,7 +270,7 @@ namespace CommonLibraryP.MachinePKG.Localization {
         /// <summary>
         ///   查詢類似 Offset 的當地語系化字串。
         /// </summary>
-        internal static string Offset {
+        public static string Offset {
             get {
                 return ResourceManager.GetString("Offset", resourceCulture);
             }
@@ -135,7 +279,7 @@ namespace CommonLibraryP.MachinePKG.Localization {
         /// <summary>
         ///   查詢類似 Port 的當地語系化字串。
         /// </summary>
-        internal static string Port {
+        public static string Port {
             get {
                 return ResourceManager.GetString("Port", resourceCulture);
             }
@@ -144,16 +288,34 @@ namespace CommonLibraryP.MachinePKG.Localization {
         /// <summary>
         ///   查詢類似 Record Status Changed 的當地語系化字串。
         /// </summary>
-        internal static string Record_Status_Changed {
+        public static string Record_Status_Changed {
             get {
                 return ResourceManager.GetString("Record Status Changed", resourceCulture);
             }
         }
         
         /// <summary>
+        ///   查詢類似 Retry Count 的當地語系化字串。
+        /// </summary>
+        public static string Retry_Count {
+            get {
+                return ResourceManager.GetString("Retry Count", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Runtime data 的當地語系化字串。
+        /// </summary>
+        public static string Runtime_data {
+            get {
+                return ResourceManager.GetString("Runtime data", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Start Index 的當地語系化字串。
         /// </summary>
-        internal static string Start_Index {
+        public static string Start_Index {
             get {
                 return ResourceManager.GetString("Start Index", resourceCulture);
             }
@@ -162,34 +324,88 @@ namespace CommonLibraryP.MachinePKG.Localization {
         /// <summary>
         ///   查詢類似 Station 的當地語系化字串。
         /// </summary>
-        internal static string Station {
+        public static string Station {
             get {
                 return ResourceManager.GetString("Station", resourceCulture);
             }
         }
         
         /// <summary>
+        ///   查詢類似 Status 的當地語系化字串。
+        /// </summary>
+        public static string Status {
+            get {
+                return ResourceManager.GetString("Status", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 String Reverse 的當地語系化字串。
         /// </summary>
-        internal static string String_Reverse {
+        public static string String_Reverse {
             get {
                 return ResourceManager.GetString("String Reverse", resourceCulture);
             }
         }
         
         /// <summary>
+        ///   查詢類似 Tag 的當地語系化字串。
+        /// </summary>
+        public static string Tag {
+            get {
+                return ResourceManager.GetString("Tag", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Tag Category 的當地語系化字串。
+        /// </summary>
+        public static string Tag_Category {
+            get {
+                return ResourceManager.GetString("Tag Category", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Tag Count 的當地語系化字串。
         /// </summary>
-        internal static string Tag_Count {
+        public static string Tag_Count {
             get {
                 return ResourceManager.GetString("Tag Count", resourceCulture);
             }
         }
         
         /// <summary>
+        ///   查詢類似 Tag Name 的當地語系化字串。
+        /// </summary>
+        public static string Tag_Name {
+            get {
+                return ResourceManager.GetString("Tag Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Target Value 的當地語系化字串。
+        /// </summary>
+        public static string Target_Value {
+            get {
+                return ResourceManager.GetString("Target Value", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Trigger Time 的當地語系化字串。
+        /// </summary>
+        public static string Trigger_Time {
+            get {
+                return ResourceManager.GetString("Trigger Time", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Update By Time 的當地語系化字串。
         /// </summary>
-        internal static string Update_By_Time {
+        public static string Update_By_Time {
             get {
                 return ResourceManager.GetString("Update By Time", resourceCulture);
             }
@@ -198,9 +414,27 @@ namespace CommonLibraryP.MachinePKG.Localization {
         /// <summary>
         ///   查詢類似 UpdateDelay 的當地語系化字串。
         /// </summary>
-        internal static string Update_Delay {
+        public static string Update_Delay {
             get {
                 return ResourceManager.GetString("Update Delay", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Value String 的當地語系化字串。
+        /// </summary>
+        public static string Value_String {
+            get {
+                return ResourceManager.GetString("Value String", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Warning Message 的當地語系化字串。
+        /// </summary>
+        public static string Warning_Message {
+            get {
+                return ResourceManager.GetString("Warning Message", resourceCulture);
             }
         }
     }
