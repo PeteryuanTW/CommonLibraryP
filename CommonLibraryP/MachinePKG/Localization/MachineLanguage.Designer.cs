@@ -295,6 +295,15 @@ namespace CommonLibraryP.MachinePKG.Localization {
         }
         
         /// <summary>
+        ///   查詢類似 Report 的當地語系化字串。
+        /// </summary>
+        public static string Report {
+            get {
+                return ResourceManager.GetString("Report", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Retry Count 的當地語系化字串。
         /// </summary>
         public static string Retry_Count {
@@ -394,6 +403,15 @@ namespace CommonLibraryP.MachinePKG.Localization {
         }
         
         /// <summary>
+        ///   查詢類似 Time Range 的當地語系化字串。
+        /// </summary>
+        public static string Time_Range {
+            get {
+                return ResourceManager.GetString("Time Range", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Trigger Time 的當地語系化字串。
         /// </summary>
         public static string Trigger_Time {
@@ -417,6 +435,15 @@ namespace CommonLibraryP.MachinePKG.Localization {
         public static string Update_Delay {
             get {
                 return ResourceManager.GetString("Update Delay", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Utilization Rate 的當地語系化字串。
+        /// </summary>
+        public static string Utilization_Rate {
+            get {
+                return ResourceManager.GetString("Utilization Rate", resourceCulture);
             }
         }
         

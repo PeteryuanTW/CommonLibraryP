@@ -2,14 +2,17 @@
 
 @using DevExpress.Blazor
 @inject MachineService machineService
+@inject NotificationService notificationService
+@inject IStringLocalizer<MachineLanguage> localizer
 @rendermode RenderMode.InteractiveServer
 
+<link href="_content/CommonLibraryP/lib/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
 
 <DxLoadingPanel Visible="@isProcessing" Text="@($"{percent}%")" IndicatorAnimationType="WaitIndicatorAnimationType.Pulse" ApplyBackgroundShading="true">
-    <DxGridLayout>
+    <DxGridLayout RowSpacing="1rem">
         <Rows>
-            <DxGridLayoutRow Height="auto"></DxGridLayoutRow>
-            <DxGridLayoutRow></DxGridLayoutRow>
+            <DxGridLayoutRow Height="1fr"></DxGridLayoutRow>
+            <DxGridLayoutRow Height="10fr"></DxGridLayoutRow>
         </Rows>
         <Columns>
             <DxGridLayoutColumn></DxGridLayoutColumn>
@@ -21,7 +24,9 @@
             <DxGridLayoutItem Row="0" Column="0" ColumnSpan="4">
                 <Template>
                     <div>
-                        
+                        <DxToolbar SizeMode="SizeMode.Large" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                            <DxToolbarItem IconCssClass="oi oi-magnifying-glass" Click="ShowSearchOpoup" BeginGroup="true" />
+                        </DxToolbar>
                     </div>
                 </Template>
             </DxGridLayoutItem>
@@ -86,7 +91,7 @@
                                         @<div>
                                             @($"{x.StartValue}~{x.EndValue}")
                                         </div>
-                                                               )
+                                                                                                                     )
                                 </DxChartTooltip>
                                 <DxChartLegend Visible="false" />
                             </DxChartRangeBarSeries>
@@ -95,37 +100,31 @@
                     </div>
                 </Template>
             </DxGridLayoutItem>
-            <DxGridLayoutItem Row="1" Column="0" Visible="@(!hasMachineStatusIntervals && !isProcessing)" ColumnSpan="4">
-                <Template>
-                    <div class="alert alert-warning" role="alert">
-                        No data found
-                    </div>
-                </Template>
-            </DxGridLayoutItem>
         </Items>
     </DxGridLayout>
 </DxLoadingPanel>
 
-<DxPopup @ref="@SerachPopup">
+<DxPopup @ref="@SerachPopup" CloseOnOutsideClick="false" ShowFooter="false" Width="50rem">
     <BodyContentTemplate Context="bodycontext">
         <EditForm Model="@machineUtilizationDTO" Context="editformcontext" OnValidSubmit="GetLogData">
             <DataAnnotationsValidator />
             <DxFormLayout>
-                <DxFormLayoutItem Caption="Machine" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="4">
+                <DxFormLayoutItem Caption="@(localizer["Machine"])" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6">
                     <DxComboBox Data="machines" @bind-Value="@machineUtilizationDTO.MachineID" ValueFieldName="@nameof(Machine.Id)" TextFieldName="@nameof(Machine.Name)" ShowValidationIcon="true"></DxComboBox>
                 </DxFormLayoutItem>
-                <DxFormLayoutItem Caption="Range" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="4">
+                <DxFormLayoutItem Caption="@(localizer["Time Range"])" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6">
                     <DxDateRangePicker @bind-StartDate="@machineUtilizationDTO.Start" @bind-EndDate="@machineUtilizationDTO.End" ShowValidationIcon="true"></DxDateRangePicker>
                 </DxFormLayoutItem>
-                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="4">
-                    <DxToolbar>
-                        <Items>
-                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Left" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
-                        </Items>
-                    </DxToolbar>
-                </DxFormLayoutItem>
+
                 <DxFormLayoutItem ColSpanLg="12">
                     <hr>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <DxToolbar>
+                        <Items>
+                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                        </Items>
+                    </DxToolbar>
                 </DxFormLayoutItem>
             </DxFormLayout>
         </EditForm>
@@ -159,6 +158,11 @@
         machineUtilizationDTO = new MachineUtilizationDTO { };
     }
 
+    private async Task ShowSearchOpoup()
+    => await SerachPopup?.ShowAsync();
+    private async Task CloseSearchOpoup()
+    => await SerachPopup?.CloseAsync();
+
     private async void SetPercent(int i)
     {
         percent = i;
@@ -178,13 +182,21 @@
 
     private async Task GetLogData()
     {
+        await CloseSearchOpoup();
         await SetProcessing(true);
         machineStatusLogs = await machineService.GetMachineStatusLogByID(machineUtilizationDTO);
+        if (machineStatusLogs.Count is 0)
+        {
+            notificationService.ShowToast(new RequestResult(3, "No machin data found"));
+            await SetProcessing(false);
+            return;
+        }
         var p = new Progress<int>((int i) =>
         {
             SetPercent(i);
         });
         machineStatusIntervals = await machineService.CalculateStatusIntervalsAsyncStream(machineStatusLogs, p).ToListAsync();
         await SetProcessing(false);
+        notificationService.ShowToast(new RequestResult(2, "Machine utilization rate calculation finished"));
     }
 }

@@ -132,7 +132,7 @@ namespace CommonLibraryP.MachinePKG
             using (var scope = scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<MachineDBContext>();
-                var tmp = await dbContext.Machines.Include(x => x.TagCategory).ThenInclude(x => x.Tags)
+                var tmp = await dbContext.Machines.Include(x => x.TagCategory).ThenInclude(x => x.Tags).ThenInclude(x=>x.TagWarningConditions)
                     .AsSplitQuery()
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Id == id);

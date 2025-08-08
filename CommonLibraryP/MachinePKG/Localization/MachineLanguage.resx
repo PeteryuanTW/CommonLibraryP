@@ -99,7 +99,6 @@
   </resheader>
   <data name="Name" xml:space="preserve">
     <value>Name</value>
-    <comment>Name</comment>
   </data>
   <data name="IP" xml:space="preserve">
     <value>IP</value>
@@ -223,5 +222,14 @@
   </data>
   <data name="Trigger Time" xml:space="preserve">
     <value>Trigger Time</value>
+  </data>
+  <data name="Report" xml:space="preserve">
+    <value>Report</value>
+  </data>
+  <data name="Utilization Rate" xml:space="preserve">
+    <value>Utilization Rate</value>
+  </data>
+  <data name="Time Range" xml:space="preserve">
+    <value>Time Range</value>
   </data>
 </root>

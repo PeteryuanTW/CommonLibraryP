@@ -243,4 +243,13 @@
   <data name="Trigger Time" xml:space="preserve">
     <value>觸發時間</value>
   </data>
+  <data name="Report" xml:space="preserve">
+    <value>報表</value>
+  </data>
+  <data name="Utilization Rate" xml:space="preserve">
+    <value>稼動率</value>
+  </data>
+  <data name="Time Range" xml:space="preserve">
+    <value>時間範圍</value>
+  </data>
 </root>
