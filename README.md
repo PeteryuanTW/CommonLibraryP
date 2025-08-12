@@ -2,7 +2,7 @@
 * Dotnet 8 Blazor Server-Side with Devexpress v25.1.x style
 * SQL server 16+
 ### DB preparatory works
-* Using MachineDB_Dev.sql file to create necessary table schema.
+* Using MachineDB_Dev.sql or MapDB_Dev.sql to create necessary table schema.
 * Check your SQL server can login with sql authentication.
 ### Code setting
 appsettings.json
