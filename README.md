@@ -1,10 +1,8 @@
-### Use Case
-> Simplifying the connection and communication to machine with common protocol.
 ### Environment
-* Dotnet 8 Blazor Server-Side with Devexpress style
-* SQL server
+* Dotnet 8 Blazor Server-Side with Devexpress v25.1.x style
+* SQL server 16+
 ### DB preparatory works
-* Using machineDB.sql file to create necessary table schema.
+* Using MachineDB_Dev.sql file to create necessary table schema.
 * Check your SQL server can login with sql authentication.
 ### Code setting
 appsettings.json
@@ -21,6 +19,9 @@ appsettings.json
   ...
 }
 ```
+# Machine package
+### Use Case
+> Simplifying the connection and communication to machine with common protocol.
 Progeam.cs
 ```
 builder.AddMachineService(); //if your connection string name is "DefaultConnection"
@@ -39,7 +40,7 @@ builder.AddMachineService(your connection string); //if your connection string n
 * Put following components in your page.
 * Verify machine information is accessible with following component.
 ```
-<MachineDashboard Machine="@machine object"/>
+<MachineDashboard MachineId="@machineId"/>
 ```
 ### Verify service
 * Inject MachineService to your own service (or component) which is already injected with singleton lifecycle in previous steps.
@@ -52,5 +53,39 @@ string s = tag?.ValueString();
 ```
 how to set tag value
 ```
-RequestResult res = await MachineService.SetMachineTag(string machineName, string tagName, object val);
+RequestResult res = await MachineService.SetMachineTagByString(string machineName, string tagName, string valString);
+```
+### Customize your machine status logic
+status code equal oe less than 100 is preserved for system
+dxButtonRenderStyle and Color only use for ui styling
+status code and status name is not allow to be duplicate
+```
+CommonEnumHelper.AddCustomStatus(status code, status name, dxButtonRenderStyle, Color);
+```
+
+write your own machine class
+inherit ModbusTCPMachine and overide function UpdateStatus
+define connection type code 0 and 1 is preserved for system
+connection type code is not allow to be duplicate
+```
+MachineTypeEnumHelper.AddCustomConnection<YourMachineClass>(your connection type code);
+```
+# Map package
+### Use Case
+> Visualize machine in your image as a dashboard
+
+### Component setting
+* Put following components in your page
+* Set map configuration and map components in DB with following components
+
+```
+<MapSetting/>
+<MapEditor MapConfigId="@mapId/>
+```
+
+### Verify setting
+* Put following components in your page
+* Verify mpa information
+```
+<MapDashboard MapConfigParam="@MapConfigParam"/>
 ```
