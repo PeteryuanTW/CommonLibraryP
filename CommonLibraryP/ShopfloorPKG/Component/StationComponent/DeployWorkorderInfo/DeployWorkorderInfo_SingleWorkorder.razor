@@ -34,7 +34,7 @@
     protected override async Task OnInitializedAsync()
     {
         workorderIdModel = new ();
-        Workorders = await shopfloorService.GetAllWorkordersConfig();
+        Workorders = await shopfloorService.GetWorkordersRunningConfig();
     }
 
     private async Task SetWorkorder()

@@ -23,12 +23,11 @@ namespace CommonLibraryP.ShopfloorPKG
 
         public DateTime? StartTime { get; set; }
         public DateTime? FinishedTime { get; set; }
-
-
-        public virtual ICollection<ItemRecordDetail> ItemRecordDetails { get; set; } = new List<ItemRecordDetail>();
-
         public virtual ICollection<TaskDetail> TaskDetails { get; set; } = new List<TaskDetail>();
+        public virtual ICollection<ItemRecord> ItemRecords { get; set; } = new List<ItemRecord>();
 
-        public virtual Workorder? Workorders { get; set; }
+        public string ItemsRecordString => string.Join(", ", ItemRecords.Select(r => $"{r.RecordName}:{r.RecordValue}"));
+
+        public virtual Workorder? Workorder { get; set; }
     }
 }

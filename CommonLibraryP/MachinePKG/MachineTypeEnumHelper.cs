@@ -263,15 +263,6 @@ namespace CommonLibraryP.MachinePKG
     }
     #endregion
 
-    #region editmode
-    //public enum DataEditMode
-    //{
-    //    Insert,
-    //    Update,
-    //    Delete,
-    //}
-    #endregion
-
     #region special tag type
 
     //public class SpecialTagTypeWrapperClass : EnumWrapper

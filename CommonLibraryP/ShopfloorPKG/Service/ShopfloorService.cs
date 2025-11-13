@@ -137,7 +137,7 @@ namespace CommonLibraryP.ShopfloorPKG
 
         public Func<Task>? StationStatuschangedAct;
 
-        protected void MachineStatechanged()
+        protected void StationStatechanged()
         {
             StationStatuschangedAct?.Invoke();
         }
@@ -150,7 +150,6 @@ namespace CommonLibraryP.ShopfloorPKG
                 return await dbContext.Stations.AsNoTracking().ToListAsync();
             }
         }
-
         public virtual List<StationTypeWrapperClass> GetStationTypesWrapperClass()
         {
             return ShopfloorTypeEnumHelper.GetStationTypesWrapperClass().ToList();
@@ -233,8 +232,11 @@ namespace CommonLibraryP.ShopfloorPKG
             Station res;
             switch (station.StationType)
             {
-                case 111:
+                case 11:
                     res = new StationSingleWorkorderSingleSerial(station);
+                    break;
+                case 12:
+                    res = new StationSingleWorkorderMultipleSerials(station);
                     break;
                 default:
                     res = station;
@@ -263,7 +265,6 @@ namespace CommonLibraryP.ShopfloorPKG
                 //await Task.WhenAll(retrieveTasks);
             }
         }
-
         private async Task RetrieveWorkorderItemsAndTaskInStation(Station station)
         {
             using (var scope = scopeFactory.CreateScope())
@@ -278,7 +279,7 @@ namespace CommonLibraryP.ShopfloorPKG
                 bool singleTask = tasksInStation.Count == 1;
 
                 var distinctItemIds = tasksInStation.Select(x => x.ItemId).Distinct().ToList();
-                var ItemDetailsFromTasks = await dbContext.ItemDetails.Where(x => distinctItemIds.Contains(x.Id) && x.FinishedTime == null).AsNoTracking().ToListAsync();
+                var ItemDetailsFromTasks = await dbContext.ItemDetails.Include(x=>x.ItemRecords).Where(x => distinctItemIds.Contains(x.Id) && x.FinishedTime == null).AsNoTracking().ToListAsync();
                 bool hasItem = ItemDetailsFromTasks.Count > 0;
                 if (!hasItem)
                 {
@@ -342,7 +343,7 @@ namespace CommonLibraryP.ShopfloorPKG
             if (target is not null)
             {
                 var res = target.Run();
-                MachineStatechanged();
+                StationStatechanged();
                 return Task.FromResult<RequestResult>(res);
             }
             return Task.FromResult<RequestResult>(new(3, "Station not found"));
@@ -362,11 +363,12 @@ namespace CommonLibraryP.ShopfloorPKG
             }
             switch (targetStation.StationType)
             {
-                case 111:
+                case 11:
+                case 12:
                     try
                     {
                         StationSingleWorkorder? stationSingleWorkorder = targetStation as StationSingleWorkorder;
-                        var itemDetail = await GetOrGenerateItem(stationSingleWorkorder.Workorder.Id, singleSarialNoStationInModel.SerialNo, stationSingleWorkorder.Id);
+                        var itemDetail = await GetOrGenerateItem(stationSingleWorkorder.Workorder.Id, singleSarialNoStationInModel.SerialNo);
                         var addItemRes = stationSingleWorkorder.AddItemDetail(itemDetail);
 
                         if (!addItemRes.IsSuccess)
@@ -392,7 +394,7 @@ namespace CommonLibraryP.ShopfloorPKG
             }
         }
 
-        public async Task<RequestResult> StationOutByFIFO(FIFOStationOutModel fIFOStationOutModel)
+        public async Task<RequestResult> StationOutByFIFO(StationOutByFIFOModel fIFOStationOutModel)
         {
             Station? targetStation = GetStationByName(fIFOStationOutModel.StationName);
             if (targetStation is null)
@@ -407,19 +409,19 @@ namespace CommonLibraryP.ShopfloorPKG
             bool isLast = await CheckStationIsLastInProcess(targetStation);
             switch (targetStation.StationType)
             {
-                case 111:
+                case 11:
                     try
                     {
                         if (targetStation is StationSingleWorkorderSingleSerial stationSingleWorkorderSingleSerial)
                         {
+
+                            var item = stationSingleWorkorderSingleSerial?.WIPItemDetail;
+                            stationSingleWorkorderSingleSerial?.RemoveItemDetail();
+
                             var taskDetail = stationSingleWorkorderSingleSerial.WIPTaskDetail;
                             taskDetail.FinishedTime = DateTime.Now;
                             await UpsertTaskDetail(taskDetail);
                             stationSingleWorkorderSingleSerial?.RemoveTaskDetail();
-
-
-                            var item = stationSingleWorkorderSingleSerial?.WIPItemDetail;
-                            stationSingleWorkorderSingleSerial?.RemoveItemDetail();
 
                             if (isLast)
                             {
@@ -451,6 +453,80 @@ namespace CommonLibraryP.ShopfloorPKG
             }
         }
 
+        public async Task<RequestResult> StationOutBySerialNo(StationOutBySerialNoModel stationOutBySerialNoModel)
+        {
+            Station? targetStation = GetStationByName(stationOutBySerialNoModel.StationName);
+            if (targetStation is null)
+            {
+                return new(3, $"station {stationOutBySerialNoModel.StationName} not found");
+            }
+            var check = targetStation.CheckCanRemoveItem();
+            if (!check.IsSuccess)
+            {
+                return check;
+            }
+            bool isLast = await CheckStationIsLastInProcess(targetStation);
+            switch (targetStation.StationType)
+            {
+                case 12:
+                    try
+                    {
+                        if (targetStation is StationSingleWorkorderMultipleSerials stationSingleWorkorderMultipleSerials)
+                        {
+                            var item = stationSingleWorkorderMultipleSerials?.RemoveItemDetail(stationOutBySerialNoModel.SerialNo).Obj;
+                            //stationSingleWorkorderSingleSerial?.RemoveItemDetail();
+
+
+                            var taskDetail = stationSingleWorkorderMultipleSerials?.RemoveTaskDetail(item.Id).Obj;
+                            taskDetail.FinishedTime = DateTime.Now;
+                            await UpsertTaskDetail(taskDetail);
+                            //stationSingleWorkorderSingleSerial?.RemoveTaskDetail();
+
+
+                            
+
+                            if (isLast)
+                            {
+                                item.FinishedTime = DateTime.Now;
+                                if (stationOutBySerialNoModel.Pass)
+                                {
+                                    item.Okamount++;
+                                }
+                                else
+                                {
+                                    item.Ngamount++;
+                                }
+                                return await UpsertItemDetail(item);
+                            }
+                            return new(2, $"Station {stationOutBySerialNoModel.StationName} station out by FIFO success");
+                        }
+                        else
+                        {
+                            return new(4, $"Station {stationOutBySerialNoModel.StationName} type downcasting error");
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        return new(4, ex.Message);
+                    }
+                default:
+                    return new(3, $"station {stationOutBySerialNoModel.StationName} deosn't support this command");
+            }
+        }
+
+
+        public Task<RequestResult> ClearStation(Guid id)
+        {
+            var target = stations.FirstOrDefault(x => x.Id == id);
+            if (target is not null)
+            {
+                var res = target.ClearWorkorder();
+                StationStatechanged();
+                return Task.FromResult<RequestResult>(res);
+            }
+            return Task.FromResult<RequestResult>(new(3, "Station not found"));
+        }
 
         #endregion
 
@@ -462,6 +538,16 @@ namespace CommonLibraryP.ShopfloorPKG
                 Workorder w = new();
                 var dbContext = scope.ServiceProvider.GetRequiredService<ShopfloorDBContext>();
                 return await dbContext.Workorders.AsNoTracking().ToListAsync();
+            }
+        }
+
+        public async Task<List<Workorder>> GetWorkordersRunningConfig()
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                Workorder w = new();
+                var dbContext = scope.ServiceProvider.GetRequiredService<ShopfloorDBContext>();
+                return await dbContext.Workorders.Where(x => x.Status == 5).AsNoTracking().ToListAsync();
             }
         }
         public async Task<RequestResult> UpsertWorkorderConfig(Workorder workorder)
@@ -550,16 +636,85 @@ namespace CommonLibraryP.ShopfloorPKG
                     .AsNoTracking().ToListAsync();
             }
         }
+
+        public async Task<RequestResult> StartWorkorderById(Guid id)
+        {
+            try
+            {
+                using (var scope = scopeFactory.CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<ShopfloorDBContext>();
+                    var target = await dbContext.Workorders.FirstOrDefaultAsync(x => x.Id == id);
+                    if (target is not null)
+                    {
+                        if (target.CanRun)
+                        {
+                            target.Start();
+                            await dbContext.SaveChangesAsync();
+                            return new(2, $"start workorder success");
+                        }
+                        else
+                        {
+                            return new(4, "workorder is not allow to run");
+                        }
+                    }
+                    else
+                    {
+                        return new(4, "Workorder not found");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                return new(4, $"start workorder fail({e.Message})");
+            }
+
+        }
+
+        public async Task<RequestResult> StopWorkorderById(Guid id)
+        {
+            try
+            {
+                using (var scope = scopeFactory.CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<ShopfloorDBContext>();
+                    var target = await dbContext.Workorders.FirstOrDefaultAsync(x => x.Id == id);
+                    if (target is not null)
+                    {
+                        if (target.CanStop)
+                        {
+                            target.Stop();
+                            await dbContext.SaveChangesAsync();
+                            return new(2, $"stop workorder success");
+                        }
+                        else
+                        {
+                            return new(4, "workorder is not allow to stop");
+                        }
+                    }
+                    else
+                    {
+                        return new(4, "Workorder not found");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                return new(4, $"stop workorder fail({e.Message})");
+            }
+
+        }
         #endregion
 
         #region item
 
-        private async Task<ItemDetail> GetOrGenerateItem(Guid workorderID, string serialNo, Guid stationID)
+        private async Task<ItemDetail> GetOrGenerateItem(Guid workorderID, string serialNo)
         {
             using (var scope = scopeFactory.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ShopfloorDBContext>();
                 var targetItem = dbContext.ItemDetails
+                    .Include(x => x.ItemRecords)
                     .AsNoTracking()
                     .AsSplitQuery()
                     .FirstOrDefault(x => x.WorkordersId == workorderID && x.SerialNo == serialNo);
@@ -567,8 +722,6 @@ namespace CommonLibraryP.ShopfloorPKG
                 {
                     //first item
                     var newItem = await GenerateItemDetail(workorderID, serialNo);
-                    //var newTask = await GenerateTaskDetail(newItem.Id, stationID);
-                    //newItem.TaskDetails.Add(newTask);
                     return newItem;
                 }
                 else
@@ -587,6 +740,15 @@ namespace CommonLibraryP.ShopfloorPKG
                 await dbContext.ItemDetails.AddAsync(itemDetail);
                 await dbContext.SaveChangesAsync();
                 return itemDetail;
+            }
+        }
+
+        private async Task<ItemDetail?> GetItemDetailWithRecord(Guid id)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ShopfloorDBContext>();
+                return await dbContext.ItemDetails.Include(x => x.ItemRecords).FirstOrDefaultAsync(x => x.Id == id);
             }
         }
 
@@ -618,6 +780,79 @@ namespace CommonLibraryP.ShopfloorPKG
                 catch (Exception ex)
                 {
                     return new RequestResult(4, $"Upsert task fail({ex.Message})");
+                }
+            }
+        }
+
+        public async Task<List<ItemDetail>> GetItemDetails()
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ShopfloorDBContext>();
+                return await dbContext.ItemDetails.Include(x => x.Workorder)
+                    .Include(x=>x.TaskDetails).ThenInclude(x=>x.Station)
+                    .Include(x=>x.ItemRecords)
+                    .AsNoTracking().ToListAsync();
+            }
+        }
+
+        #endregion
+
+        #region itemRecord
+
+        public async Task<RequestResult> RecordItemDetail(SingleWorkorderRecordModel singleWorkorderRecordModel)
+        {
+            var stationSingleWorkorder = stations.OfType<StationSingleWorkorder>();
+            var stationSingleWorkorderWithWIP = stationSingleWorkorder.Where(x => x.IsRunning && x.CheckItemIsWIP(singleWorkorderRecordModel.serialNo)); ;
+            if (stationSingleWorkorderWithWIP.Any())
+            {
+                var wo = stationSingleWorkorderWithWIP.FirstOrDefault().Workorder;
+                var targetItem = await GetOrGenerateItem(wo.Id, singleWorkorderRecordModel.serialNo);
+                var res =  await UpsertItemRecord(targetItem.Id, singleWorkorderRecordModel.recordName, singleWorkorderRecordModel.recordValue);
+
+                var newItemWithRecord = await GetItemDetailWithRecord(targetItem.Id);
+
+                stationSingleWorkorderWithWIP.ToList().ForEach(x => x.RefreshItemAndRecord(newItemWithRecord));
+
+
+
+                return res;
+            }
+            else
+            {
+                return new(4, $"Item {singleWorkorderRecordModel.serialNo} not found as WIP in any running station");
+            }
+
+        }
+
+        private async Task<RequestResult> UpsertItemRecord(Guid itemId, string recordName, string recordValue)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                try
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<ShopfloorDBContext>();
+                    var target = await dbContext.ItemRecords.FirstOrDefaultAsync(x => x.ItemId == itemId && x.RecordName == recordName);
+                    if (target is not null)
+                    {
+                        target.RecordValue = recordValue;
+                    }
+                    else
+                    {
+                        await dbContext.ItemRecords.AddAsync(new ItemRecord
+                        {
+                            Id = Guid.NewGuid(),
+                            ItemId = itemId,
+                            RecordName = recordName,
+                            RecordValue = recordValue
+                        });
+                    }
+                    await dbContext.SaveChangesAsync();
+                    return new(2, $"Upsert item record success");
+                }
+                catch (Exception ex)
+                {
+                    return new RequestResult(4, $"Upsert item record fail({ex.Message})");
                 }
             }
         }

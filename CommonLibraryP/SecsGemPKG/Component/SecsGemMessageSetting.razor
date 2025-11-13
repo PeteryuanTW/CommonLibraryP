@@ -1,0 +1,66 @@
+﻿@namespace CommonLibraryP.SecsGemPKG.Component
+@rendermode RenderMode.InteractiveServer
+
+@inject SecsGemService secsGemService
+@inject NotificationService notificationService
+
+<DxSplitter CssClass="w-100 h-100">
+    <Panes>
+        <DxSplitterPane Size="4fr" AllowCollapse="true">
+            <div>
+                <DxGrid Data="@secsRootNodes" SelectedDataItem="@targetSecsItemObj" SelectedDataItemChanged="OnSelectedChanged" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" HighlightRowOnHover="true">
+                    <ToolbarTemplate>
+                        <DxToolbar Title="@($"{targetSecsItem?.Id}")" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                            <Items>
+                                <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-pencil" Enabled="@secsItemSelected" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-trash" Enabled="@secsItemSelected" RenderStyle="ButtonRenderStyle.Danger" Alignment="ToolbarItemAlignment.Right" BeginGroup="true" />
+                            </Items>
+                        </DxToolbar>
+                    </ToolbarTemplate>
+                    <Columns>
+                        <DxGridDataColumn FieldName="@nameof(SecsTreeNode.Id)"></DxGridDataColumn>
+                    </Columns>
+                </DxGrid>
+            </div>
+        </DxSplitterPane>
+        <DxSplitterPane Size="4fr" AllowCollapse="true">
+            <div>
+                <DxTreeView Data="@relativeItems"
+                            AnimationType="LayoutAnimationType.Slide">
+                    <DataMappings>
+                        <DxTreeViewDataMapping Text="123"
+                                               Key="@nameof(SecsTreeNode.Id)"
+                                               Children="@nameof(SecsTreeNode.ChildrenNode)" />
+                    </DataMappings>
+                </DxTreeView>
+            </div>
+        </DxSplitterPane>
+    </Panes>
+</DxSplitter>
+
+
+
+@code {
+    private IEnumerable<SecsTreeNode> secsRootNodes = new List<SecsTreeNode>();
+    private Object? targetSecsItemObj;
+    private SecsTreeNode? targetSecsItem => targetSecsItemObj as SecsTreeNode;
+    private bool secsItemSelected => targetSecsItem != null;
+
+    private List<SecsTreeNode> relativeItems = new List<SecsTreeNode>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        secsRootNodes = await secsGemService.GetAllSecsGemRootItems();
+    }
+
+    private async Task OnSelectedChanged(Object obj)
+    {
+        targetSecsItemObj = obj;
+        if (secsItemSelected)
+        {
+            relativeItems = await secsGemService.GetAllFlatSecsGemItems(targetSecsItem!.Id);
+        }
+    }
+}

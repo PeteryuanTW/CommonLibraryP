@@ -30,12 +30,16 @@ namespace CommonLibraryP.ShopfloorPKG
         public TaskDetail? WIPTaskDetail => wipTaskDetail;
         protected override int WIPTaskAmount => WIPTaskDetail is null ? 0 : 1;
 
+        public override bool CanClear => IsRunning && WorkorderAmount is 1 && WIPItemAmount is 0 && WIPTaskAmount is 0;
+
         public override RequestResult CheckCanAddItem()
         {
-            if (StationStatusCode is not 5)
+            var res = base.CheckCanAddItem();
+            if(!res.IsSuccess)
             {
-                return new RequestResult(4, $"Station {Name} is not running");
+                return res;
             }
+
             if (WorkorderAmount is not 1)
             {
                 return new RequestResult(4, $"Station {Name} workorder amount error ({WorkorderAmount})");
@@ -65,12 +69,12 @@ namespace CommonLibraryP.ShopfloorPKG
             UIUpdate();
             return new RequestResult(2, $"Station {Name} add item {itemDetail?.SerialNo} success");
         }
-
         public override RequestResult CheckCanRemoveItem()
         {
-            if (StationStatusCode is not 5)
+            var res = base.CheckCanRemoveItem();
+            if (!res.IsSuccess)
             {
-                return new RequestResult(4, $"Station {Name} is not running");
+                return res;
             }
             if (WorkorderAmount is not 1)
             {
@@ -101,13 +105,12 @@ namespace CommonLibraryP.ShopfloorPKG
             UIUpdate();
             return new RequestResult(2, $"Station {Name} remove item success");
         }
-
-
         public override RequestResult CheckCanAddTask()
         {
-            if (StationStatusCode is not 5)
+            var res = base.CheckCanAddTask();
+            if (!res.IsSuccess)
             {
-                return new RequestResult(4, $"Station {Name} is not running");
+                return res;
             }
             if (WorkorderAmount is not 1)
             {
@@ -123,7 +126,7 @@ namespace CommonLibraryP.ShopfloorPKG
             }
             return new RequestResult(2, $"Station {Name} can add task");
         }
-
+        
         public override RequestResult AddTaskDetail(TaskDetail taskDetail)
         {
             var check = CheckCanAddTask();
@@ -131,32 +134,32 @@ namespace CommonLibraryP.ShopfloorPKG
             {
                 return check;
             }
-            if (WIPItemAmount is not 1)
-            {
-                return new RequestResult(4, $"Item amount {WIPItemAmount} error");
-            }
-            if (WIPTaskAmount is not 0)
-            {
-                return new RequestResult(4, $"Task amount {WIPTaskAmount} error");
-            }
+            //if (WIPItemAmount is not 1)
+            //{
+            //    return new RequestResult(4, $"Item amount {WIPItemAmount} error");
+            //}
+            //if (WIPTaskAmount is not 0)
+            //{
+            //    return new RequestResult(4, $"Task amount {WIPTaskAmount} error");
+            //}
             wipTaskDetail = taskDetail;
             UIUpdate();
             return new RequestResult(2, $"Station add task success");
         }
-
         public override RequestResult CheckCanRemoveTask()
         {
-            if (StationStatusCode is not 5)
+            var check = base.CheckCanRemoveTask();
+            if (!check.IsSuccess)
             {
-                return new RequestResult(4, $"Station {Name} is not running");
+                return check;
             }
             if (WorkorderAmount is not 1)
             {
                 return new RequestResult(4, $"Station {Name} has no workorder yet");
             }
-            if (WIPItemAmount is not 1)
+            if (WIPItemAmount is not 0)
             {
-                return new RequestResult(4, $"Station {Name} has no item yet");
+                return new RequestResult(4, $"Station {Name} has item now");
             }
             if (WIPTaskAmount is not 1)
             {
@@ -164,7 +167,6 @@ namespace CommonLibraryP.ShopfloorPKG
             }
             return new RequestResult(2, $"Station {Name} can remove task");
         }
-        
         public RequestResult RemoveTaskDetail()
         {
             var check = CheckCanRemoveTask();
@@ -172,17 +174,30 @@ namespace CommonLibraryP.ShopfloorPKG
             {
                 return check;
             }
-            if (WIPItemAmount is not 1)
-            {
-                return new RequestResult(4, $"Item amount {WIPItemAmount} error"); ;
-            }
-            if (WIPTaskAmount is not 1)
-            {
-                return new RequestResult(4, $"Item task amount {WIPTaskAmount} error"); ;
-            }
+            //if (WIPItemAmount is not 1)
+            //{
+            //    return new RequestResult(4, $"Item amount {WIPItemAmount} error"); ;
+            //}
+            //if (WIPTaskAmount is not 1)
+            //{
+            //    return new RequestResult(4, $"Item task amount {WIPTaskAmount} error"); ;
+            //}
             wipTaskDetail = null;
             UIUpdate();
             return new RequestResult(2, $"Station {Name} remove item success");
+        }
+
+
+
+        public override bool CheckItemIsWIP(string serialNo)
+        {
+            return wipItemDetail?.SerialNo == serialNo;
+        }
+        public override RequestResult RefreshItemAndRecord(ItemDetail itemDetail)
+        {
+            wipItemDetail = itemDetail;
+            UIUpdate();
+            return new RequestResult(2, $"Station {Name} refresh item {itemDetail?.SerialNo} success");
         }
     }
 }

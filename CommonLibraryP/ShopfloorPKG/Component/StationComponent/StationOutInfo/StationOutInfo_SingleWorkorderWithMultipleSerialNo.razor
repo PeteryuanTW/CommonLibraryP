@@ -1,0 +1,59 @@
+﻿@namespace CommonLibraryP.ShopfloorPKG.Component
+
+@rendermode RenderMode.InteractiveServer
+@inject ShopfloorService shopfloorService
+@inject IStringLocalizer<ShopfloorLanguage> localizer
+
+<EditForm Model="@stationOutBySerialNoModel" OnValidSubmit="StationOut" Context="EditFormContext">
+    <DataAnnotationsValidator />
+    <DxFormLayout>
+        <DxFormLayoutItem Visible="false" CaptionPosition="CaptionPosition.Vertical">
+            <DxTextBox @bind-Text="@stationOutBySerialNoModel.StationName" ReadOnly="true" />
+        </DxFormLayoutItem>
+        <DxFormLayoutItem BeginRow="true" Caption="@($"{localizer["Serial No"]}")" CaptionPosition="CaptionPosition.Vertical">
+            <DxComboBox Data="@itemDetails" @bind-Value="@stationOutBySerialNoModel.SerialNo" TextFieldName="@nameof(ItemDetail.SerialNo)" ValueFieldName="@nameof(ItemDetail.SerialNo)"></DxComboBox>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="@($"{localizer["Ok"]}")" CaptionPosition="CaptionPosition.Vertical">
+            <DxCheckBox @bind-Checked="@stationOutBySerialNoModel.Pass" CheckType="CheckType.Switch" />
+        </DxFormLayoutItem>
+        <DxFormLayoutItem ColSpanLg="12">
+            <hr />
+        </DxFormLayoutItem>
+        <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+            <DxToolbar>
+                <Items>
+                    <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                </Items>
+            </DxToolbar>
+        </DxFormLayoutItem>
+    </DxFormLayout>
+</EditForm>
+
+@code {
+    [Parameter]
+    public string StationName { get; set; } = null!;
+    [Parameter]
+    public EventCallback<StationOutBySerialNoModel> StationOutCallback { get; set; }
+    private StationOutBySerialNoModel stationOutBySerialNoModel = new();
+
+    private List<ItemDetail> itemDetails = new();
+
+    protected override void OnParametersSet()
+    {
+        stationOutBySerialNoModel.StationName = StationName;
+
+        var station = shopfloorService.Stations.FirstOrDefault(x => x.Name == StationName);
+
+        if (station is StationSingleWorkorderMultipleSerials multipleSerialNoStation)
+        {
+            itemDetails = multipleSerialNoStation.WIPItemDetails;
+        }
+
+        base.OnParametersSet();
+    }
+
+    private async Task StationOut()
+    {
+        await StationOutCallback.InvokeAsync(stationOutBySerialNoModel);
+    }
+}

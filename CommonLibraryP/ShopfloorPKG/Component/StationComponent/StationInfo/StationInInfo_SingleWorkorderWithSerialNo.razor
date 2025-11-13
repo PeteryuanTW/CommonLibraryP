@@ -6,7 +6,7 @@
 <EditForm Model="@singleSarialNoStationInModel" OnValidSubmit="StationIn" Context="EditFormContext">
     <DataAnnotationsValidator />
     <DxFormLayout>
-        <DxFormLayoutItem Caption="@($"{localizer["Station"]}")" CaptionPosition="CaptionPosition.Vertical">
+        <DxFormLayoutItem Visible="false" Caption="@($"{localizer["Station"]}")" CaptionPosition="CaptionPosition.Vertical">
             <DxTextBox @bind-Text="@singleSarialNoStationInModel.StationName" ReadOnly="true"/>
         </DxFormLayoutItem>
         <DxFormLayoutItem Caption="@($"{localizer["Serial no"]}")" CaptionPosition="CaptionPosition.Vertical">

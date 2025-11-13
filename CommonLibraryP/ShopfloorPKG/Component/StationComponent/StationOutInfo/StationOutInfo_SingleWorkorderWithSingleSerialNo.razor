@@ -6,7 +6,7 @@
 <EditForm Model="@fifoStationOutModel" OnValidSubmit="StationOut" Context="EditFormContext">
     <DataAnnotationsValidator />
     <DxFormLayout>
-        <DxFormLayoutItem Caption="@($"{localizer["Station"]}")" CaptionPosition="CaptionPosition.Vertical">
+        <DxFormLayoutItem Visible="false" Caption="@($"{localizer["Station"]}")" CaptionPosition="CaptionPosition.Vertical">
             <DxTextBox @bind-Text="@fifoStationOutModel.StationName" ReadOnly="true" />
         </DxFormLayoutItem>
         <DxFormLayoutItem Caption="@($"{localizer["Ok"]}")" CaptionPosition="CaptionPosition.Vertical">
@@ -29,8 +29,8 @@
     [Parameter]
     public string StationName { get; set; } = null!;
     [Parameter]
-    public EventCallback<FIFOStationOutModel> StationOutCallback { get; set; }
-    private FIFOStationOutModel fifoStationOutModel = new();
+    public EventCallback<StationOutByFIFOModel> StationOutCallback { get; set; }
+    private StationOutByFIFOModel fifoStationOutModel = new();
 
     protected override void OnParametersSet()
     {

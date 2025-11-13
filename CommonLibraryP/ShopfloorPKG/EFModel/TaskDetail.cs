@@ -22,6 +22,6 @@ namespace CommonLibraryP.ShopfloorPKG
 
         public virtual Station? Station { get; set; }
 
-        public virtual ICollection<TaskRecordDetail> TaskRecordDetails { get; set; } = new List<TaskRecordDetail>();
+        //public virtual ICollection<TaskRecordDetail> TaskRecordDetails { get; set; } = new List<TaskRecordDetail>();
     }
 }

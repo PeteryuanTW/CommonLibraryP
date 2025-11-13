@@ -1,0 +1,216 @@
+﻿@namespace CommonLibraryP.SecsGemPKG.Component
+@rendermode RenderMode.InteractiveServer
+@using QSACTIVEXLib
+
+@implements IDisposable
+@inject SecsGemService secsGemService
+@inject NotificationService notificationService
+
+<DxStackLayout Orientation="Orientation.Horizontal" ItemSpacing="1rem">
+    <Items>
+        <DxStackLayoutItem Length="4fr">
+            <Template>
+                <div>
+                    <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+                        <DxFormLayoutItem ColSpanLg="12" Caption="HSMS" CaptionPosition="CaptionPosition.Horizontal">
+                            <hr />
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem ColSpanLg="12">
+                            <DxToolbar>
+                                <Items>
+                                    <DxToolbarItem BeginGroup="true" Click="SwitchHSMSStatus" IconCssClass="@($"oi oi-media-{GetHSMSHostingIcon(secsGemStatus?.Hosting ?? false)}")" RenderStyle="@(GetHSMSHostingStyle(secsGemStatus?.Hosting ?? false))" />
+                                    <DxToolbarItem BeginGroup="true" IconCssClass="@($"oi oi-info")" RenderStyle="ButtonRenderStyle.Info" Click="ShowHSMSParameterPopup" />
+                                </Items>
+                            </DxToolbar>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem ColSpanLg="6" Caption="Hosting">
+                            <DxCheckBox Checked="@secsGemStatus?.Hosting" ReadOnly="true" CheckType="CheckType.Switch" />
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem ColSpanLg="6" Caption="Connected">
+                            <DxCheckBox Checked="@secsGemStatus?.Connected" ReadOnly="true" CheckType="CheckType.Switch" />
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem ColSpanLg="12" Caption="GEM" CaptionPosition="CaptionPosition.Horizontal">
+                            <hr />
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem ColSpanLg="6" Caption="Communicating">
+                            <DxCheckBox Checked="@secsGemStatus?.Communicating" ReadOnly="true" CheckType="CheckType.Switch" />
+                        </DxFormLayoutItem>
+                    </DxFormLayout>
+                </div>
+            </Template>
+        </DxStackLayoutItem>
+        <DxStackLayoutItem Length="8fr">
+            <Template>
+                <div class="h-100">
+                    <DxGrid Data="@qsEventLogs">
+                        <Columns>
+                            <DxGridDataColumn FieldName="@nameof(QSEventLog.LogTime)" DisplayFormat="g" />
+                            <DxGridDataColumn FieldName="@nameof(QSEventLog.EventType)" />
+                            <DxGridDataColumn FieldName="@nameof(QSEventLog.S)" />
+                            <DxGridDataColumn FieldName="@nameof(QSEventLog.F)" />
+                            <DxGridDataColumn FieldName="@nameof(QSEventLog.SecsItem)">
+                                <CellDisplayTemplate>
+                                    <DxButton Click="@(async () => await ShowSECSItemPopup(context.DataItem))" Visible="@(GetSecsItem(context.DataItem) is not null)" IconCssClass="oi oi-info"></DxButton>
+                                </CellDisplayTemplate>
+                            </DxGridDataColumn>
+                        </Columns>
+                    </DxGrid>
+                </div>
+            </Template>
+        </DxStackLayoutItem>
+    </Items>
+</DxStackLayout>
+
+<DxPopup @ref="@infoPopup" ShowCloseButton="true" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <BodyContentTemplate Context="bodycontext">
+        <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+            <DxFormLayoutItem ColSpanLg="12" Caption="Commom Parameter" CaptionPosition="CaptionPosition.Horizontal">
+                <hr />
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="COMMMODE" ColSpanLg="4">
+                <DxComboBox ReadOnly="true" Data="@commmodeTypeWrapperClasses" @bind-Value="@qsWrapper.lCOMM_Mode" ValueFieldName="@nameof(COMMMODETypeWrapperClass.Commmode)" TextFieldName="@nameof(COMMMODETypeWrapperClass.DisplayName)"></DxComboBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="T3" ColSpanLg="4">
+                <DxSpinEdit ReadOnly="true" @bind-Value="@qsWrapper.T3"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="Device Id" ColSpanLg="4">
+                <DxSpinEdit ReadOnly="true" @bind-Value="@qsWrapper.lDeviceID"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem ColSpanLg="12" Caption="HSMS Parameter" CaptionPosition="CaptionPosition.Horizontal">
+                <hr />
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="HSMS_Connect_Mode">
+                <DxComboBox ReadOnly="true" Data="@hsmsCommmodeTypeWrapperClasses" @bind-Value="@qsWrapper.HSMS_Connect_Mode" ValueFieldName="@nameof(HSMSCOMMMODETypeWrapperClass.HSMS_COMM_MODE)" TextFieldName="@nameof(HSMSCOMMMODETypeWrapperClass.DisplayName)"></DxComboBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="lLinkTestPeriod">
+                <DxSpinEdit ReadOnly="true" @bind-Value="@qsWrapper.lLinkTestPeriod"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="T5" ColSpanLg="3" BeginRow="true">
+                <DxSpinEdit ReadOnly="true" @bind-Value="@qsWrapper.T5"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="T6" ColSpanLg="3">
+                <DxSpinEdit ReadOnly="true" @bind-Value="@qsWrapper.T6"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="T7" ColSpanLg="3">
+                <DxSpinEdit ReadOnly="true" @bind-Value="@qsWrapper.T7"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="T8" ColSpanLg="3">
+                <DxSpinEdit ReadOnly="true" @bind-Value="@qsWrapper.T8"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="szLocalIP" ColSpanLg="3" BeginRow="true">
+                <DxTextBox ReadOnly="true" @bind-Text="@qsWrapper.szLocalIP"></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="nLocalPort" ColSpanLg="3">
+                <DxSpinEdit ReadOnly="true" @bind-Value="@qsWrapper.nLocalPort"></DxSpinEdit>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="szRemoteIP" ColSpanLg="3">
+                <DxTextBox ReadOnly="true" @bind-Text="@qsWrapper.szRemoteIP"></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="nRemotePort" ColSpanLg="3">
+                <DxSpinEdit ReadOnly="true" @bind-Value="@qsWrapper.nRemotePort"></DxSpinEdit>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    </BodyContentTemplate>
+</DxPopup>
+
+<DxPopup @ref="@secsItemPopup" ShowCloseButton="true" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <BodyContentTemplate Context="bodycontext">
+        <SecsItemTreeRoot SecsItem="@surrentSECSItem" />
+    </BodyContentTemplate>
+</DxPopup>
+
+@code {
+    DxPopup? infoPopup { get; set; }
+
+    DxPopup? secsItemPopup { get; set; }
+
+
+
+    private QSWrapper qsWrapper = new();
+    private SECSGemStatus secsGemStatus = null!;
+    private List<QSEventLog> qsEventLogs = new();
+    private SecsTreeNode? surrentSECSItem;
+
+    private ButtonRenderStyle GetHSMSHostingStyle(bool b)
+    => b ? ButtonRenderStyle.Danger : ButtonRenderStyle.Success;
+    private string GetHSMSHostingIcon(bool b)
+    => b ? "stop" : "play";
+
+    private ToolbarItemRenderStyleMode GetBtnRender(bool b)
+    => b ? ToolbarItemRenderStyleMode.Contained : ToolbarItemRenderStyleMode.Plain;
+    private string GetHostingText(bool h)
+    => h ? "HSMS hosting" : "HSMS not hosting";
+    private string GetConnectingText(bool c)
+    => c ? "Connected" : "Not connected";
+
+    private SECSCommonParameter? secsCommonParameter;
+
+    private IEnumerable<COMMMODETypeWrapperClass> commmodeTypeWrapperClasses => SecsGemTypeEnumHelper.CommmodeTypeWrapperClasses();
+    public IEnumerable<SECSCOMMMODETypeWrapperClass> secsCommmodeTypeWrapperClasses = SecsGemTypeEnumHelper.SecsCommmodeTypeWrapperClasses();
+    public IEnumerable<HSMSCOMMMODETypeWrapperClass> hsmsCommmodeTypeWrapperClasses = SecsGemTypeEnumHelper.HsmsCommmodeTypeWrapperClasses();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetSECSGemInfo();
+
+        secsGemService.UIEvent += GetSECSGemInfo;
+        await base.OnInitializedAsync();
+    }
+
+    private async Task GetSECSGemInfo()
+    {
+        qsWrapper = secsGemService.QSWrapper;
+        secsGemStatus = secsGemService.SECSGemStatus;
+        qsEventLogs = secsGemService.QSEventLogs;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+
+    }
+
+    private async Task ShowHSMSParameterPopup()
+    {
+        await infoPopup?.ShowAsync();
+    }
+
+
+    private SecsTreeNode? GetSecsItem(object context)
+    {
+        if (context is QSEventLog qsEventLog)
+        {
+            return qsEventLog.SecsItem;
+        }
+        return null;
+    }
+
+    private async Task ShowSECSItemPopup(Object qsEventObj)
+    {
+        if (qsEventObj is QSEventLog qsEventLog)
+        {
+            surrentSECSItem = await secsGemService.GetSecsGemItemById(new Guid("440492e9-e4f1-4651-9c25-a07b1dd16354"));//qsEventLog.SecsItem;
+            await secsItemPopup.ShowAsync();
+        }
+    }
+
+    private async Task CloseSECSItemPopup()
+    {
+        surrentSECSItem = null;
+        await secsItemPopup.CloseAsync();
+    }
+
+    private void SwitchHSMSStatus()
+    {
+        if (!secsGemStatus.Hosting)
+        {
+            var res = secsGemService.InitHSMSFromSetting();
+            notificationService.ShowToast(res);
+        }
+        else
+        {
+            var res = secsGemService.StopHSMS();
+            notificationService.ShowToast(res);
+        }
+    }
+}

@@ -38,15 +38,6 @@
 </DxGrid>
 
 <DxPopup @ref="@machinePopup" ShowCloseButton="true" Closing="InitParam" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
-    @* <HeaderTemplate>
-        <div class="w-100 p-3 border border-bottom">
-            <DxToolbar>
-                <Items>
-                    <DxToolbarItem IconCssClass="oi oi-x" Click="CloseMachinePopup" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
-                </Items>
-            </DxToolbar>
-        </div>
-    </HeaderTemplate> *@
     <BodyContentTemplate Context="bodycontext">
         <EditForm Model="@targetMachine" Context="EditFormContext" OnValidSubmit="UpsertMachine">
             <DataAnnotationsValidator />
@@ -57,9 +48,6 @@
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["Enable"]}")" ColSpanLg="6">
                     <DxCheckBox CheckType="CheckType.Switch" @bind-Checked="@targetMachine.Enabled" />
                 </DxFormLayoutItem>
-                @* <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["Process"]}")" ColSpanLg="6">
-                    <DxComboBox Data="processes" @bind-Value="@taregtMachine.ProcessId" ValueFieldName="@nameof(Process.Id)" TextFieldName="@nameof(Process.Name)"></DxComboBox>
-                </DxFormLayoutItem> *@
                 <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["IP"]}")" ColSpanLg="6">
                     <DxTextBox @bind-Text="@targetMachine.Ip" ShowValidationIcon="true" />
                 </DxFormLayoutItem>

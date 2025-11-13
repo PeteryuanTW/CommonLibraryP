@@ -1,26 +1,27 @@
 ﻿@namespace CommonLibraryP.ShopfloorPKG.Component
 
 @rendermode RenderMode.InteractiveServer
-@inject IStringLocalizer<ShopfloorLanguage> localizer
+@inject IStringLocalizer<ShopfloorLanguage> shopfloorLocalizer
+@inject IStringLocalizer<CommonLanguage> commonLocalizer
 @inject ShopfloorService shopfloorService
 @inject NotificationService notificationService
 @implements IDisposable
 
 <style>
     .stationheight-s {
-    height: 30rem;
+    height: 35rem;
     }
 
     .stationheight-l {
-    height: 40rem;
+    height: 35rem;
     }
 
     .stationwide-s {
-    width: 20rem;
+    width: 23rem;
     }
 
     .stationwide-l {
-    width: 40rem;
+    width: 23rem;
     }
 
 </style>
@@ -29,7 +30,7 @@
 {
     <DxPopup HeaderText="Error Message" @bind-Visible="@showErrorMsg" CloseOnOutsideClick="false" />
 
-    <div class="card shadow p-3 @sizeCss" style="border-color:@(statusDetail?.GetColorRGBString())">
+    <div class="card shadow p-3 @heightCss @widthCss" style="border-color:@(statusDetail?.GetColorRGBString())">
         <DxGridLayout RowSpacing="1rem">
             <Rows>
                 <DxGridLayoutRow Areas="title" Height="1fr" />
@@ -48,7 +49,7 @@
                                 <Items>
                                     <DxButtonGroupItem Text="@($"{StationParam?.Process?.Name}")" />
                                     <DxButtonGroupItem Text="@($"{StationParam?.Name}")" />
-                                    <DxButtonGroupItem Text="@($"{localizer[CommonEnumHelper.GetStatusDetail(StationParam.StationStatusCode).DisplayName]}")" />
+                                    <DxButtonGroupItem Text="@($"{commonLocalizer[CommonEnumHelper.GetStatusDetail(StationParam.StationStatusCode).DisplayName]}")" />
                                 </Items>
                             </DxButtonGroup>
                         </div>
@@ -72,6 +73,7 @@
                     <Template>
                         <div class="w-100 h-100 d-flex flex-wrap justify-content-around align-items-center">
                             <DxButton Visible="@canrun" Click="RunStation" IconCssClass="oi oi-media-play" RenderStyle="ButtonRenderStyle.Success" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
+                            <DxButton Visible="@canclear" Click="ClearStation" IconCssClass="oi oi-share-boxed" RenderStyle="ButtonRenderStyle.Danger" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
                             <DxButton Click="@ShowOperationPopup" IconCssClass="oi oi-clipboard" RenderStyle="ButtonRenderStyle.Info" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
                         </div>
                     </Template>
@@ -92,17 +94,17 @@
         </HeaderTemplate>
         <BodyContentTemplate>
             <DxTabs>
-                <DxTabPage Text="@($"{localizer["Workorder Deploy"]}")" Visible="@StationParam.CanDeployWorkorder">
+                <DxTabPage Text="@($"{shopfloorLocalizer["Workorder Deploy"]}")" Visible="@StationParam.CanDeployWorkorder">
                     <div class="p-3">
                         @WorkorderDeployInfo
                     </div>
                 </DxTabPage>
-                <DxTabPage Text="@($"{localizer["Station In"]}")" Visible="@StationParam.CanStationIn">
+                <DxTabPage Text="@($"{shopfloorLocalizer["Station In"]}")" Visible="@StationParam.CanStationIn">
                     <div class="p-3">
                         @StationInInfo
                     </div>
                 </DxTabPage>
-                <DxTabPage Text="@($"{localizer["Station Out"]}")" Visible="@StationParam.CanStationOut">
+                <DxTabPage Text="@($"{shopfloorLocalizer["Station Out"]}")" Visible="@StationParam.CanStationOut">
                     <div class="p-3">
                         @StationOutInfo
                     </div>
@@ -130,26 +132,28 @@
 
     private RenderFragment? ItemAndTaskInfoArea => StationParam?.StationType switch
     {
-        111 => @<ItemAndTaskInfo_SingleWorkorderSingleItemWithSerialNo StationParamFromRoot="@StationParam" /> ,
+        11 => @<ItemAndTaskInfo_SingleWorkorderSingleItemWithSerialNo StationParamFromRoot="@StationParam" /> ,
+        12 => @<ItemAndTaskInfo_SingleWorkorderMultipleItemWithSerialNo StationParamFromRoot="@StationParam" /> ,
         _ => null,
     };
 
     private RenderFragment? WorkorderDeployInfo => StationParam.IsSingleWorkorder ?
     @<DeployWorkorderInfo_SingleWorkorder StationParamFromRoot="@StationParam" WorkorderIdModelCallback="DeployWorkorder" /> : null;
 
-    private RenderFragment? StationInInfo => StationParam.IsSingleItem ?
+    private RenderFragment? StationInInfo => StationParam.WithSerialNo ?
     @<StationInInfo_SingleWorkorderWithSerialNo StationName="@StationParam?.Name" StationInCallback="StationInWithSerialNo" />: null;
 
     private RenderFragment? StationOutInfo => StationParam.IsSingleItem ?
-    @<StationOutInfo_SingleWorkorderWithSerialNo StationName="@StationParam?.Name" StationOutCallback="StationOutWithoutSerialNo" />: null;
+    @<StationOutInfo_SingleWorkorderWithSingleSerialNo StationName="@StationParam?.Name" StationOutCallback="StationOutByFIFO" />: @<StationOutInfo_SingleWorkorderWithMultipleSerialNo StationName="@StationParam?.Name" StationOutCallback="StationOutWithSerialNo" />;
 
     private RenderFragment? ItemRecordInfo;
 
     public bool showErrorMsg = false;
 
-    private string sizeCss => StationParam.IsSingleItem ? "stationheight-s stationwide-s" : "stationheight-l stationwide-l";
+    private string heightCss => StationParam.IsSingleItem ? "stationheight-s" : "stationheight-l";
+    private string widthCss => StationParam.IsSingleItem ? "stationwide-s" : "stationwide-l";
     private int workorderAreaFrame => StationParam.IsSingleWorkorder ? 1 : 2;
-    private int itemAndTaskAreaFrame => StationParam.IsSingleItem ? 3 : 2;
+    private int itemAndTaskAreaFrame => StationParam.IsSingleItem ? 3 : 4;
 
 
     private bool showOperation = false;
@@ -159,10 +163,10 @@
     => showOperation = false;
 
     protected bool canedit => hasStation ? StationParam.StationStatusCode is 0 : false;
-    protected bool canrun => hasStation ? StationParam.Canrun : false;
-    protected bool canoperate => hasStation ? StationParam.StationStatusCode is 5 : false;
-    protected bool canpause => hasStation ? StationParam.StationStatusCode is 5 : false;
-    protected bool canstop => hasStation ? StationParam.StationStatusCode is 5 : false;
+    protected bool canrun => hasStation ? StationParam?.CanRun??false : false;
+    protected bool canoperate => hasStation ? StationParam.IsRunning : false;
+    protected bool canpause => hasStation ? StationParam.IsRunning : false;
+    protected bool canclear => hasStation ? StationParam?.CanClear??false : false;
     protected bool iserror => hasStation ? StationParam.StationStatusCode is 8 : false;
 
     protected override Task OnInitializedAsync()
@@ -223,10 +227,27 @@
 
     #region station out
 
-    private async Task StationOutWithoutSerialNo(FIFOStationOutModel fifoStationOutModel)
+    private async Task StationOutByFIFO(StationOutByFIFOModel fifoStationOutModel)
     {
         var res = await shopfloorService.StationOutByFIFO(fifoStationOutModel);
         CloseOperationPopup();
+        notificationService.ShowToast(res);
+    }
+
+    private async Task StationOutWithSerialNo(StationOutBySerialNoModel stationOutBySerialNoModel)
+    {
+        var res = await shopfloorService.StationOutBySerialNo(stationOutBySerialNoModel);
+        CloseOperationPopup();
+        notificationService.ShowToast(res);
+    }
+
+    #endregion
+
+    #region clear
+
+    private async Task ClearStation()
+    {
+        var res = await shopfloorService.ClearStation(StationParam.Id);
         notificationService.ShowToast(res);
     }
 

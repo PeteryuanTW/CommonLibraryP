@@ -1,0 +1,15 @@
+﻿@namespace CommonLibraryP.SecsGemPKG.Component
+@rendermode RenderMode.InteractiveServer
+@using CommonLibraryP.SecsGemPKG
+<CascadingValue Value="@SecsItem">
+    <DxTreeView>
+        <Nodes>
+            <SecsItemTreeNodes/>
+        </Nodes>
+    </DxTreeView>
+</CascadingValue>
+
+@code {
+    [Parameter]
+    public SecsTreeNode SecsItem { get; set; } = null!;
+}

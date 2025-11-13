@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CommonLibraryP.ShopfloorPKG
 {
-    public class FIFOStationOutModel
+    public class StationOutByFIFOModel
     {
         [Required]
         public string StationName { get; set; } = string.Empty;

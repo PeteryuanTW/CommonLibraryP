@@ -29,9 +29,11 @@ namespace CommonLibraryP.ShopfloorPKG
 
         public override int WorkorderAmount => workorder is null ? 0 : 1;
 
-        public override bool CanDeployWorkorder => WorkorderAmount is 0;
+        public override bool CanDeployWorkorder => StationStatusCode is 4 && WorkorderAmount is 0;
 
-        public override bool Canrun => StationStatusCode is 0 && WorkorderAmount is 1;
+        public override bool CanRun => StationStatusCode is 4 && WorkorderAmount is 1;
+
+        
 
         public override RequestResult SetWorkorder(Workorder wo)
         {
@@ -39,9 +41,9 @@ namespace CommonLibraryP.ShopfloorPKG
             {
                 return new(4, "Workorder already exist");
             }
-            if (StationStatusCode is not 0)
+            if (!CanDeployWorkorder)
             {
-                return new(4, "Station is not at Init status");
+                return new(4, "Station is not at idle status");
             }
             workorder = wo;
             UIUpdate();
@@ -54,9 +56,9 @@ namespace CommonLibraryP.ShopfloorPKG
             {
                 return new(4, $"Station {Name} workorder amount invalid{WorkorderAmount}");
             }
-            if (StationStatusCode is not 0)
+            if (!CanRun)
             {
-                return new(4, "Station is not at Init status");
+                return new(4, "Station is not at idle status");
             }
             SetStationStatus(5);
             UIUpdate();
@@ -65,13 +67,14 @@ namespace CommonLibraryP.ShopfloorPKG
 
         public override RequestResult ClearWorkorder()
         {
-            if ( WorkorderAmount is 0)
+            if (!CanClear)
             {
-                return new(4, $"Station {Name} has no workorder");
+                return new(4, $"Station {Name} not allow to clear");
             }
             else
             {
                 workorder = null;
+                SetStationStatus(4);
                 UIUpdate();
                 return new(2, $"Station {Name} clear workorder success");
             }

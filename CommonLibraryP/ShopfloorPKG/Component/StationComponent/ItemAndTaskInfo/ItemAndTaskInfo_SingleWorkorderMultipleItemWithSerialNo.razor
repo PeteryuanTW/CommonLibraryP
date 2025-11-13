@@ -1,0 +1,39 @@
+﻿@namespace CommonLibraryP.ShopfloorPKG.Component
+
+@inherits WorkorderInfoComponent
+@inject IStringLocalizer<ShopfloorLanguage> localizer
+
+
+@if (stationSingleWorkorderMultipleSerials is not null)
+{
+        <DxFormLayout>
+            <DxFormLayoutItem ColSpanLg="12" CaptionPosition="CaptionPosition.Vertical">
+                <DxGrid Data="@stationSingleWorkorderMultipleSerials.WIPTaskDetails"  PageSize="3">
+                    <Columns>
+                    <DxGridDataColumn FieldName="@nameof(TaskDetail.ItemId)" Caption="@($"{localizer["Serial no"]}")">
+                            <CellDisplayTemplate Context="itemidcontext">
+                                @stationSingleWorkorderMultipleSerials.WIPItemDetails.FirstOrDefault(x => x.Id == (itemidcontext.DataItem as TaskDetail).ItemId)?.SerialNo
+                            </CellDisplayTemplate>
+                        </DxGridDataColumn>
+                    <DxGridDataColumn FieldName="@nameof(TaskDetail.StartTime)" DisplayFormat="g" Caption="@($"{localizer["Start time"]}")" />
+                    </Columns>
+                </DxGrid>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+}
+else
+{
+
+}
+
+@code {
+
+    private StationSingleWorkorderMultipleSerials? stationSingleWorkorderMultipleSerials => StationParamFromRoot as StationSingleWorkorderMultipleSerials;
+
+    // private bool hasRecord => stationSingleWorkorderMultipleSerials is not null && stationSingleWorkorderMultipleSerials.WIPItemDetails.SelectMany(x=>x.ItemRecords) is not null && stationSingleWorkorderSingleSerial.WIPItemDetail.ItemRecords.Any();
+
+    // private IEnumerable<ItemRecord> itemRecords => hasRecord ? stationSingleWorkorderSingleSerial?.WIPItemDetail?.ItemRecords : new List<ItemRecord>();
+
+    // private string itemRecordMsg => string.Join(Environment.NewLine, itemRecords.Select(x => $"{x.RecordName}: {x.RecordValue}"));
+
+}

@@ -8,7 +8,15 @@
     <DxFormLayout>
         <DxFormLayoutItem Caption="@($"{localizer["Serial no"]}")" ColSpanLg="12" CaptionPosition="CaptionPosition.Vertical">
             <DxTextBox Text="@stationSingleWorkorderSingleSerial?.WIPItemDetail?.SerialNo" ReadOnly="true" />
-        </DxFormLayoutItem><DxFormLayoutItem Caption="@($"{localizer["Start time"]}")" ColSpanLg="12" CaptionPosition="CaptionPosition.Vertical">
+        </DxFormLayoutItem>
+        @* <DxFormLayoutItem ColSpanLg="1" CaptionPosition="CaptionPosition.Vertical" Visible="@hasRecord">
+            <DxToolbar>
+                <Items>
+                    <DxToolbarItem RenderStyle="ButtonRenderStyle.Info" Text="@($"{itemRecords.Count()}")" Tooltip="@itemRecordMsg" />
+                </Items>
+            </DxToolbar>
+        </DxFormLayoutItem> *@
+        <DxFormLayoutItem Caption="@($"{localizer["Start time"]}")" ColSpanLg="12" CaptionPosition="CaptionPosition.Vertical">
             <DxDateEdit Date="@stationSingleWorkorderSingleSerial?.WIPTaskDetail?.StartTime" ReadOnly="true" DisplayFormat="G" />
         </DxFormLayoutItem>
     </DxFormLayout>
@@ -20,6 +28,14 @@ else
 
 @code {
 
-    private StationSingleWorkorderSingleSerial stationSingleWorkorderSingleSerial => StationParamFromRoot as StationSingleWorkorderSingleSerial;
+    private StationSingleWorkorderSingleSerial? stationSingleWorkorderSingleSerial => StationParamFromRoot as StationSingleWorkorderSingleSerial;
+
+    private bool hasRecord => stationSingleWorkorderSingleSerial is not null && stationSingleWorkorderSingleSerial.WIPItemDetail is not null && stationSingleWorkorderSingleSerial.WIPItemDetail.ItemRecords.Any();
+
+    private int serialNoWidth => hasRecord ? 9 : 12;
+
+    private IEnumerable<ItemRecord> itemRecords => hasRecord? stationSingleWorkorderSingleSerial?.WIPItemDetail?.ItemRecords : new List<ItemRecord>();
+
+    private string itemRecordMsg => string.Join(Environment.NewLine, itemRecords.Select(x => $"{x.RecordName}: {x.RecordValue}"));
 
 }

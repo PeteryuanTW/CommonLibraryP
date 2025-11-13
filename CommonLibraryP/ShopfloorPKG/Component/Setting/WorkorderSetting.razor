@@ -1,6 +1,9 @@
-﻿@rendermode RenderMode.InteractiveServer
+﻿@namespace CommonLibraryP.ShopfloorPKG.Component
+
+@rendermode RenderMode.InteractiveServer
 @inject IStringLocalizer<ShopfloorLanguage> localizer
 @inject ShopfloorService shopfloorService
+@inject NotificationService notificationService
 
 <DxGridLayout ColumnSpacing="1rem">
     <Rows>
@@ -14,28 +17,27 @@
         <DxGridLayoutItem Row="1" Column="0">
             <Template>
                 <div class="p-3">
-                    <DxGrid @ref="grid" Data="@workorders" FocusedRowEnabled="true" FocusedRowChanged="OnFocusedRowChanged" DataItemDeleting="DeleteWorkorder" HighlightRowOnHover="true">
+                    <DxGrid @ref="grid" Data="@workorders" @bind-SelectedDataItem="@targetWorkorderObj" FilterMenuButtonDisplayMode="GridFilterMenuButtonDisplayMode.Always" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" HighlightRowOnHover="true" DataItemDeleting="DeleteWorkorder">
                         <ToolbarTemplate>
-                            <DxToolbar SizeMode="SizeMode.Large" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                            <DxToolbar Title="@(workorderSelected?$"{targetWorkorder?.WorkorderNo}-{targetWorkorder?.Lot}":string.Empty)" SizeMode="SizeMode.Large" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
                                 <DxToolbarItem IconCssClass="oi oi-plus" Click="NewWorkorderClicked" BeginGroup="true" />
-                                <DxToolbarItem IconCssClass="oi oi-pencil" Enabled="@workorderSelected" Click="ShowPopup" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-pencil" Enabled="@canEdit" Click="ShowPopup" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-media-play" Enabled="@canRun" Click="RunWorkorder" RenderStyle="ButtonRenderStyle.Success" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-media-stop" Enabled="@canStop" Click="StopWorkorder" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" />
                                 <DxToolbarItem Enabled="@workorderSelected" Click="ShowDelete" IconCssClass="oi oi-trash" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
                             </DxToolbar>
                         </ToolbarTemplate>
                         <Columns>
-                            <DxGridDataColumn Caption="@($"{localizer["Status"]}")" FieldName="@nameof(Workorder.Status)">
-                                <CellDisplayTemplate>
-                                    <div>
-                                        @($"{localizer[(context.DataItem as Workorder)?.Status.ToString()]}")
-                                    </div>
-                                </CellDisplayTemplate>
-                            </DxGridDataColumn>
+                            <DxGridDataColumn Caption="@($"{localizer["Status"]}")" FieldName="@nameof(Workorder.StatusString)" TextAlignment="GridTextAlignment.Center"/>
                             <DxGridDataColumn Caption="@($"{localizer["Workorder"]}")" FieldName="@nameof(Workorder.WorkorderNo)" />
                             <DxGridDataColumn Caption="@($"{localizer["Lot"]}")" FieldName="@nameof(Workorder.Lot)" />
                             <DxGridDataColumn Caption="@($"{localizer["Part No"]}")" FieldName="@nameof(Workorder.PartNo)" />
+                            <DxGridDataColumn Caption="@($"{localizer["Start Time"]}")" FieldName="@nameof(Workorder.StartTime)" DisplayFormat="g"/>
+                            <DxGridDataColumn Caption="@($"{localizer["Finished Time"]}")" FieldName="@nameof(Workorder.FinishedTime)" DisplayFormat="g" />
                             <DxGridDataColumn Caption="@($"{localizer["Target"]}")" FieldName="@nameof(Workorder.TargetAmount)" />
                             <DxGridDataColumn Caption="@($"{localizer["OK"]}")" FieldName="@nameof(Workorder.OkAmount)" />
                             <DxGridDataColumn Caption="@($"{localizer["NG"]}")" FieldName="@nameof(Workorder.NgAmount)" />
+                            <DxGridDataColumn Caption="@($"{localizer["Create Time"]}")" FieldName="@nameof(Workorder.CreateTime)" DisplayFormat="g" />
                         </Columns>
                     </DxGrid>
                 </div>
@@ -44,7 +46,7 @@
     </Items>
 </DxGridLayout>
 
-<DxPopup @bind-Visible="@popupVisible" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+<DxPopup @ref="@workorderPopup" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
     <HeaderTemplate>
         <div class="w-100 p-3 border border-bottom">
             <DxToolbar>
@@ -92,13 +94,19 @@
 </DxPopup>
 
 @code {
-    IGrid grid { get; set; }
+    IGrid? grid { get; set; }
+    private DxPopup? workorderPopup { get; set; }
     private List<Workorder> workorders = new();
-    private Workorder? targetWorkorder;
-    private bool workorderSelected => targetWorkorder != null;
+    private Object? targetWorkorderObj;
+    private Workorder? targetWorkorder => targetWorkorderObj as Workorder;
 
-    private bool popupVisible = false;
-    private IEnumerable<Process> processes;
+    private bool workorderSelected => targetWorkorder != null;
+    private bool canEdit => workorderSelected && (targetWorkorder?.CanRun ?? false);
+    private bool canRun => workorderSelected && (targetWorkorder?.CanRun ?? false);
+    private bool canStop => workorderSelected && (targetWorkorder?.CanStop ?? false);
+
+    //private bool popupVisible = false;
+    private IEnumerable<Process> processes = new List<Process>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -107,32 +115,28 @@
 
     private async Task GetParameter()
     {
-        var a = await shopfloorService.GetAllWorkordersConfig();
+        workorders = await shopfloorService.GetAllWorkordersConfig();
         processes = await shopfloorService.GetAllProcesses();
     }
 
-    private void ShowPopup() => popupVisible = true;
-    private async void ClosePopup()
+    private async Task ShowPopup() => await workorderPopup?.ShowAsync();
+    private async Task ClosePopup()
     {
-        popupVisible = false;
+        await workorderPopup?.CloseAsync();
         await GetParameter();
     } 
 
-    private void OnFocusedRowChanged(GridFocusedRowChangedEventArgs e)
+    private async Task NewWorkorderClicked()
     {
-        targetWorkorder = e.DataItem as Workorder;
-    }
-
-    private void NewWorkorderClicked()
-    {
-        targetWorkorder = new Workorder();
-        ShowPopup();
+        targetWorkorderObj = new Workorder();
+        await ShowPopup();
     }
 
     private async Task UpsertWorkorder()
     {
         var res = await shopfloorService.UpsertWorkorderConfig(targetWorkorder);
-        ClosePopup();
+        await ClosePopup();
+        notificationService.ShowToast(res);
     }
 
     private void ShowDelete()
@@ -144,5 +148,20 @@
     {
         var res = await shopfloorService.DeleteWorkorder(targetWorkorder);
         await GetParameter();
+        notificationService.ShowToast(res);
+    }
+
+    private async Task RunWorkorder()
+    {
+        var res = await shopfloorService.StartWorkorderById(targetWorkorder?.Id ?? new());
+        await GetParameter();
+        notificationService.ShowToast(res);
+    }
+
+    private async Task StopWorkorder()
+    {
+        var res = await shopfloorService.StopWorkorderById(targetWorkorder?.Id ?? new());
+        await GetParameter();
+        notificationService.ShowToast(res);
     }
 }

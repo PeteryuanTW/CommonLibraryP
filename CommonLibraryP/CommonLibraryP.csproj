@@ -23,13 +23,40 @@
 		<Compile Remove="MachinePKG\EFPartialModel\ConditionTagDataNode.partial.cs" />
 		<Compile Remove="MachinePKG\EFPartialModel\SetTagAction.partial.cs" />
 		<Compile Remove="MapPKG\Component\Setting\MapComponent\MapEditComponentBase.cs" />
+		<Compile Remove="ShopfloorPKG\EFModel\ItemRecordConfig.cs" />
+		<Compile Remove="ShopfloorPKG\EFModel\ItemRecordContent.cs" />
+		<Compile Remove="ShopfloorPKG\EFModel\ItemRecordDetail.cs" />
 		<Compile Remove="ShopfloorPKG\EFModel\RecipeItem.cs" />
+		<Compile Remove="ShopfloorPKG\EFModel\TaskRecordConfig.cs" />
+		<Compile Remove="ShopfloorPKG\EFModel\TaskRecordContent.cs" />
+		<Compile Remove="ShopfloorPKG\EFModel\TaskRecordDetail.cs" />
 		<Compile Remove="ShopfloorPKG\EFModel\WorkorderRecipeConfig.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Content Remove="MachinePKG\Component\Setting\ConditionSetting.razor" />
 		<Content Remove="MapPKG\Component\Setting\MapComponent\MapComponentEdit.razor" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <COMReference Include="QSACTIVEXLib">
+	    <VersionMinor>0</VersionMinor>
+	    <VersionMajor>1</VersionMajor>
+	    <Guid>b25f3585-0060-40de-b95f-80146b9365e6</Guid>
+	    <Lcid>0</Lcid>
+	    <WrapperTool>tlbimp</WrapperTool>
+	    <Isolated>false</Isolated>
+	    <EmbedInteropTypes>true</EmbedInteropTypes>
+	  </COMReference>
+	  <COMReference Include="QGACTIVEXLib">
+	    <VersionMinor>0</VersionMinor>
+	    <VersionMajor>1</VersionMajor>
+	    <Guid>dcf453ea-d30f-47d6-a916-cfd254b85739</Guid>
+	    <Lcid>0</Lcid>
+	    <WrapperTool>tlbimp</WrapperTool>
+	    <Isolated>false</Isolated>
+	    <EmbedInteropTypes>true</EmbedInteropTypes>
+	  </COMReference>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -43,7 +70,13 @@
 		<None Include="MachinePKG\EFPartialModel\SetTagAction.partial.cs" />
 		<None Include="MapPKG\Component\Setting\MapComponent\MapComponentEdit.razor" />
 		<None Include="MapPKG\Component\Setting\MapComponent\MapEditComponentBase.cs" />
+		<None Include="ShopfloorPKG\EFModel\ItemRecordConfig.cs" />
+		<None Include="ShopfloorPKG\EFModel\ItemRecordContent.cs" />
+		<None Include="ShopfloorPKG\EFModel\ItemRecordDetail.cs" />
 		<None Include="ShopfloorPKG\EFModel\RecipeItem.cs" />
+		<None Include="ShopfloorPKG\EFModel\TaskRecordConfig.cs" />
+		<None Include="ShopfloorPKG\EFModel\TaskRecordContent.cs" />
+		<None Include="ShopfloorPKG\EFModel\TaskRecordDetail.cs" />
 		<None Include="ShopfloorPKG\EFModel\WorkorderRecipeConfig.cs" />
 	</ItemGroup>
 
@@ -63,6 +96,7 @@
 		</PackageReference>
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.8" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="NModbus" Version="3.0.81" />
 		<PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
 		<PackageReference Include="Serilog.Expressions" Version="5.0.0" />
@@ -74,6 +108,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Update="Localization\CommonLanguage.Designer.cs">
+		  <DesignTime>True</DesignTime>
+		  <AutoGen>True</AutoGen>
+		  <DependentUpon>CommonLanguage.resx</DependentUpon>
+		</Compile>
 		<Compile Update="MachinePKG\Localization\MachineLanguage.Designer.cs">
 			<DesignTime>True</DesignTime>
 			<AutoGen>True</AutoGen>
@@ -92,6 +131,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<EmbeddedResource Update="Localization\CommonLanguage.resx">
+		  <Generator>PublicResXFileCodeGenerator</Generator>
+		  <LastGenOutput>CommonLanguage.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
 		<EmbeddedResource Update="MachinePKG\Localization\MachineLanguage.resx">
 			<Generator>PublicResXFileCodeGenerator</Generator>
 			<LastGenOutput>MachineLanguage.Designer.cs</LastGenOutput>

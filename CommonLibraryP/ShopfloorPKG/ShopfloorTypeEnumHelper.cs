@@ -32,14 +32,12 @@ namespace CommonLibraryP.ShopfloorPKG
 
     /// <summary>
     /// first bit: 1->single workorder, 2->multiple workorder
-    /// second bit: 1->single item, 2->multiple item
-    /// third bit: 1->with serial no, 2->without serial no
-    /// hint: no serial no always with single item (only x12 no x22)
+    /// second bit: 1->single item, 2->multiple item, 3->no serial no
     /// </summary>
     public enum StationType
     {
-        SingleWorkorderSingleSerial = 111,
-        SingleWorkorderMultipleSerials = 121,
+        SingleWorkorderSingleSerial = 11,
+        SingleWorkorderMultipleSerials = 12,
         //SingleWorkorderNoSerial = 112,
 
         //MultipleWorkorderSingleSerial = 3,
