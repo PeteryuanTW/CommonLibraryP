@@ -1,0 +1,51 @@
+﻿@namespace CommonLibraryP.SecsGemPKG.Component
+@inject SecsGemService secsGemService
+
+@using QSACTIVEXLib
+
+<DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+    <DxFormLayoutGroup Caption="Secs/Gem">
+        <DxFormLayoutItem ColSpanLg="12" Caption="Bisic Config" CaptionPosition="CaptionPosition.Horizontal">
+            <hr />
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="szLocalIP" ColSpanLg="3" BeginRow="true">
+            <DxTextBox ReadOnly="true" @bind-Text="@qsWrapper.szLocalIP"></DxTextBox>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="nLocalPort" ColSpanLg="3">
+            <DxSpinEdit ReadOnly="true" @bind-Value="@qsWrapper.nLocalPort"></DxSpinEdit>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="szRemoteIP" ColSpanLg="3">
+            <DxTextBox ReadOnly="true" @bind-Text="@qsWrapper.szRemoteIP"></DxTextBox>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem Caption="nRemotePort" ColSpanLg="3">
+            <DxSpinEdit ReadOnly="true" @bind-Value="@qsWrapper.nRemotePort"></DxSpinEdit>
+        </DxFormLayoutItem>
+        <DxFormLayoutItem ColSpanLg="12" Caption="HSMS" CaptionPosition="CaptionPosition.Horizontal">
+            <hr />
+        </DxFormLayoutItem>
+        <DxFormLayoutItem ColSpanLg="6" Caption="Hosting">
+            <DxCheckBox Checked="@secsGemStatus?.Hosting" ReadOnly="true" CheckType="CheckType.Switch" />
+        </DxFormLayoutItem>
+        <DxFormLayoutItem ColSpanLg="6" Caption="Connected">
+            <DxCheckBox Checked="@secsGemStatus?.Connected" ReadOnly="true" CheckType="CheckType.Switch" />
+        </DxFormLayoutItem>
+        <DxFormLayoutItem ColSpanLg="12" Caption="GEM" CaptionPosition="CaptionPosition.Horizontal">
+            <hr />
+        </DxFormLayoutItem>
+        <DxFormLayoutItem ColSpanLg="6" Caption="Communicating">
+            <DxCheckBox Checked="@secsGemStatus?.Communicating" ReadOnly="true" CheckType="CheckType.Switch" />
+        </DxFormLayoutItem>
+    </DxFormLayoutGroup>
+</DxFormLayout>
+
+@code {
+    private SECSGemStatus secsGemStatus = null!;
+    private QSWrapper qsWrapper = new();
+
+    protected override Task OnInitializedAsync()
+    {
+        secsGemStatus = secsGemService.SECSGemStatus;
+        qsWrapper = secsGemService.QSWrapper;
+        return base.OnInitializedAsync();
+    }
+}

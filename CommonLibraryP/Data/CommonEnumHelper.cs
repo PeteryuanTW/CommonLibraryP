@@ -12,6 +12,7 @@ namespace CommonLibraryP.Data
 {
     public static class CommonEnumHelper
     {
+        public static List<StatusDetailWrapperClass> GetStatusDetailWrapperClasses() => statusDetailWrapperClasses;
         private static List<StatusDetailWrapperClass> statusDetailWrapperClasses = new()
         {
             new(0, "Init", ButtonRenderStyle.Secondary, Color.FromArgb(143, 143, 143)),

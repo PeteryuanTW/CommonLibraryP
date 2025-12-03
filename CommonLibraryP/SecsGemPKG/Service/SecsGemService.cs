@@ -1,5 +1,6 @@
 ﻿using CommonLibraryP.API;
 using CommonLibraryP.MachinePKG;
+using CommonLibraryP.MapPKG;
 using DevExpress.Blazor;
 using DevExpress.XtraPrinting.Shape.Native;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,8 @@ namespace CommonLibraryP.SecsGemPKG
 
 
 
+
+        public event Func<int, int, SecsTreeNode, SecsTreeNode, Task>? SecsMessageFunc;
 
         public event Func<Task>? UIEvent;
 
@@ -289,14 +292,10 @@ namespace CommonLibraryP.SecsGemPKG
                     secsGemStatus.SetConnected(true);
                     break;
                 case EVENT_ID.QS_EVENT_RECV_MSG:
-                    switch ((S, F))
+                    Task.Run(async () =>
                     {
-                        case (1, 13):
-                            //SendMessage(S, F + 1, test);
-                            break;
-                        default:
-                            break;
-                    }
+                        await CheckSecsGemHub(S, F, res);
+                    });
                     break;
                 case EVENT_ID.QS_EVENT_SEND_MSG:
                     break;
@@ -318,6 +317,121 @@ namespace CommonLibraryP.SecsGemPKG
                 qsWrapper.SendSECSIIMessage(S, F, 1, ref systemBytes, secsData);
             });
         }
+
+        public async Task CheckSecsGemHub(int s, int f, SecsTreeNode secsTreeNode)
+        {
+            using (var scope = scopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
+
+                var targetEvent = await dbContext.SecsEvents.AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.S == s && e.F == f);
+
+                if (targetEvent is not null)
+                {
+                    var targetTemplate = await GetSecsGemItemById(targetEvent.SourceNodeId);
+                    var targetReplyTemplate = await GetSecsGemItemById(targetEvent.ReplyNodeId);
+                    if (targetTemplate is not null && targetReplyTemplate is not null)
+                    {
+                        var res = CopyIfStructureEqual(secsTreeNode, targetTemplate);
+                        SecsMessageFunc?.Invoke(s, f, targetTemplate, targetReplyTemplate);
+                    }
+                }
+
+            }
+        }
+
+        public bool CopyIfStructureEqual(SecsTreeNode source, SecsTreeNode target)
+        {
+            if (IsStructureEqual(source, target))
+            {
+                CopyValues(source, target);
+                return true;
+            }
+            return false;
+        }
+        private bool IsStructureEqual(SecsTreeNode source, SecsTreeNode template)
+        {
+            if (source == null || template == null) return false;
+
+            // 型別必須一致
+            if (source.GetType() != template.GetType()) return false;
+
+            // ValueType 必須一致
+            if (source.IsValueType != template.IsValueType) return false;
+
+            // 子節點數量必須一致
+            if (source.ChildrenNode.Count != template.ChildrenNode.Count) return false;
+
+            // 遞迴比對子節點
+            for (int i = 0; i < source.ChildrenNode.Count; i++)
+            {
+                if (!IsStructureEqual(source.ChildrenNode[i], template.ChildrenNode[i]))
+                    return false;
+            }
+            return true;
+        }
+        private void CopyValues(SecsTreeNode source, SecsTreeNode template)
+        {
+            if (source == null || template == null) return;
+
+            if (source.IsValueType && template.IsValueType)
+            {
+                switch ((source, template))
+                {
+                    case (SecsAscii secsAsciiSource, SecsAscii secsAsciiTemplate):
+                        secsAsciiTemplate.StringValue = secsAsciiSource.StringValue;
+                        break;
+                    case (SecsBinaryValue secsBinaryValueSource, SecsBinaryValue secsBinaryValueTemplate):
+                        secsBinaryValueTemplate.BinaryValue = secsBinaryValueSource.BinaryValue;
+                        break;
+                    case (SecsBoolValue secsBoolValueSource, SecsBoolValue secsBoolValueTemplate):
+                        secsBoolValueTemplate.BoolValue = secsBoolValueSource.BoolValue;
+                        break;
+                    case (SecsI1Value secsI1ValueSource, SecsI1Value secsI1ValueTemplate):
+                        secsI1ValueTemplate.I1Value = secsI1ValueSource.I1Value;
+                        break;
+                    case (SecsI2Value secsI2ValueSource, SecsI2Value secsI2ValueTemplate):
+                        secsI2ValueTemplate.I2Value = secsI2ValueSource.I2Value;
+                        break;
+                    case (SecsI4Value secsI4ValueSource, SecsI4Value secsI4ValueTemplate):
+                        secsI4ValueTemplate.I4Value = secsI4ValueSource.I4Value;
+                        break;
+                    case (SecsI8Value secsI8ValueSource, SecsI8Value secsI8ValueTemplate):
+                        secsI8ValueTemplate.I8Value = secsI8ValueSource.I8Value;
+                        break;
+                    case (SecsU1Value secsU1ValueSource, SecsU1Value secsU1ValueTemplate):
+                        secsU1ValueTemplate.U1Value = secsU1ValueSource.U1Value;
+                        break;
+                    case (SecsU2Value secsU2ValueSource, SecsU2Value secsU2ValueTemplate):
+                        secsU2ValueTemplate.U2Value = secsU2ValueSource.U2Value;
+                        break;
+                    case (SecsU4Value secsU4ValueSource, SecsU4Value secsU4ValueTemplate):
+                        secsU4ValueTemplate.U4Value = secsU4ValueSource.U4Value;
+                        break;
+                    case (SecsU8Value secsU8ValueSource, SecsU8Value secsU8ValueTemplate):
+                        secsU8ValueTemplate.U8Value = secsU8ValueSource.U8Value;
+                        break;
+                    case (SecsF4Value secsF4ValueSource, SecsF4Value secsF4ValueTemplate):
+                        secsF4ValueTemplate.F4Value = secsF4ValueSource.F4Value;
+                        break;
+                    case (SecsF8Value secsF8ValueSource, SecsF8Value secsF8ValueTemplate):
+                        secsF8ValueTemplate.F8Value = secsF8ValueSource.F8Value;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            for (int i = 0; i < source.ChildrenNode.Count; i++)
+            {
+                CopyValues(source.ChildrenNode[i], template.ChildrenNode[i]);
+            }
+        }
+
+
+
+
 
         private void Log(EVENT_ID eventType, int s, int f, SecsTreeNode? SecsItem = null)
         {
@@ -391,185 +505,104 @@ namespace CommonLibraryP.SecsGemPKG
             }
         }
 
-        public async Task<List<SecsTreeNode>> GetAllFlatSecsGemItems(Guid parentId)
+        public async Task<SecsTreeNode?> GetSecsGemItemById(Guid? id)
         {
-            var result = new List<SecsTreeNode>();
-            var queue = new Queue<Guid>();
-            queue.Enqueue(parentId);
-
+            if(id is null) return null;
             using var scope = scopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
-            while (queue.Count > 0)
+
+            // 一次性抓出所有節點
+            var allNodes = await dbContext.SecsTreeNodes.AsNoTracking().ToListAsync();
+
+            // 建立 ParentId → 子節點 的 lookup
+            var lookup = allNodes.ToLookup(n => n.ParentId);
+
+            // 用遞迴組裝樹
+            SecsTreeNode? BuildTree(Guid? nodeId)
             {
-                var currentId = queue.Dequeue();
-                var current = await dbContext.SecsTreeNodes
-                    .FirstOrDefaultAsync(x => x.Id == currentId);
-                if (current is null)
-                {
-                    return result;
-                }
-                result.Add(await GetSecsGemItemValue(dbContext, current.Id));
+                if (nodeId is null) return null;
+                var node = allNodes.FirstOrDefault(n => n.Id == nodeId);
+                if (node is null) return null;
 
+                var children = lookup[node.Id]
+                    .Select(child => BuildTree(child.Id))
+                    .Where(c => c != null)
+                    .ToList()!;
 
-                var children = await dbContext.SecsTreeNodes
-                    .Where(x => x.ParentId == currentId)
-                    .ToListAsync();
-
-                foreach (var child in children)
-                {
-                    queue.Enqueue(child.Id);
-                }
+                node.ChildrenNode = children;
+                return node;
             }
 
-            return result;
+            return BuildTree(id);
+
         }
 
-
-        private async Task<SecsTreeNode?> GetSecsGemItemValue(SecsGemDBContext dbContext, Guid id)
+        public async Task<RequestResult> UpsertSecsTreeNode(SecsTreeNode secsTreeNode)
         {
-            return await dbContext.SecsTreeNodes.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
-            //switch (res)
-            //{
-            //    case SecsBinary binary:
-            //        return await dbContext.SecsBinarys
-            //            .Include(x => x.BinaryValues)
-            //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-            //    case SecsBool boolean:
-            //        return await dbContext.SecsBools
-            //            .Include(x => x.BoolValues)
-            //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-
-            //    case SecsI1 i1:
-            //        return await dbContext.SecsI1s
-            //            .Include(x => x.SbyteValues)
-            //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-            //    case SecsI2 i2:
-            //        return await dbContext.SecsI2s
-            //            .Include(x => x.ShortValues)
-            //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-            //    case SecsI4 i4:
-            //        return await dbContext.SecsI4s
-            //            .Include(x => x.IntValues)
-            //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-            //    case SecsI8 i8:
-            //        return await dbContext.SecsI8s
-            //            .Include(x => x.LongValues)
-            //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-
-            //    case SecsU1 u1:
-            //        return await dbContext.SecsU1s
-            //            .Include(x => x.ByteValues)
-            //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-            //    case SecsU2 u2:
-            //        return await dbContext.SecsU2s
-            //            .Include(x => x.UshortValues)
-            //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-            //    case SecsU4 u4:
-            //        return await dbContext.SecsU4s
-            //            .Include(x => x.UintValues)
-            //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-            //    case SecsU8 u8:
-            //        return await dbContext.SecsU8s
-            //            .Include(x => x.UlongValues)
-            //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-
-            //    case SecsF4 f4:
-            //        return await dbContext.SecsF4s
-            //            .Include(x => x.FloatValues)
-            //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-            //    case SecsF8 f8:
-            //        return await dbContext.SecsF8s
-            //            .Include(x => x.DoubleValues)
-            //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-            //    default:
-            //        return res;
-            //}
-        } 
-
-        public async Task<SecsTreeNode?> GetSecsGemItemById(Guid id)
-        {
-            using (var scope = scopeFactory.CreateScope())
+            try
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
-                var res = await dbContext.SecsTreeNodes.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id);
-                if (res is SecsList secsList)
+                using (var scope = scopeFactory.CreateScope())
                 {
-                    var childrenId = await GetSecsGemItemChildrenId(dbContext, secsList.Id);
-                    var children = await Task.WhenAll(childrenId.Select(x => GetSecsGemItemById(x)));
-                    secsList.ChildrenNode = [.. children];
-                    return secsList;
-                }
-                else
-                {
-                    return res;
-                    //switch (res)
-                    //{
-                    //    case SecsBinary binary:
-                    //        return await dbContext.SecsBinarys
-                    //            .Include(x => x.BinaryValues)
-                    //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-                    //    case SecsBool boolean:
-                    //        return await dbContext.SecsBools
-                    //            .Include(x => x.BoolValues)
-                    //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
+                    var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
+                    var target = await dbContext.SecsTreeNodes
+                        .FirstOrDefaultAsync(x => x.Id == secsTreeNode.Id);
 
-                    //    case SecsI1 i1:
-                    //        return await dbContext.SecsI1s
-                    //            .Include(x => x.SbyteValues)
-                    //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-                    //    case SecsI2 i2:
-                    //        return await dbContext.SecsI2s
-                    //            .Include(x => x.ShortValues)
-                    //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-                    //    case SecsI4 i4:
-                    //        return await dbContext.SecsI4s
-                    //            .Include(x => x.IntValues)
-                    //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-                    //    case SecsI8 i8:
-                    //        return await dbContext.SecsI8s
-                    //            .Include(x => x.LongValues)
-                    //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
+                    if (target is null)
+                    {
+                        dbContext.SecsTreeNodes.Add(secsTreeNode); // Insert
+                    }
+                    else
+                    {
+                        dbContext.Entry(target).CurrentValues.SetValues(secsTreeNode); // Update
+                    }
 
-                    //    case SecsU1 u1:
-                    //        return await dbContext.SecsU1s
-                    //            .Include(x => x.ByteValues)
-                    //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-                    //    case SecsU2 u2:
-                    //        return await dbContext.SecsU2s
-                    //            .Include(x => x.UshortValues)
-                    //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-                    //    case SecsU4 u4:
-                    //        return await dbContext.SecsU4s
-                    //            .Include(x => x.UintValues)
-                    //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-                    //    case SecsU8 u8:
-                    //        return await dbContext.SecsU8s
-                    //            .Include(x => x.UlongValues)
-                    //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-
-                    //    case SecsF4 f4:
-                    //        return await dbContext.SecsF4s
-                    //            .Include(x => x.FloatValues)
-                    //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-                    //    case SecsF8 f8:
-                    //        return await dbContext.SecsF8s
-                    //            .Include(x => x.DoubleValues)
-                    //            .AsNoTracking().FirstOrDefaultAsync(x => x.Id == res.Id);
-                    //    default:
-                    //        return res;
-                    //}
+                    await dbContext.SaveChangesAsync();
+                    return new RequestResult(2, "Upsert SecsTreeNode success");
                 }
             }
+            catch (Exception e)
+            {
+                return new RequestResult(4, $"Upsert SecsTreeNode fail: {e.Message}");
+            }
+
         }
 
-        private async Task<List<Guid>> GetSecsGemItemChildrenId(SecsGemDBContext secsGemDBContext ,Guid parentId)
+
+        public async Task<RequestResult> DeleteSecsTreeNodeAndAllChildren(Guid id)
         {
-             return await secsGemDBContext.SecsTreeNodes.AsNoTracking().Where(i => i.ParentId == parentId).Select(x => x.Id).ToListAsync();
-             
+            using var scope = scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
+
+            // 一次性抓出所有節點
+            var allNodes = await dbContext.SecsTreeNodes.ToListAsync();
+
+            // 建立 ParentId → 子節點 的 lookup
+            var lookup = allNodes.ToLookup(n => n.ParentId);
+
+            // 找出所有要刪除的節點 (包含自己 + 子孫)
+            List<SecsTreeNode> CollectNodes(Guid nodeId)
+            {
+                var node = allNodes.FirstOrDefault(n => n.Id == nodeId);
+                if (node == null) return new List<SecsTreeNode>();
+
+                var children = lookup[node.Id]
+                    .SelectMany(child => CollectNodes(child.Id))
+                    .ToList();
+
+                children.Add(node); // 把自己加進去
+                return children;
+            }
+
+            var toDelete = CollectNodes(id);
+
+            if (toDelete.Count == 0) return new RequestResult(1, "No nodes to delete");
+
+            // 從 DbContext 移除
+            dbContext.SecsTreeNodes.RemoveRange(toDelete);
+            await dbContext.SaveChangesAsync();
+            return new RequestResult(2, "Delete nodes and all children success");
+
         }
-
-
-
 
         #endregion
     }

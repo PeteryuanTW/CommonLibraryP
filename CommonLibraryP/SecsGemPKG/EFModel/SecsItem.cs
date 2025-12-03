@@ -5,12 +5,12 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static CommonLibraryP.SecsGemPKG.SecsBool;
 using static System.Reflection.Metadata.BlobBuilder;
 
 namespace CommonLibraryP.SecsGemPKG
@@ -157,7 +157,7 @@ namespace CommonLibraryP.SecsGemPKG
             Array.Copy(data, index, bins, 0, length);
             index += length;
 
-            var binValues = bins.Select(b => new SecsBinaryValue { Value = b }).ToList();
+            var binValues = bins.Select(b => new SecsBinaryValue { BinaryValue = b }).ToList();
 
             var res = new SecsBinary()
             {
@@ -175,7 +175,7 @@ namespace CommonLibraryP.SecsGemPKG
                 bools.Add(data[index++] != 0);
             //Console.WriteLine($"[Bool] index after={index}");
 
-            var boolValues = bools.Select(b => new SecsBoolValue { Value = b }).ToList();
+            var boolValues = bools.Select(b => new SecsBoolValue { BoolValue = b }).ToList();
 
             var res = new SecsBool()
             {
@@ -192,7 +192,7 @@ namespace CommonLibraryP.SecsGemPKG
                 sbytes.Add((sbyte)data[index++]);
             //Console.WriteLine($"[I1] index after={index}");
 
-            var sbyteValues = sbytes.Select(b => new SecsI1Value { Value = b }).ToList();
+            var sbyteValues = sbytes.Select(b => new SecsI1Value { I1Value = b }).ToList();
 
             var res = new SecsI1()
             {
@@ -213,7 +213,7 @@ namespace CommonLibraryP.SecsGemPKG
             }
             //Console.WriteLine($"[I2] index after={index}");
 
-            var shortValues = shorts.Select(b => new SecsI2Value { Value = b }).ToList();
+            var shortValues = shorts.Select(b => new SecsI2Value { I2Value = b }).ToList();
 
             var res = new SecsI2()
             {
@@ -234,7 +234,7 @@ namespace CommonLibraryP.SecsGemPKG
             }
             //Console.WriteLine($"[I4] index after={index}");
 
-            var intValues = ints.Select(b => new SecsI4Value { Value = b }).ToList();
+            var intValues = ints.Select(b => new SecsI4Value { I4Value = b }).ToList();
 
             var res = new SecsI4()
             {
@@ -258,7 +258,7 @@ namespace CommonLibraryP.SecsGemPKG
             }
             //Console.WriteLine($"[I8] index after={index}");
 
-            var longValues = longs.Select(b => new SecsI8Value { Value = b }).ToList();
+            var longValues = longs.Select(b => new SecsI8Value { I8Value = b }).ToList();
 
             var res = new SecsI8()
             {
@@ -274,7 +274,7 @@ namespace CommonLibraryP.SecsGemPKG
             for (int i = 0; i < length; i++)
                 bytes.Add(data[index++]);
 
-            var byteValues = bytes.Select(b => new SecsU1Value { Value = b }).ToList();
+            var byteValues = bytes.Select(b => new SecsU1Value { U1Value = b }).ToList();
 
             var res = new SecsU1()
             {
@@ -294,7 +294,7 @@ namespace CommonLibraryP.SecsGemPKG
             }
             //Console.WriteLine($"[U2] index after={index}");
 
-            var ushortValues = ushorts.Select(b => new SecsU2Value { Value = b }).ToList();
+            var ushortValues = ushorts.Select(b => new SecsU2Value { U2Value = b }).ToList();
 
             var res = new SecsU2()
             {
@@ -315,7 +315,7 @@ namespace CommonLibraryP.SecsGemPKG
             }
             //Console.WriteLine($"[U4] index after={index}");
 
-            var uintValues = uints.Select(b => new SecsU4Value { Value = b }).ToList();
+            var uintValues = uints.Select(b => new SecsU4Value { U4Value = b }).ToList();
 
             var res = new SecsU4()
             {
@@ -339,7 +339,7 @@ namespace CommonLibraryP.SecsGemPKG
             }
             //Console.WriteLine($"[U8] index after={index}");
 
-            var ulongValues = ulongs.Select(b => new SecsU8Value { Value = b }).ToList();
+            var ulongValues = ulongs.Select(b => new SecsU8Value { U8Value = b }).ToList();
 
             var res = new SecsU8()
             {
@@ -363,7 +363,7 @@ namespace CommonLibraryP.SecsGemPKG
             }
             //Console.WriteLine($"[F4] index after={index}");
 
-            var floatValues = floats.Select(b => new SecsF4Value { Value = b }).ToList();
+            var floatValues = floats.Select(b => new SecsF4Value { F4Value = b }).ToList();
 
             var res = new SecsF4()
             {
@@ -388,7 +388,7 @@ namespace CommonLibraryP.SecsGemPKG
             }
             //Console.WriteLine($"[F8] index after={index}");
 
-            var doubleValues = doubles.Select(b => new SecsF8Value { Value = b }).ToList();
+            var doubleValues = doubles.Select(b => new SecsF8Value { F8Value = b }).ToList();
 
             var res = new SecsF8()
             {
@@ -501,211 +501,392 @@ namespace CommonLibraryP.SecsGemPKG
         Machine,
     }
 
+    public enum SecsNodeType
+    {
+        List,
+        Ascii,
+        Binary,
+        BinaryValue,
+        Boolean,
+        BooleanValue,
+        I1,
+        I1Value,
+        I2,
+        I2Value,
+        I4,
+        I4Value,
+        I8,
+        I8Value,
+        U1,
+        U1Value,
+        U2,
+        U2Value,
+        U4,
+        U4Value,
+        U8,
+        U8Value,
+        F4,
+        F4Value,
+        F8,
+        F8Value
+    }
+
+
     public abstract class SecsTreeNode
     {
-        public Guid Id { get; set; }
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         public Guid? ParentId { get; set; }
 
+        public bool IsRoot => ParentId is null;
+        [Required]
+        public string Name { get; set; } = null!;
+
         [NotMapped]
         public List<SecsTreeNode> ChildrenNode { get; set; } = new List<SecsTreeNode>();
+
+        public abstract bool IsValueType { get; }
+
+        public abstract string CodeOrValueString { get; }
+
+        public SecsTreeNode? FindNodeByName(string name)
+        {
+            if (Name == name)
+                return this;
+
+            foreach (var child in ChildrenNode)
+            {
+                var found = child.FindNodeByName(name);
+                if (found != null)
+                    return found;
+            }
+            return null;
+        }
+        public bool SetValueByName(string nodeName, object value)
+        {
+            var target = FindNodeByName(nodeName);
+            if(target is null) return false;
+            if(!target.IsValueType) return false;
+            switch (target)
+            {
+                case SecsAscii asciiItem when value is string strinfValue:
+                    asciiItem.StringValue = strinfValue;
+                    return true;
+                case SecsBinaryValue binaryItem when value is byte byteValue:
+                    binaryItem.BinaryValue = byteValue;
+                    return true;
+                case SecsI4Value i4Item when value is int i4Value:
+                    i4Item.I4Value = i4Value;
+                    return true;
+                case SecsI8Value i8Item when value is long i8Value:
+                    i8Item.I8Value = i8Value;
+                    return true;
+
+                case SecsU1Value u1Item when value is byte u1Value:
+                    u1Item.U1Value = u1Value;
+                    return true;
+
+                case SecsU2Value u2Item when value is ushort u2Value:
+                    u2Item.U2Value = u2Value;
+                    return true;
+
+                case SecsU4Value u4Item when value is uint u4Value:
+                    u4Item.U4Value = u4Value;
+                    return true;
+
+                case SecsU8Value u8Item when value is ulong u8Value:
+                    u8Item.U8Value = u8Value;
+                    return true;
+
+                case SecsF4Value f4Item when value is float f4Value:
+                    f4Item.F4Value = f4Value;
+                    return true;
+
+                case SecsF8Value f8Item when value is double f8Value:
+                    f8Item.F8Value = f8Value;
+                    return true;
+                case SecsUnknown unknownItem when value is byte rawByte:
+                default:
+                    return false;
+            }
+
+
+        }
     }
 
-    public interface ISecsItem
-    {
-        public string Code { get; }
-    }
 
     public interface ISecsValue<T>
     {
         public T Value { get; }
     }
 
-    public class SecsList : SecsTreeNode, ISecsItem
+    public class SecsList : SecsTreeNode
     {
-        public string Code => "L";
+        public override string CodeOrValueString => $"<L[{ChildrenNode.Count}]>";
+
+        public override bool IsValueType => false;
     }
 
-    public class SecsAscii : SecsTreeNode, ISecsItem, ISecsValue<string>
+    public class SecsAscii : SecsTreeNode, ISecsValue<string>
     {
+        public override string CodeOrValueString => $"<A[{StringValue.Length}] {StringValue}>";
         public string StringValue { get; set; } = string.Empty;
-
-        public string Code => "A";
-
-        [NotMapped]
         public string Value => StringValue;
+
+        public override bool IsValueType => true;
     }
 
-    public class SecsBinary : SecsTreeNode, ISecsItem, ISecsValue<List<byte>>
+    public class SecsBinary : SecsTreeNode, ISecsValue<List<byte>>
     {
-        public string Code => "B";
+        public override string CodeOrValueString => $"<B[{Value.Count}]>";
 
         public List<byte> Value
             => ChildrenNode.OfType<SecsBinaryValue>().Select(x => x.Value)
             .ToList();
+
+        public override bool IsValueType => false;
     }
 
     public class SecsBinaryValue : SecsTreeNode, ISecsValue<byte>
     {
-        public byte Value { get; set; }
+
+        public byte Value => BinaryValue;
+
+        public byte BinaryValue { get; set; }
+
+        public override string CodeOrValueString => BinaryValue.ToString();
+
+        public override bool IsValueType => true;
     }
 
-    public class SecsBool : SecsTreeNode, ISecsItem, ISecsValue<List<bool>>
+    public class SecsBool : SecsTreeNode, ISecsValue<List<bool>>
     {
-        public string Code => "Boolean";
+        public override string CodeOrValueString => $"<Boolean[{Value.Count}]>";
 
-        public List<bool> Value { get; set; } = new();
+        public List<bool> Value => ChildrenNode.OfType<SecsBoolValue>().Select(x => x.Value)
+            .ToList();
+
+        public override bool IsValueType => false;
     }
 
     public class SecsBoolValue : SecsTreeNode, ISecsValue<bool>
     {
-        public bool Value { get; set; }
+        public override string CodeOrValueString => BoolValue.ToString();
+        public bool Value => BoolValue;
+        public bool BoolValue { get; set; }
+
+        public override bool IsValueType => true;
     }
-    public class SecsI1 : SecsTreeNode, ISecsItem, ISecsValue<List<sbyte>>
+    public class SecsI1 : SecsTreeNode, ISecsValue<List<sbyte>>
     {
-        public string Code => "I1";
+        public override string CodeOrValueString => $"<I1[{Value.Count}]>";
 
         public List<sbyte> Value =>
             ChildrenNode.OfType<SecsI1Value>().Select(x => x.Value)
             .ToList();
+
+        public override bool IsValueType => false;
     }
 
     public class SecsI1Value : SecsTreeNode, ISecsValue<sbyte>
     {
-        public sbyte Value { get; set; }
+        public override string CodeOrValueString => I1Value.ToString();
+        public sbyte Value => I1Value;
+        public sbyte I1Value { get; set; }
+
+        public override bool IsValueType => true;
     }
 
-    public class SecsI2 : SecsTreeNode, ISecsItem, ISecsValue<List<short>>
+    public class SecsI2 : SecsTreeNode, ISecsValue<List<short>>
     {
-        public string Code => "I2";
+        public override string CodeOrValueString => $"<I2{Value.Count}>";
 
         public List<short> Value =>
             ChildrenNode.OfType<SecsI2Value>().Select(x => x.Value)
             .ToList();
+
+        public override bool IsValueType => false;
     }
 
     public class SecsI2Value : SecsTreeNode, ISecsValue<short>
     {
-        public short Value { get; set; }
+        public override string CodeOrValueString => I2Value.ToString();
+        public short Value => I2Value;
+        public short I2Value { get; set; }
+
+        public override bool IsValueType => true;
     }
 
-    public class SecsI4 : SecsTreeNode, ISecsItem, ISecsValue<List<int>>
+    public class SecsI4 : SecsTreeNode, ISecsValue<List<int>>
     {
-        public string Code => "I4";
+        public override string CodeOrValueString => $"<I4[{Value.Count}]>";
 
         public List<int> Value =>
             ChildrenNode.OfType<SecsI4Value>().Select(x => x.Value)
             .ToList();
+
+        public override bool IsValueType => false;
     }
 
     public class SecsI4Value : SecsTreeNode, ISecsValue<int>
     {
-        public int Value { get; set; }
+        public override string CodeOrValueString => I4Value.ToString();
+        public int Value => I4Value;
+        public int I4Value { get; set; }
+
+        public override bool IsValueType => true;
     }
 
 
-    public class SecsI8 : SecsTreeNode, ISecsItem, ISecsValue<List<long>>
+    public class SecsI8 : SecsTreeNode, ISecsValue<List<long>>
     {
-        public string Code => "I8";
+        public override string CodeOrValueString => $"<I8{Value.Count}>";
 
         public List<long> Value =>
             ChildrenNode.OfType<SecsI8Value>().Select(x => x.Value)
             .ToList();
+
+        public override bool IsValueType => false;
     }
 
     public class SecsI8Value : SecsTreeNode, ISecsValue<long>
     {
-        public long Value { get; set; }
+        public override string CodeOrValueString => I8Value.ToString();
+        public long Value => I8Value;
+        public long I8Value { get; set; }
+
+        public override bool IsValueType => true;
     }
 
-    public class SecsU1 : SecsTreeNode, ISecsItem, ISecsValue<List<byte>>
+    public class SecsU1 : SecsTreeNode, ISecsValue<List<byte>>
     {
-        public string Code => "U1";
+        public override string CodeOrValueString => $"<U1[{Value.Count}]>";
 
         public List<byte> Value =>
             ChildrenNode.OfType<SecsU1Value>().Select(x => x.Value)
             .ToList();
+
+        public override bool IsValueType => false;
     }
 
     public class SecsU1Value : SecsTreeNode, ISecsValue<byte>
     {
-        public byte Value { get; set; }
+        public override string CodeOrValueString => U1Value.ToString();
+        public byte Value => U1Value;
+        public byte U1Value { get; set; }
+
+        public override bool IsValueType => true;
     }
 
-    public class SecsU2 : SecsTreeNode, ISecsItem, ISecsValue<List<ushort>>
+    public class SecsU2 : SecsTreeNode, ISecsValue<List<ushort>>
     {
-        public string Code => "U2";
+        public override string CodeOrValueString => $"<U2[{Value.Count}]>";
 
         public List<ushort> Value =>
             ChildrenNode.OfType<SecsU2Value>().Select(x => x.Value)
             .ToList();
+
+        public override bool IsValueType => false;
     }
 
     public class SecsU2Value : SecsTreeNode, ISecsValue<ushort>
     {
-        public ushort Value { get; set; }
+        public override string CodeOrValueString => U2Value.ToString();
+        public ushort Value => U2Value;
+        public ushort U2Value { get; set; }
+
+        public override bool IsValueType => true;
     }
 
-    public class SecsU4 : SecsTreeNode, ISecsItem, ISecsValue<List<uint>>
+    public class SecsU4 : SecsTreeNode, ISecsValue<List<uint>>
     {
-        public string Code => "U4";
+        public override string CodeOrValueString => $"<U4[{Value.Count}]>";
 
         public List<uint> Value =>
             ChildrenNode.OfType<SecsU4Value>().Select(x => x.Value)
             .ToList();
+
+        public override bool IsValueType => false;
     }
 
     public class SecsU4Value : SecsTreeNode, ISecsValue<uint>
     {
-        public uint Value { get; set; }
+        public override string CodeOrValueString => U4Value.ToString();
+        public uint Value => U4Value;
+        public uint U4Value { get; set; }
+
+        public override bool IsValueType => true;
     }
 
-    public class SecsU8 : SecsTreeNode, ISecsItem, ISecsValue<List<ulong>>
+    public class SecsU8 : SecsTreeNode, ISecsValue<List<ulong>>
     {
-        public string Code => "U8";
+        public override string CodeOrValueString => $"<U8[{Value.Count}]>";
         public List<ulong> Value =>
             ChildrenNode.OfType<SecsU8Value>().Select(x => x.Value)
             .ToList();
+
+        public override bool IsValueType => false;
     }
 
     public class SecsU8Value : SecsTreeNode, ISecsValue<ulong>
     {
-        public ulong Value { get; set; }
+        public override string CodeOrValueString => U8Value.ToString();
+        public ulong Value => U8Value;
+        public ulong U8Value { get; set; }
+
+        public override bool IsValueType => true;
     }
 
-    public class SecsF4 : SecsTreeNode, ISecsItem, ISecsValue<List<float>>
+    public class SecsF4 : SecsTreeNode, ISecsValue<List<float>>
     {
-        public string Code => "F4";
+        public override string CodeOrValueString => $"<F4[{Value.Count}]>";
 
         public List<float> Value =>
             ChildrenNode.OfType<SecsF4Value>().Select(x => x.Value)
             .ToList();
+
+        public override bool IsValueType => false;
     }
 
     public class SecsF4Value : SecsTreeNode, ISecsValue<float>
     {
-        public float Value { get; set; }
+        public override string CodeOrValueString => F4Value.ToString();
+        public float Value => F4Value;
+        public float F4Value { get; set; }
+
+        public override bool IsValueType => true;
     }
 
-    public class SecsF8 : SecsTreeNode, ISecsItem, ISecsValue<List<double>>
+    public class SecsF8 : SecsTreeNode, ISecsValue<List<double>>
     {
-        public string Code => "F8";
+        public override string CodeOrValueString => $"<F8[{Value.Count}]>";
 
         public List<double> Value =>
             ChildrenNode.OfType<SecsF8Value>().Select(x => x.Value)
             .ToList();
+
+        public override bool IsValueType => false;
     }
 
     public class SecsF8Value : SecsTreeNode, ISecsValue<double>
     {
-        public double Value { get; set; }
+        public override string CodeOrValueString => F8Value.ToString();
+        public double Value => F8Value;
+        public double F8Value { get; set; }
+
+        public override bool IsValueType => true;
     }
 
-    public class SecsUnknown(byte b) : SecsTreeNode, ISecsItem, ISecsValue<byte>
+    public class SecsUnknown(byte b) : SecsTreeNode, ISecsValue<byte>
     {
         private byte rawByte = b;
         public byte Value => rawByte;
-        public string Code => "Unknown";
+
+        public override string CodeOrValueString => $"Unknown({rawByte.ToString()})";
+
+        public override bool IsValueType => true;
     }
     #endregion
 

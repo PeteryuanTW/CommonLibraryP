@@ -115,7 +115,7 @@
 
 <DxPopup @ref="@secsItemPopup" ShowCloseButton="true" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
     <BodyContentTemplate Context="bodycontext">
-        <SecsItemTreeRoot SecsItem="@surrentSECSItem" />
+        <SecsItemTreeRoot SecsItem="@currentSECSItem" />
     </BodyContentTemplate>
 </DxPopup>
 
@@ -124,12 +124,10 @@
 
     DxPopup? secsItemPopup { get; set; }
 
-
-
     private QSWrapper qsWrapper = new();
     private SECSGemStatus secsGemStatus = null!;
     private List<QSEventLog> qsEventLogs = new();
-    private SecsTreeNode? surrentSECSItem;
+    private SecsTreeNode? currentSECSItem;
 
     private ButtonRenderStyle GetHSMSHostingStyle(bool b)
     => b ? ButtonRenderStyle.Danger : ButtonRenderStyle.Success;
@@ -189,14 +187,14 @@
     {
         if (qsEventObj is QSEventLog qsEventLog)
         {
-            surrentSECSItem = await secsGemService.GetSecsGemItemById(new Guid("440492e9-e4f1-4651-9c25-a07b1dd16354"));//qsEventLog.SecsItem;
+            currentSECSItem = qsEventLog.SecsItem;//qsEventLog.SecsItem;
             await secsItemPopup.ShowAsync();
         }
     }
 
     private async Task CloseSECSItemPopup()
     {
-        surrentSECSItem = null;
+        currentSECSItem = null;
         await secsItemPopup.CloseAsync();
     }
 

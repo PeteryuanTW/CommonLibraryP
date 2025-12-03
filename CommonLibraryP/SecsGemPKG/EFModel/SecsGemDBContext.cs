@@ -14,75 +14,49 @@ namespace CommonLibraryP.SecsGemPKG
 
         }
 
-        public virtual DbSet<SecsTreeNode> SecsTreeNodes { get; set; }
-        public virtual DbSet<SecsList> SecsLists { get; set; }
-        public virtual DbSet<SecsAscii> SecsAsciis { get; set; }
-        public virtual DbSet<SecsBinary> SecsBinarys { get; set; }
-        public virtual DbSet<SecsBinaryValue> SecsBinaryValues { get; set; }
-        public virtual DbSet<SecsBool> SecsBools { get; set; }
-        public virtual DbSet<SecsBoolValue> SecsBoolValues { get; set; }
-        public virtual DbSet<SecsI1> SecsI1s { get; set; }
-        public virtual DbSet<SecsI1Value> SecsI1Values { get; set; }
-        public virtual DbSet<SecsI2> SecsI2s { get; set; }
-        public virtual DbSet<SecsI2Value> SecsI2Values { get; set; }
-        public virtual DbSet<SecsI4> SecsI4s { get; set; }
-        public virtual DbSet<SecsI4Value> SecsI4Values { get; set; }
-        public virtual DbSet<SecsI8> SecsI8s { get; set; }
-        public virtual DbSet<SecsI8Value> SecsI8Values { get; set; }
-        public virtual DbSet<SecsU1> SecsU1s { get; set; }
-        public virtual DbSet<SecsU1Value> SecsU1Values { get; set; }
-        public virtual DbSet<SecsU2> SecsU2s { get; set; }
-        public virtual DbSet<SecsU2Value> SecsU2Values { get; set; }
-        public virtual DbSet<SecsU4> SecsU4s { get; set; }
-        public virtual DbSet<SecsU4Value> SecsU4Values { get; set; }
-        public virtual DbSet<SecsU8> SecsU8s { get; set; }
-        public virtual DbSet<SecsU8Value> SecsU8Values { get; set; }
-        public virtual DbSet<SecsF4> SecsF4s { get; set; }
-        public virtual DbSet<SecsF4Value> SecsF4Values { get; set; }
-        public virtual DbSet<SecsF8> SecsF8s { get; set; }
-        public virtual DbSet<SecsF8Value> SecsF8Values { get; set; }
+        public DbSet<SecsTreeNode> SecsTreeNodes { get; set; }
+
+        public DbSet<SecsEvent> SecsEvents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<SecsTreeNode>(entity =>
-            {
-                entity.HasKey(e => e.Id);
+            modelBuilder.Entity<SecsTreeNode>()
+            .HasDiscriminator<SecsNodeType>("NodeType")
+            .HasValue<SecsList>(SecsNodeType.List)
+            .HasValue<SecsAscii>(SecsNodeType.Ascii)
+            .HasValue<SecsBinary>(SecsNodeType.Binary)
+            .HasValue<SecsBinaryValue>(SecsNodeType.BinaryValue)
+            .HasValue<SecsBool>(SecsNodeType.Boolean)
+            .HasValue<SecsBoolValue>(SecsNodeType.BooleanValue)
+            .HasValue<SecsI1>(SecsNodeType.I1)
+            .HasValue<SecsI1Value>(SecsNodeType.I1Value)
+            .HasValue<SecsI2>(SecsNodeType.I2)
+            .HasValue<SecsI2Value>(SecsNodeType.I2Value)
+            .HasValue<SecsI4>(SecsNodeType.I4)
+            .HasValue<SecsI4Value>(SecsNodeType.I4Value)
+            .HasValue<SecsI8>(SecsNodeType.I8)
+            .HasValue<SecsI8Value>(SecsNodeType.I8Value)
+            .HasValue<SecsU1>(SecsNodeType.U1)
+            .HasValue<SecsU1Value>(SecsNodeType.U1Value)
+            .HasValue<SecsU2>(SecsNodeType.U2)
+            .HasValue<SecsU2Value>(SecsNodeType.U2Value)
+            .HasValue<SecsU4>(SecsNodeType.U4)
+            .HasValue<SecsU4Value>(SecsNodeType.U4Value)
+            .HasValue<SecsU8>(SecsNodeType.U8)
+            .HasValue<SecsU8Value>(SecsNodeType.U8Value)
+            .HasValue<SecsF4>(SecsNodeType.F4)
+            .HasValue<SecsF4Value>(SecsNodeType.F4Value)
+            .HasValue<SecsF8>(SecsNodeType.F8)
+            .HasValue<SecsF8Value>(SecsNodeType.F8Value);
 
 
-                entity.UseTpcMappingStrategy();
-            });
+            modelBuilder.Entity<SecsTreeNode>()
+            .Property<SecsNodeType>("NodeType")
+            .HasColumnName("NodeType")
+            .HasConversion<int>();
 
-            modelBuilder.Entity<SecsList>(entity =>
-            {
+            modelBuilder.Entity<SecsEvent>();
 
-                //entity.Ignore(nameof(SecsItemBase.ValueSourceCode));
-            });
-
-            modelBuilder.Entity<SecsAscii>();
-            modelBuilder.Entity<SecsBinary>();
-            modelBuilder.Entity<SecsBinaryValue>();
-            modelBuilder.Entity<SecsBool>();
-            modelBuilder.Entity<SecsBoolValue>();
-            modelBuilder.Entity<SecsI1>();
-            modelBuilder.Entity<SecsI1Value>();
-            modelBuilder.Entity<SecsI2>();
-            modelBuilder.Entity<SecsI2Value>();
-            modelBuilder.Entity<SecsI4>();
-            modelBuilder.Entity<SecsI4Value>();
-            modelBuilder.Entity<SecsI8>();
-            modelBuilder.Entity<SecsI8Value>();
-            modelBuilder.Entity<SecsU1>();
-            modelBuilder.Entity<SecsU1Value>();
-            modelBuilder.Entity<SecsU2>();
-            modelBuilder.Entity<SecsU2Value>();
-            modelBuilder.Entity<SecsU4>();
-            modelBuilder.Entity<SecsU4Value>();
-            modelBuilder.Entity<SecsU8>();
-            modelBuilder.Entity<SecsU8Value>();
-            modelBuilder.Entity<SecsF4>();
-            modelBuilder.Entity<SecsF4Value>();
-            modelBuilder.Entity<SecsF8>();
-            modelBuilder.Entity<SecsF8Value>();
 
 
 

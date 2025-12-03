@@ -6,61 +6,308 @@
 
 <DxSplitter CssClass="w-100 h-100">
     <Panes>
-        <DxSplitterPane Size="4fr" AllowCollapse="true">
+        <DxSplitterPane Size="25%" AllowCollapse="true">
             <div>
-                <DxGrid Data="@secsRootNodes" SelectedDataItem="@targetSecsItemObj" SelectedDataItemChanged="OnSelectedChanged" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" HighlightRowOnHover="true">
+                <DxGrid @ref="rootNodesGrid" Data="@secsRootNodes" SelectedDataItem="@targetRootSecsItemObj" SelectedDataItemChanged="OnRootSelectedChanged" DataItemDeleting="DeleteRootNode" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" HighlightRowOnHover="true">
                     <ToolbarTemplate>
-                        <DxToolbar Title="@($"{targetSecsItem?.Id}")" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                        <DxToolbar Title="@(targetRootSecsItem?.Name)" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
                             <Items>
-                                <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true" />
-                                <DxToolbarItem IconCssClass="oi oi-pencil" Enabled="@secsItemSelected" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
-                                <DxToolbarItem IconCssClass="oi oi-trash" Enabled="@secsItemSelected" RenderStyle="ButtonRenderStyle.Danger" Alignment="ToolbarItemAlignment.Right" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true">
+                                    <Items>
+                                        @foreach (var t in secsRootTypeWrapperClasses)
+                                        {
+                                            <DxToolbarItem Text="@t.DisplayName" Click="@(() => NewRootNodeClicked(t))" />
+                                        }
+                                    </Items>
+                                </DxToolbarItem>
+                                <DxToolbarItem IconCssClass="oi oi-pencil" Enabled="@secsRootItemSelected" Click="@ShowRootNodePopup" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="bi bi-chat-left-text" Enabled="@secsRootItemSelected" Click="@TrySendMessage" RenderStyle="ButtonRenderStyle.Success" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="oi oi-trash" Enabled="@secsRootItemSelected" Click="ShowDeleteRootPopup" RenderStyle="ButtonRenderStyle.Danger" Alignment="ToolbarItemAlignment.Right" BeginGroup="true" />
                             </Items>
                         </DxToolbar>
                     </ToolbarTemplate>
                     <Columns>
                         <DxGridDataColumn FieldName="@nameof(SecsTreeNode.Id)"></DxGridDataColumn>
+                        <DxGridDataColumn FieldName="@nameof(SecsTreeNode.Name)"></DxGridDataColumn>
                     </Columns>
                 </DxGrid>
             </div>
         </DxSplitterPane>
-        <DxSplitterPane Size="4fr" AllowCollapse="true">
-            <div>
-                <DxTreeView Data="@relativeItems"
-                            AnimationType="LayoutAnimationType.Slide">
-                    <DataMappings>
-                        <DxTreeViewDataMapping Text="123"
-                                               Key="@nameof(SecsTreeNode.Id)"
-                                               Children="@nameof(SecsTreeNode.ChildrenNode)" />
-                    </DataMappings>
-                </DxTreeView>
-            </div>
+        <DxSplitterPane Size="75%" AllowCollapse="true">
+            <DxStackLayout Orientation="Orientation.Vertical" ItemSpacing="5rem">
+                <Items>
+                    <DxStackLayoutItem Length="1fr">
+                        <Template>
+                            <div>
+                                <DxToolbar Title="@(targetSecsTreeNode?.Name)" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+                                    <Items>
+                                        <DxToolbarItem IconCssClass="oi oi-plus" BeginGroup="true" Visible="@(secsDataTypeWrapperClasses.Any())">
+                                            <Items>
+                                                @foreach (var t in secsDataTypeWrapperClasses)
+                                                {
+                                                    <DxToolbarItem Text="@t.DisplayName" Click="@(() => NewNodeClicked(t))" />
+                                                }
+                                            </Items>
+                                        </DxToolbarItem>
+                                        <DxToolbarItem IconCssClass="oi oi-pencil" Enabled="@(secsTreeNodeSelected)" Click="@ShowTreeNodePopup" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
+                                        <DxToolbarItem IconCssClass="oi oi-trash" Enabled="@(secsTreeNodeSelected)" Click="@ShowDeleteRelaviveItemsPopup" RenderStyle="ButtonRenderStyle.Danger" Alignment="ToolbarItemAlignment.Right" BeginGroup="true" />
+                                    </Items>
+                                </DxToolbar>
+                            </div>
+                        </Template>
+                    </DxStackLayoutItem>
+                    <DxStackLayoutItem Length="11fr">
+                        <Template>
+                            <div>
+                                <SecsItemTreeRoot SecsItem="@targetRootSecsItem" OnNodeSelected="NodeSelectionChanged" />
+                            </div>
+                        </Template>
+                    </DxStackLayoutItem>
+                </Items>
+            </DxStackLayout>
         </DxSplitterPane>
     </Panes>
 </DxSplitter>
 
+<DxPopup @ref="@rootNodePopup" HeaderText="@(targetSecsTreeNode?.GetType().Name)" ShowCloseButton="true" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <BodyContentTemplate Context="bodycontext">
+        <EditForm Model="@targetRootSecsItem" Context="EditFormContext" OnValidSubmit="UpsertRootNode">
+            <DataAnnotationsValidator />
+            <DxFormLayout>
+                <DxFormLayoutItem Caption="Name" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6" BeginRow="true">
+                    <DxTextBox @bind-Text="@targetRootSecsItem.Name" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem ColSpanLg="12">
+                    <hr />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <DxToolbar>
+                        <Items>
+                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                        </Items>
+                    </DxToolbar>
+                </DxFormLayoutItem>
+            </DxFormLayout>
+        </EditForm>
+    </BodyContentTemplate>
+</DxPopup>
 
+<DxPopup @ref="@treeNodePopup" HeaderText="@(targetSecsTreeNode?.GetType().Name)" ShowCloseButton="true" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <BodyContentTemplate Context="bodycontext">
+        <EditForm Model="@targetSecsTreeNode" Context="EditFormContext" OnValidSubmit="UpsertTreeNode">
+            <DataAnnotationsValidator />
+            <DxFormLayout>
+                <DxFormLayoutItem Caption="Name" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6" BeginRow="true">
+                    <DxTextBox @bind-Text="@targetSecsTreeNode.Name" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Value" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6">
+                    @switch (targetSecsTreeNode)
+                    {
+                        case SecsAscii secsAscii:
+                            <DxTextBox @bind-Text="@secsAscii.StringValue" />
+                            break;
+                        case SecsBoolValue secsBoolValue:
+                            <DxCheckBox CheckType="CheckType.Switch" @bind-Checked="@secsBoolValue.BoolValue" />
+                            break;
+                        case SecsBinaryValue secsBinaryValue:
+                            <DxSpinEdit @bind-Value="@secsBinaryValue.BinaryValue" />
+                            break;
+                        case SecsI1Value secsI1Value:
+                            <DxSpinEdit @bind-Value="@secsI1Value.I1Value" />
+                            break;
+                        case SecsI2Value secsI2Value:
+                            <DxSpinEdit @bind-Value="@secsI2Value.I2Value" />
+                            break;
+                        case SecsI4Value secsI4Value:
+                            <DxSpinEdit @bind-Value="@secsI4Value.I4Value" />
+                            break;
+                        case SecsI8Value secsI8Value:
+                            <DxSpinEdit @bind-Value="@secsI8Value.I8Value" />
+                            break;
+                        case SecsU1Value secsU1Value:
+                            <DxSpinEdit @bind-Value="@secsU1Value.U1Value" />
+                            break;
+                        case SecsU2Value secsU2Value:
+                            <DxSpinEdit @bind-Value="@secsU2Value.U2Value" />
+                            break;
+                        case SecsU4Value secsU4Value:
+                            <DxSpinEdit @bind-Value="@secsU4Value.U4Value" />
+                            break;
+                        case SecsU8Value secsU8Value:
+                            <DxSpinEdit @bind-Value="@secsU8Value.U8Value" />
+                            break;
+                        case SecsF4Value secsF4Value:
+                            <DxSpinEdit @bind-Value="@secsF4Value.F4Value" />
+                            break;
+                        case SecsF8Value secsF8Value:
+                            <DxSpinEdit @bind-Value="@secsF8Value.F8Value" />
+                            break;
+                        default:
+                            break;
+                    }
+                </DxFormLayoutItem>
+                <DxFormLayoutItem ColSpanLg="12">
+                    <hr />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <DxToolbar>
+                        <Items>
+                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                        </Items>
+                    </DxToolbar>
+                </DxFormLayoutItem>
+            </DxFormLayout>
+        </EditForm>
+    </BodyContentTemplate>
+</DxPopup>
+
+<DxMessageBox @bind-Visible="deleteRelativeItemsVisible" ShowIcon="false"
+              Text=@($"Are you sure you want to delete {targetSecsTreeNode?.Name}?")
+              OkButtonText="Ok"
+              CloseOnEscape="false"
+              RenderStyle="@MessageBoxRenderStyle.Danger"
+              Type="@MessageBoxType.Alert"
+              Closed="DeleteTreeNode">
+</DxMessageBox>
 
 @code {
+    IGrid? rootNodesGrid { get; set; }
+    DxPopup? rootNodePopup { get; set; }
     private IEnumerable<SecsTreeNode> secsRootNodes = new List<SecsTreeNode>();
-    private Object? targetSecsItemObj;
-    private SecsTreeNode? targetSecsItem => targetSecsItemObj as SecsTreeNode;
-    private bool secsItemSelected => targetSecsItem != null;
+    private IEnumerable<SecsDataTypeWrapperClass> secsRootTypeWrapperClasses => SecsGemTypeEnumHelper.GetSecsNodeDataTypeWrapperClasses().ToList();
+    private Object? targetRootSecsItemObj;
+    private SecsTreeNode? targetRootSecsItem => targetRootSecsItemObj as SecsTreeNode;
+    private bool secsRootItemSelected => targetRootSecsItem != null;
 
+
+
+    private bool deleteRelativeItemsVisible = false;
     private List<SecsTreeNode> relativeItems = new List<SecsTreeNode>();
 
 
+    private IEnumerable<SecsDataTypeWrapperClass> secsDataTypeWrapperClasses => SecsGemTypeEnumHelper.GetCompatibleChildrenType(targetSecsTreeNode).ToList();
+    DxPopup? treeNodePopup { get; set; }
+    private SecsTreeNode? targetSecsTreeNode;
+    private bool secsTreeNodeSelected => targetSecsTreeNode is not null;
+
     protected override async Task OnInitializedAsync()
+    {
+        await LoadRootNodes();
+    }
+
+    private async Task OnRootSelectedChanged(Object obj)
+    {
+        if (obj is SecsTreeNode secsTreeNode)
+        {
+            targetRootSecsItemObj = secsTreeNode;
+            await LoadAllTreeNodesArchitecture();
+        }
+    }
+
+    private void NodeSelectionChanged(SecsTreeNode secsTreeNode)
+    {
+        targetSecsTreeNode = secsTreeNode;
+    }
+
+
+
+    private async Task ShowRootNodePopup()
+    {
+        await rootNodePopup?.ShowAsync();
+    }
+
+    private async Task CloseRootNodePopup()
+    {
+        await rootNodePopup?.CloseAsync();
+    }
+
+    private async Task ShowTreeNodePopup()
+    {
+        await treeNodePopup?.ShowAsync();
+    }
+
+    private async Task CloseTreeNodePopup()
+    {
+        await treeNodePopup?.CloseAsync();
+    }
+
+    private async Task LoadRootNodes()
     {
         secsRootNodes = await secsGemService.GetAllSecsGemRootItems();
     }
 
-    private async Task OnSelectedChanged(Object obj)
+    private async Task LoadAllTreeNodesArchitecture()
     {
-        targetSecsItemObj = obj;
-        if (secsItemSelected)
+        if (secsRootItemSelected)
         {
-            relativeItems = await secsGemService.GetAllFlatSecsGemItems(targetSecsItem!.Id);
+            targetRootSecsItemObj = await secsGemService.GetSecsGemItemById(targetRootSecsItem.Id);
         }
+    }
+
+
+
+
+    private async Task NewRootNodeClicked(SecsDataTypeWrapperClass secsDataTypeWrapperClass)
+    {
+        targetRootSecsItemObj = SecsGemTypeEnumHelper.GetSecsTreeNodeTypeByEnum(secsDataTypeWrapperClass.SecsDataTypeEnum);
+        await ShowRootNodePopup();
+    }
+
+    private async Task NewNodeClicked(SecsDataTypeWrapperClass secsDataTypeWrapperClass)
+    {
+        var parentId = targetSecsTreeNode?.Id;
+        targetSecsTreeNode = SecsGemTypeEnumHelper.GetSecsTreeNodeTypeByEnum(secsDataTypeWrapperClass.SecsDataTypeEnum);
+        targetSecsTreeNode.ParentId = parentId;
+        await ShowTreeNodePopup();
+    }
+
+    private async Task UpsertRootNode()
+    {
+        var res = await secsGemService.UpsertSecsTreeNode(targetRootSecsItem);
+        await LoadRootNodes();
+        await LoadAllTreeNodesArchitecture();
+        await CloseRootNodePopup();
+        notificationService.ShowToast(res);
+    }
+
+    private void ShowDeleteRootPopup()
+    {
+        rootNodesGrid?.ShowDataItemDeleteConfirmation(targetRootSecsItem);
+    }
+
+    private async Task DeleteRootNode()
+    {
+        var res = await secsGemService.DeleteSecsTreeNodeAndAllChildren(targetRootSecsItem.Id);
+        await LoadRootNodes();
+        await LoadAllTreeNodesArchitecture();
+        notificationService.ShowToast(res);
+    }
+
+    private async Task UpsertTreeNode()
+    {
+        var res = await secsGemService.UpsertSecsTreeNode(targetSecsTreeNode);
+        await LoadAllTreeNodesArchitecture();
+        await CloseTreeNodePopup();
+        notificationService.ShowToast(res);
+    }
+
+    private void ShowDeleteRelaviveItemsPopup()
+    {
+        deleteRelativeItemsVisible = true;
+    }
+
+    private async Task DeleteTreeNode(bool b)
+    {
+        if (!b) return;
+        var res = await secsGemService.DeleteSecsTreeNodeAndAllChildren(targetSecsTreeNode.Id);
+        await LoadAllTreeNodesArchitecture();
+        notificationService.ShowToast(res);
+    }
+
+
+    private Task TrySendMessage()
+    {
+        secsGemService.SendMessage(0, 0, targetRootSecsItem);
+        return Task.CompletedTask;
     }
 }
