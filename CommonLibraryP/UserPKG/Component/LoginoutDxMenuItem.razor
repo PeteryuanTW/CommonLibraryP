@@ -1,0 +1,18 @@
+﻿@namespace CommonLibraryP.UserPKG.Component
+@rendermode RenderMode.InteractiveServer
+
+@inherits AuthComponentBase
+
+<DxMenuItem Text="@(userService.UserInfoDTO?.Username)" IconCssClass="@processingIconCssClass" Position="ItemPosition.End">
+    <Items>
+        <DxMenuItem Text="@text" IconCssClass="@iconCss" NavigateUrl="Loginout"/>
+    </Items>
+</DxMenuItem>
+
+@code {
+    private string processingIconCssClass => userService.IsPorcossing ? "oi oi-ellipses" : "bi bi-person";
+
+    private string iconCss => userService.IsAuth ? "oi oi-account-logout" : "oi oi-account-login";
+
+    private string text => userService.IsAuth ? "Logout" : "Login";
+}

@@ -16,13 +16,24 @@ namespace CommonLibraryP.SecsGemPKG
         {
             this.scopeFactory = scopeFactory;
         }
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             using (var scope = scopeFactory.CreateScope())
             {
                 var secsGemService = scope.ServiceProvider.GetRequiredService<SecsGemService>();
-                secsGemService.InitHSMSFromSetting();
-                return Task.CompletedTask;
+                await secsGemService.InitAndStartHSMS();
+                secsGemService.InitGem();
+                await secsGemService.InitSVs();
+
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    if (secsGemService.GemStatus.UpdateSV)
+                    {
+                        await secsGemService.UpdateSVs();
+                        await secsGemService.UpdateGemStatus();
+                    }
+                    await Task.Delay(secsGemService.GemStatus.UpdateSVDelay, stoppingToken);
+                }
             }
         }
     }

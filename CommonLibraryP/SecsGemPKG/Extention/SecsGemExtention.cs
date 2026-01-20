@@ -18,8 +18,8 @@ namespace CommonLibraryP.SecsGemPKG
     {
         public static IHostApplicationBuilder AddSecsGemService(this IHostApplicationBuilder builder, string dbConnectionStringName = "DefaultConnection")
         {
-            builder.Services.AddOptions<HSMSQepSetting>()
-                .Bind(builder.Configuration.GetSection("HSMSQepSetting"))
+            builder.Services.AddOptions<HSMSParameter>()
+                .Bind(builder.Configuration.GetSection("HSMSParameter"))
                 .ValidateDataAnnotations();
             builder.Services.AddDbContextFactory<SecsGemDBContext>(options =>
             {

@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace CommonLibraryP.MapPKG
 {
-    public static class MapExtention
+    public static class MapExtension
     {
         public static IHostApplicationBuilder AddMapService(this IHostApplicationBuilder builder, string dbConnectionStringName = "DefaultConnection")
         {

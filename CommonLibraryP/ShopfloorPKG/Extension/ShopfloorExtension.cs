@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace CommonLibraryP.ShopfloorPKG
 {
-    public static class ShopfloorExtention
+    public static class ShopfloorExtension
     {
         public static IHostApplicationBuilder AddShopfloorService(this IHostApplicationBuilder builder, string dbConnectionStringName = "DefaultConnection")
         {

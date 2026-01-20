@@ -1,5 +1,6 @@
 ﻿using CommonLibraryP.Data;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using QGACTIVEXLib;
 using QSACTIVEXLib;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,9 @@ namespace CommonLibraryP.SecsGemPKG
 
         public static IEnumerable<SecsDataTypeWrapperClass> SecsDataTypeWrapperClasses() => Enum.GetValues<SecsDataTypeEnum>()
             .Select(c => new SecsDataTypeWrapperClass(c));
+
+        public static IEnumerable<SVDataTypeWrapperClass> SVDataTypeWrapperClasses() => Enum.GetValues<SV_DATA_TYPE>()
+            .Select(c => new SVDataTypeWrapperClass(c));
 
         public static IEnumerable<SecsDataTypeWrapperClass> GetSecsNodeDataTypeWrapperClasses() => SecsDataTypeWrapperClasses().Where(x => x.Index > 0 && x.Index < 20);
 
@@ -235,5 +239,16 @@ namespace CommonLibraryP.SecsGemPKG
             displayName = secsDataTypeEnum.ToString();
         }
         public SecsDataTypeEnum SecsDataTypeEnum { get; init; }
+    }
+
+    public class SVDataTypeWrapperClass : EnumWrapper
+    {
+        public SVDataTypeWrapperClass(SV_DATA_TYPE sv_DATA_TYPE)
+        {
+            SV_DATA_TYPE = sv_DATA_TYPE;
+            index = (int)sv_DATA_TYPE;
+            displayName = sv_DATA_TYPE.ToString();
+        }
+        public SV_DATA_TYPE SV_DATA_TYPE { get; init; }
     }
 }

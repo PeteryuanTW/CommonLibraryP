@@ -541,6 +541,9 @@ namespace CommonLibraryP.SecsGemPKG
         public Guid? ParentId { get; set; }
 
         public bool IsRoot => ParentId is null;
+
+        public int Sequence { get; set; }
+
         [Required]
         public string Name { get; set; } = null!;
 

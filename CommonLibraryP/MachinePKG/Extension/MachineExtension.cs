@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace CommonLibraryP.MachinePKG
 {
-    public static class MachineExtention
+    public static class MachineExtension
     {
         public static IHostApplicationBuilder AddMachineService(this IHostApplicationBuilder builder, string dbConnectionStringName = "DefaultConnection")
         {

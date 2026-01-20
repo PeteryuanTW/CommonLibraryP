@@ -6,45 +6,43 @@
 @inject SecsGemService secsGemService
 @inject NotificationService notificationService
 
-<DxStackLayout Orientation="Orientation.Horizontal" ItemSpacing="1rem">
+<DxGridLayout RowSpacing="1rem" ColumnSpacing="1rem">
+    <Rows>
+        <DxGridLayoutRow Height="11fr" />
+    </Rows>
+    <Columns>
+        <DxGridLayoutColumn Width="4fr" />
+        <DxGridLayoutColumn Width="4fr" />
+        <DxGridLayoutColumn Width="4fr" />
+    </Columns>
     <Items>
-        <DxStackLayoutItem Length="4fr">
+        <DxGridLayoutItem Row="0" Column="0">
             <Template>
                 <div>
-                    <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
-                        <DxFormLayoutItem ColSpanLg="12" Caption="HSMS" CaptionPosition="CaptionPosition.Horizontal">
-                            <hr />
-                        </DxFormLayoutItem>
-                        <DxFormLayoutItem ColSpanLg="12">
-                            <DxToolbar>
-                                <Items>
-                                    <DxToolbarItem BeginGroup="true" Click="SwitchHSMSStatus" IconCssClass="@($"oi oi-media-{GetHSMSHostingIcon(secsGemStatus?.Hosting ?? false)}")" RenderStyle="@(GetHSMSHostingStyle(secsGemStatus?.Hosting ?? false))" />
-                                    <DxToolbarItem BeginGroup="true" IconCssClass="@($"oi oi-info")" RenderStyle="ButtonRenderStyle.Info" Click="ShowHSMSParameterPopup" />
-                                </Items>
-                            </DxToolbar>
-                        </DxFormLayoutItem>
-                        <DxFormLayoutItem ColSpanLg="6" Caption="Hosting">
-                            <DxCheckBox Checked="@secsGemStatus?.Hosting" ReadOnly="true" CheckType="CheckType.Switch" />
-                        </DxFormLayoutItem>
-                        <DxFormLayoutItem ColSpanLg="6" Caption="Connected">
-                            <DxCheckBox Checked="@secsGemStatus?.Connected" ReadOnly="true" CheckType="CheckType.Switch" />
-                        </DxFormLayoutItem>
-                        <DxFormLayoutItem ColSpanLg="12" Caption="GEM" CaptionPosition="CaptionPosition.Horizontal">
-                            <hr />
-                        </DxFormLayoutItem>
-                        <DxFormLayoutItem ColSpanLg="6" Caption="Communicating">
-                            <DxCheckBox Checked="@secsGemStatus?.Communicating" ReadOnly="true" CheckType="CheckType.Switch" />
-                        </DxFormLayoutItem>
-                    </DxFormLayout>
+                    <SecsGemSummaryComponent />
                 </div>
             </Template>
-        </DxStackLayoutItem>
-        <DxStackLayoutItem Length="8fr">
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="0" Column="1">
+            <Template>
+                <div>
+                    <DxTabs>
+                        <DxTabPage Text="SV">
+                            <SVComponent ShowToolBar="true" />
+                        </DxTabPage>
+                        <DxTabPage Text="Enevt">
+                            <EventComponent/>
+                        </DxTabPage>
+                    </DxTabs>
+                </div>
+            </Template>
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="0" Column="2">
             <Template>
                 <div class="h-100">
                     <DxGrid Data="@qsEventLogs">
                         <Columns>
-                            <DxGridDataColumn FieldName="@nameof(QSEventLog.LogTime)" DisplayFormat="g" />
+                            <DxGridDataColumn FieldName="@nameof(QSEventLog.LogTime)" DisplayFormat="G" />
                             <DxGridDataColumn FieldName="@nameof(QSEventLog.EventType)" />
                             <DxGridDataColumn FieldName="@nameof(QSEventLog.S)" />
                             <DxGridDataColumn FieldName="@nameof(QSEventLog.F)" />
@@ -57,9 +55,10 @@
                     </DxGrid>
                 </div>
             </Template>
-        </DxStackLayoutItem>
+        </DxGridLayoutItem>
     </Items>
-</DxStackLayout>
+</DxGridLayout>
+
 
 <DxPopup @ref="@infoPopup" ShowCloseButton="true" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
     <BodyContentTemplate Context="bodycontext">
@@ -125,7 +124,8 @@
     DxPopup? secsItemPopup { get; set; }
 
     private QSWrapper qsWrapper = new();
-    private SECSGemStatus secsGemStatus = null!;
+    private SECSStatus? secsGemStatus;
+    private GemStatus? gemStatus;
     private List<QSEventLog> qsEventLogs = new();
     private SecsTreeNode? currentSECSItem;
 
@@ -157,8 +157,9 @@
 
     private async Task GetSECSGemInfo()
     {
-        qsWrapper = secsGemService.QSWrapper;
-        secsGemStatus = secsGemService.SECSGemStatus;
+        //qsWrapper = secsGemService.QSWrapper;
+        //secsGemStatus = secsGemService.SECSStatus;
+        //gemStatus = secsGemService.GemStatus;
         qsEventLogs = secsGemService.QSEventLogs;
         await InvokeAsync(StateHasChanged);
     }
@@ -198,11 +199,11 @@
         await secsItemPopup.CloseAsync();
     }
 
-    private void SwitchHSMSStatus()
+    private async Task SwitchHSMSStatus()
     {
         if (!secsGemStatus.Hosting)
         {
-            var res = secsGemService.InitHSMSFromSetting();
+            var res = await secsGemService.InitAndStartHSMS();
             notificationService.ShowToast(res);
         }
         else

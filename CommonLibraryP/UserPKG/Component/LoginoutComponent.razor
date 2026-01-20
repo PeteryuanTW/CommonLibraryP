@@ -1,0 +1,105 @@
+﻿@namespace CommonLibraryP.UserPKG.Component
+@rendermode RenderMode.InteractiveServer
+
+@inherits AuthComponentBase
+
+@inject NavigationManager nav
+@inject NotificationService notificationService
+
+
+<DxGridLayout>
+    <Rows>
+        <DxGridLayoutRow Height="4fr"/>
+        <DxGridLayoutRow Height="4fr" />
+        <DxGridLayoutRow Height="4fr" />
+    </Rows>
+    <Columns>
+        <DxGridLayoutColumn Width="4fr"/>
+        <DxGridLayoutColumn Width="4fr" />
+        <DxGridLayoutColumn Width="4fr" />
+    </Columns>
+    <Items>
+        <DxGridLayoutItem Row="1" Column="1">
+            <Template>
+                <div class="card p-5">
+                    @if (!userService.IsPorcossing)
+                    {
+                        @if (userService.IsAuth)
+                        {
+                            <DxFormLayout>
+                                <DxFormLayoutItem Caption="Id" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" BeginRow="true">
+                                    <DxTextBox Text="@userService.UserInfoDTO?.Id.ToString()" ReadOnly="true" />
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="User Name" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" BeginRow="true">
+                                    <DxTextBox Text="@userService.UserInfoDTO?.Username" ReadOnly="true" />
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="Role" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" BeginRow="true">
+                                    <DxTextBox Text="@userService.UserInfoDTO?.Role.ToString()" ReadOnly="true" />
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                                    <div class="d-flex justify-content-center align-items-center">
+                                        <DxButton Text="Logout" Click="LogoutAsync" RenderStyle="ButtonRenderStyle.Danger" />
+                                    </div>
+                                </DxFormLayoutItem>
+                            </DxFormLayout>
+                        }
+                        else
+                        {
+                            <EditForm Model="@userLoginDTO" Context="EditFormContext" OnValidSubmit="LoginAsync">
+                                <DataAnnotationsValidator />
+                                <DxFormLayout>
+                                    <DxFormLayoutItem Caption="User Name" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" BeginRow="true">
+                                        <DxTextBox @bind-Text="@userLoginDTO.UserName" />
+                                    </DxFormLayoutItem>
+                                    <DxFormLayoutItem Caption="Password" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="10">
+                                        <DxTextBox @bind-Text="@userLoginDTO.Password" Password="@(!showPassword)" />
+                                    </DxFormLayoutItem>
+                                    <DxFormLayoutItem Caption="Show Password" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="2">
+                                        <DxCheckBox @bind-Checked="@showPassword" CheckType="CheckType.Switch" />
+                                    </DxFormLayoutItem>
+                                    <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                                        <div class="d-flex justify-content-center align-items-center">
+                                            <DxButton Text="Login" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Info" />
+                                        </div>
+                                    </DxFormLayoutItem>
+                                </DxFormLayout>
+                            </EditForm>
+                        }
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-content-center align-items-center">
+                            <DxWaitIndicator Visible="true" AnimationType="WaitIndicatorAnimationType.Pulse" />
+                        </div>
+                    }
+                </div>
+            </Template>
+        </DxGridLayoutItem>
+    </Items>
+</DxGridLayout>
+@code {
+    private UserLoginDTO userLoginDTO = new();
+
+    private bool showPassword = false;
+
+    private async Task LoginAsync()
+    {
+        var res = await userService.LoginAsync(userLoginDTO);
+        if (res.IsSuccess)
+        {
+            nav.NavigateTo("/", true);
+        }
+        else
+        {
+            notificationService.ShowToast(res);
+        }
+
+    }
+
+    private async Task LogoutAsync()
+    {
+        var res = await userService.LogutAsync();
+        notificationService.ShowToast(res);
+        nav.NavigateTo("/", true);
+    }
+}

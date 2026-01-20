@@ -1,609 +1,679 @@
 ﻿using CommonLibraryP.API;
-using CommonLibraryP.MachinePKG;
-using CommonLibraryP.MapPKG;
-using DevExpress.Blazor;
-using DevExpress.XtraPrinting.Shape.Native;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using QGACTIVEXLib;
 using QSACTIVEXLib;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.ExceptionServices;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace CommonLibraryP.SecsGemPKG
 {
-    public class SecsGemService : IDisposable
-    {
-        private readonly HSMSQepSetting hsmsQepSetting;
-        private readonly IServiceScopeFactory scopeFactory;
-        public SecsGemService(IServiceScopeFactory scopeFactory, IOptions<HSMSQepSetting> options)
-        {
-            this.scopeFactory = scopeFactory;
-            hsmsQepSetting = options.Value;
-        }
-
-
-        private QSWrapper qsWrapper = new();
-        public QSWrapper QSWrapper => qsWrapper;
-
-        private SECSGemStatus secsGemStatus = new();
-        public SECSGemStatus SECSGemStatus => secsGemStatus;
-
-        public List<QSEventLog> QSEventLogs = new List<QSEventLog>();
-
-
-        private QGWrapper qgWrapper = new();
-        string configPath => Path.Combine(AppContext.BaseDirectory, "SECSGEMConfig");
-
-
-
-
-        public event Func<int, int, SecsTreeNode, SecsTreeNode, Task>? SecsMessageFunc;
-
-        public event Func<Task>? UIEvent;
-
-        public void UIUpdate()
-        {
-            if (UIEvent is null) return;
-
-            foreach (var handler in UIEvent.GetInvocationList())
-            {
-                var func = (Func<Task>)handler;
-                _ = Task.Run(func);
-            }
-        }
-
-        public void Dispose()
-        {
-            StopHSMS();
-        }
-
-        public SECSIParameter GetSECSIParameter()
-        {
-            if (qsWrapper.lCOMM_Mode == COMMMODE.SECS_MODE)
-            {
-                return new SECSIParameter()
-                {
-                    T3 = qsWrapper.T3,
-                    DeviceID = qsWrapper.lDeviceID,
-                    CommMode = COMMMODE.SECS_MODE,
-
-                    T1 = qsWrapper.T1,
-                    T2 = qsWrapper.T2,
-                    T4 = qsWrapper.T4,
-                    BaudRate = qsWrapper.lBaudRate,
-                    COMPort = qsWrapper.lCOMPort,
-                    RTY = qsWrapper.RTY,
-                    SECS_Connect_Mode = qsWrapper.SECS_Connect_Mode
-                };
-            }
-            else
-            {
-                return new SECSIParameter
-                {
-                    CommMode = COMMMODE.SECS_MODE,
-                };
-            }
-
-        }
-
-        public HSMSSSParameter GetHSMSSSParameter()
-        {
-            if (qsWrapper.lCOMM_Mode == COMMMODE.HSMS_MODE)
-            {
-                return new HSMSSSParameter()
-                {
-                    T3 = qsWrapper.T3,
-                    DeviceID = qsWrapper.lDeviceID,
-                    CommMode = COMMMODE.HSMS_MODE,
-
-                    T5 = qsWrapper.T5,
-                    T6 = qsWrapper.T6,
-                    T7 = qsWrapper.T7,
-                    T8 = qsWrapper.T8,
-                    LinkTestPeriod = qsWrapper.lLinkTestPeriod,
-                    LocalIP = qsWrapper.szLocalIP,
-                    LocalPort = qsWrapper.nLocalPort,
-                    RemoteIP = qsWrapper.szRemoteIP,
-                    RemotePort = qsWrapper.nRemotePort,
-                    HSMS_Connect_Mode = qsWrapper.HSMS_Connect_Mode,
-                };
-            }
-            else
-            {
-                return new HSMSSSParameter
-                {
-                    CommMode = COMMMODE.HSMS_MODE,
-                };
-            }
-
-        }
-
-        public void SetSetCommonParameter(SECSCommonParameter secsCommonParameter)
-        {
-            if (secsGemStatus.Hosting)
-            {
-                StopHSMS();
-            }
-            if (secsCommonParameter is SECSIParameter secsIParameter)
-            {
-                SetSECSI(secsIParameter);
-            }
-            else if (secsCommonParameter is HSMSSSParameter hsmsSSParameter)
-            {
-                SetHSMS(hsmsSSParameter);
-            }
-            var res = StartHSMS();
-        }
-
-        private void SetCommon(SECSCommonParameter secsCommonParameter)
-        {
-            qsWrapper.T3 = secsCommonParameter.T3;
-            qsWrapper.lDeviceID = secsCommonParameter.DeviceID;
-            qsWrapper.lCOMM_Mode = secsCommonParameter.CommMode;
-        }
-        private void SetSECSI(SECSIParameter sescIParameter)
-        {
-            SetCommon(sescIParameter);
-
-            qsWrapper.T1 = sescIParameter.T1;
-            qsWrapper.T2 = sescIParameter.T2;
-            qsWrapper.T4 = sescIParameter.T4;
-            qsWrapper.lBaudRate = sescIParameter.BaudRate;
-            qsWrapper.lCOMPort = sescIParameter.COMPort;
-            qsWrapper.RTY = sescIParameter.RTY;
-            qsWrapper.SECS_Connect_Mode = sescIParameter.SECS_Connect_Mode;
-        }
-        private void SetHSMS(HSMSSSParameter hSMSSSParameter)
-        {
-            SetCommon(hSMSSSParameter);
-
-            qsWrapper.T5 = hSMSSSParameter.T5;
-            qsWrapper.T6 = hSMSSSParameter.T6;
-            qsWrapper.T7 = hSMSSSParameter.T7;
-            qsWrapper.T8 = hSMSSSParameter.T8;
-            qsWrapper.lLinkTestPeriod = hSMSSSParameter.LinkTestPeriod;
-            qsWrapper.szLocalIP = hSMSSSParameter.LocalIP;
-            qsWrapper.nLocalPort = hSMSSSParameter.LocalPort;
-            qsWrapper.szRemoteIP = hSMSSSParameter.RemoteIP;
-            qsWrapper.nRemotePort = hSMSSSParameter.RemotePort;
-            qsWrapper.HSMS_Connect_Mode = hSMSSSParameter.HSMS_Connect_Mode;
-
-
-        }
-
-        private void RunOnSTAThread(Action action)
-        {
-            Exception? exception = null;
-
-            var thread = new Thread(() =>
-            {
-                try { action(); }
-                catch (Exception ex) { exception = ex; }
-            });
-
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.Start();
-            thread.Join();
-
-            if (exception != null) throw exception;
-        }
-
-        public RequestResult InitHSMSFromSetting()
-        {
-            //common
-            qsWrapper.T3 = hsmsQepSetting.T3;
-            qsWrapper.lDeviceID = hsmsQepSetting.DeviceID;
-            qsWrapper.lCOMM_Mode = COMMMODE.HSMS_MODE;
-            //hsms
-            qsWrapper.T5 = hsmsQepSetting.T5;
-            qsWrapper.T6 = hsmsQepSetting.T6;
-            qsWrapper.T7 = hsmsQepSetting.T7;
-            qsWrapper.T8 = hsmsQepSetting.T8;
-            qsWrapper.lLinkTestPeriod = hsmsQepSetting.LinkTestPeriod;
-            qsWrapper.szLocalIP = hsmsQepSetting.LocalIP;
-            qsWrapper.nLocalPort = hsmsQepSetting.LocalPort;
-            qsWrapper.szRemoteIP = hsmsQepSetting.RemoteIP;
-            qsWrapper.nRemotePort = hsmsQepSetting.RemotePort;
-            qsWrapper.HSMS_Connect_Mode = HSMS_COMM_MODE.HSMS_PASSIVE_MODE;
-
-            var initRes = qsWrapper.Initialize();
-            if (initRes is not 0)
-            {
-                return new RequestResult(4, $"Init hsms fail({initRes})");
-            }
-            qsWrapper.QSEvent += new _IQSWrapperEvents_QSEventEventHandler(QSEvent);
-
-            int hsmsPassiveRes = qsWrapper.Start();
-            bool success = hsmsPassiveRes is 1;
-            secsGemStatus.SetHosting(success);
-            UIUpdate();
-            if (success)
-            {
-                return new RequestResult(2, $"Start hsms success");
-            }
-            else
-            {
-                return new RequestResult(4, $"Start hsms fail({hsmsPassiveRes})");
-            }
-
-        }
-
-        public int InitHSMS()
-        {
-            var initRes = qsWrapper.Initialize();
-            if (initRes is not 0)
-            {
-                return initRes;
-            }
-            qsWrapper.QSEvent += new _IQSWrapperEvents_QSEventEventHandler(QSEvent);
-            return 0;
-        }
-
-        public int StartHSMS()
-        {
-            var InitRes = InitHSMS();
-            if (InitRes is not 0)
-            {
-                return InitRes;
-            }
-            if (qsWrapper.lCOMM_Mode == COMMMODE.HSMS_MODE)
-            {
-                if (qsWrapper.HSMS_Connect_Mode == HSMS_COMM_MODE.HSMS_ACTIVE_MODE)
-                {
-                    secsGemStatus.SetHosting(false);
-                    var hsmsActiveRes = qsWrapper.Start();
-                    secsGemStatus.SetConnected(hsmsActiveRes is 1);
-                    UIUpdate();
-                    return hsmsActiveRes;
-                }
-                else
-                {
-                    int hsmsPassiveRes = qsWrapper.Start();
-                    secsGemStatus.SetHosting(hsmsPassiveRes is 1);
-                    UIUpdate();
-                    return hsmsPassiveRes;
-                }
-            }
-            else
-            {
-                int SECSRes = qsWrapper.Start();
-                secsGemStatus.SetHosting(SECSRes is 1);
-                secsGemStatus.SetConnected(SECSRes is 1);
-                UIUpdate();
-                return SECSRes;
-            }
-        }
-
-        private void QSEvent(int lID, EVENT_ID lMsgID, int S, int F, int W_Bit, int ulSystemBytes, object RawData, object Head, string pEventText)
-        {
-            var res = SecsParser.Parse(RawData);
-            Log(lMsgID, S, F, res);
-            switch (lMsgID)
-            {
-                case EVENT_ID.QS_EVENT_CONNECTED:
-
-                    secsGemStatus.SetConnected(true);
-                    break;
-                case EVENT_ID.QS_EVENT_RECV_MSG:
-                    Task.Run(async () =>
-                    {
-                        await CheckSecsGemHub(S, F, res);
-                    });
-                    break;
-                case EVENT_ID.QS_EVENT_SEND_MSG:
-                    break;
-                case EVENT_ID.QS_EVENT_DISCONNECTED:
-                    secsGemStatus.SetConnected(false);
-                    break;
-                default:
-                    break;
-            }
-            UIUpdate();
-        }
-
-        public void SendMessage(int S, int F, SecsTreeNode secsTreeNode)
-        {
-            int systemBytes = 0;
-            var secsData = SecsParser.EncodeItem(secsTreeNode);
-            RunOnSTAThread(() =>
-            {
-                qsWrapper.SendSECSIIMessage(S, F, 1, ref systemBytes, secsData);
-            });
-        }
-
-        public async Task CheckSecsGemHub(int s, int f, SecsTreeNode secsTreeNode)
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
-
-                var targetEvent = await dbContext.SecsEvents.AsNoTracking()
-                    .FirstOrDefaultAsync(e => e.S == s && e.F == f);
-
-                if (targetEvent is not null)
-                {
-                    var targetTemplate = await GetSecsGemItemById(targetEvent.SourceNodeId);
-                    var targetReplyTemplate = await GetSecsGemItemById(targetEvent.ReplyNodeId);
-                    if (targetTemplate is not null && targetReplyTemplate is not null)
-                    {
-                        var res = CopyIfStructureEqual(secsTreeNode, targetTemplate);
-                        SecsMessageFunc?.Invoke(s, f, targetTemplate, targetReplyTemplate);
-                    }
-                }
-
-            }
-        }
-
-        public bool CopyIfStructureEqual(SecsTreeNode source, SecsTreeNode target)
-        {
-            if (IsStructureEqual(source, target))
-            {
-                CopyValues(source, target);
-                return true;
-            }
-            return false;
-        }
-        private bool IsStructureEqual(SecsTreeNode source, SecsTreeNode template)
-        {
-            if (source == null || template == null) return false;
-
-            // 型別必須一致
-            if (source.GetType() != template.GetType()) return false;
-
-            // ValueType 必須一致
-            if (source.IsValueType != template.IsValueType) return false;
-
-            // 子節點數量必須一致
-            if (source.ChildrenNode.Count != template.ChildrenNode.Count) return false;
-
-            // 遞迴比對子節點
-            for (int i = 0; i < source.ChildrenNode.Count; i++)
-            {
-                if (!IsStructureEqual(source.ChildrenNode[i], template.ChildrenNode[i]))
-                    return false;
-            }
-            return true;
-        }
-        private void CopyValues(SecsTreeNode source, SecsTreeNode template)
-        {
-            if (source == null || template == null) return;
-
-            if (source.IsValueType && template.IsValueType)
-            {
-                switch ((source, template))
-                {
-                    case (SecsAscii secsAsciiSource, SecsAscii secsAsciiTemplate):
-                        secsAsciiTemplate.StringValue = secsAsciiSource.StringValue;
-                        break;
-                    case (SecsBinaryValue secsBinaryValueSource, SecsBinaryValue secsBinaryValueTemplate):
-                        secsBinaryValueTemplate.BinaryValue = secsBinaryValueSource.BinaryValue;
-                        break;
-                    case (SecsBoolValue secsBoolValueSource, SecsBoolValue secsBoolValueTemplate):
-                        secsBoolValueTemplate.BoolValue = secsBoolValueSource.BoolValue;
-                        break;
-                    case (SecsI1Value secsI1ValueSource, SecsI1Value secsI1ValueTemplate):
-                        secsI1ValueTemplate.I1Value = secsI1ValueSource.I1Value;
-                        break;
-                    case (SecsI2Value secsI2ValueSource, SecsI2Value secsI2ValueTemplate):
-                        secsI2ValueTemplate.I2Value = secsI2ValueSource.I2Value;
-                        break;
-                    case (SecsI4Value secsI4ValueSource, SecsI4Value secsI4ValueTemplate):
-                        secsI4ValueTemplate.I4Value = secsI4ValueSource.I4Value;
-                        break;
-                    case (SecsI8Value secsI8ValueSource, SecsI8Value secsI8ValueTemplate):
-                        secsI8ValueTemplate.I8Value = secsI8ValueSource.I8Value;
-                        break;
-                    case (SecsU1Value secsU1ValueSource, SecsU1Value secsU1ValueTemplate):
-                        secsU1ValueTemplate.U1Value = secsU1ValueSource.U1Value;
-                        break;
-                    case (SecsU2Value secsU2ValueSource, SecsU2Value secsU2ValueTemplate):
-                        secsU2ValueTemplate.U2Value = secsU2ValueSource.U2Value;
-                        break;
-                    case (SecsU4Value secsU4ValueSource, SecsU4Value secsU4ValueTemplate):
-                        secsU4ValueTemplate.U4Value = secsU4ValueSource.U4Value;
-                        break;
-                    case (SecsU8Value secsU8ValueSource, SecsU8Value secsU8ValueTemplate):
-                        secsU8ValueTemplate.U8Value = secsU8ValueSource.U8Value;
-                        break;
-                    case (SecsF4Value secsF4ValueSource, SecsF4Value secsF4ValueTemplate):
-                        secsF4ValueTemplate.F4Value = secsF4ValueSource.F4Value;
-                        break;
-                    case (SecsF8Value secsF8ValueSource, SecsF8Value secsF8ValueTemplate):
-                        secsF8ValueTemplate.F8Value = secsF8ValueSource.F8Value;
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            for (int i = 0; i < source.ChildrenNode.Count; i++)
-            {
-                CopyValues(source.ChildrenNode[i], template.ChildrenNode[i]);
-            }
-        }
-
-
-
-
-
-        private void Log(EVENT_ID eventType, int s, int f, SecsTreeNode? SecsItem = null)
-        {
-            QSEventLogs.Add(new QSEventLog()
-            {
-                EventType = eventType,
-                S = s,
-                F = f,
-                LogTime = DateTime.Now,
-                SecsItem = SecsItem
-            });
-            UIUpdate();
-        }
-
-        public RequestResult StopHSMS()
-        {
-            qsWrapper.QSEvent -= new QSACTIVEXLib._IQSWrapperEvents_QSEventEventHandler(QSEvent);
-            var stopRes = qsWrapper.Stop();
-            bool success = stopRes is 1;
-            secsGemStatus.SetHosting(!success);
-            UIUpdate();
-            if (success)
-            {
-                return new RequestResult(2, $"Stop hsms success");
-
-            }
-            else
-            {
-                return new RequestResult(4, $"Stop hsms fail({stopRes})");
-            }
-        }
-
-
-        public int InitGem()
-        {
-            var qgRes = qgWrapper.Initialize(configPath);
-            if (qgRes is not 0)
-            {
-                qgWrapper.QGEvent += new _IQGWrapperEvents_QGEventEventHandler(qgEvent);
-                qgWrapper.PPEvent += new _IQGWrapperEvents_PPEventEventHandler(qgInfoEvent);
-                qgWrapper.TerminalMsgReceive += new _IQGWrapperEvents_TerminalMsgReceiveEventHandler(qgTerminalMsgReceive);
-                return qgRes;
-            }
-            return 0;
-        }
-
-        private void qgEvent(int lID, int S, int F, int W_Bit, int SystemBytes, object RawData, int Length)
-        {
-            qsWrapper.SendSECSIIMessage(S, F, W_Bit, ref SystemBytes, RawData);
-        }
-
-        private void qgInfoEvent(PP_TYPE MsgID, string InfoData)
-        {
-
-        }
-
-        private void qgTerminalMsgReceive(string Message)
-        {
-
-        }
-
-
-        #region secsgem items
-
-        public async Task<List<SecsTreeNode>> GetAllSecsGemRootItems()
-        {
-            using (var scope = scopeFactory.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
-                return await dbContext.SecsTreeNodes.AsNoTracking().Where(i => i.ParentId == null).ToListAsync();
-            }
-        }
-
-        public async Task<SecsTreeNode?> GetSecsGemItemById(Guid? id)
-        {
-            if(id is null) return null;
-            using var scope = scopeFactory.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
-
-            // 一次性抓出所有節點
-            var allNodes = await dbContext.SecsTreeNodes.AsNoTracking().ToListAsync();
-
-            // 建立 ParentId → 子節點 的 lookup
-            var lookup = allNodes.ToLookup(n => n.ParentId);
-
-            // 用遞迴組裝樹
-            SecsTreeNode? BuildTree(Guid? nodeId)
-            {
-                if (nodeId is null) return null;
-                var node = allNodes.FirstOrDefault(n => n.Id == nodeId);
-                if (node is null) return null;
-
-                var children = lookup[node.Id]
-                    .Select(child => BuildTree(child.Id))
-                    .Where(c => c != null)
-                    .ToList()!;
-
-                node.ChildrenNode = children;
-                return node;
-            }
-
-            return BuildTree(id);
-
-        }
-
-        public async Task<RequestResult> UpsertSecsTreeNode(SecsTreeNode secsTreeNode)
-        {
-            try
-            {
-                using (var scope = scopeFactory.CreateScope())
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
-                    var target = await dbContext.SecsTreeNodes
-                        .FirstOrDefaultAsync(x => x.Id == secsTreeNode.Id);
-
-                    if (target is null)
-                    {
-                        dbContext.SecsTreeNodes.Add(secsTreeNode); // Insert
-                    }
-                    else
-                    {
-                        dbContext.Entry(target).CurrentValues.SetValues(secsTreeNode); // Update
-                    }
-
-                    await dbContext.SaveChangesAsync();
-                    return new RequestResult(2, "Upsert SecsTreeNode success");
-                }
-            }
-            catch (Exception e)
-            {
-                return new RequestResult(4, $"Upsert SecsTreeNode fail: {e.Message}");
-            }
-
-        }
-
-
-        public async Task<RequestResult> DeleteSecsTreeNodeAndAllChildren(Guid id)
-        {
-            using var scope = scopeFactory.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
-
-            // 一次性抓出所有節點
-            var allNodes = await dbContext.SecsTreeNodes.ToListAsync();
-
-            // 建立 ParentId → 子節點 的 lookup
-            var lookup = allNodes.ToLookup(n => n.ParentId);
-
-            // 找出所有要刪除的節點 (包含自己 + 子孫)
-            List<SecsTreeNode> CollectNodes(Guid nodeId)
-            {
-                var node = allNodes.FirstOrDefault(n => n.Id == nodeId);
-                if (node == null) return new List<SecsTreeNode>();
-
-                var children = lookup[node.Id]
-                    .SelectMany(child => CollectNodes(child.Id))
-                    .ToList();
-
-                children.Add(node); // 把自己加進去
-                return children;
-            }
-
-            var toDelete = CollectNodes(id);
-
-            if (toDelete.Count == 0) return new RequestResult(1, "No nodes to delete");
-
-            // 從 DbContext 移除
-            dbContext.SecsTreeNodes.RemoveRange(toDelete);
-            await dbContext.SaveChangesAsync();
-            return new RequestResult(2, "Delete nodes and all children success");
-
-        }
-
-        #endregion
-    }
+	public class SecsGemService : IDisposable
+	{
+		//private readonly HSMSParameter hsmsParameter;
+		private readonly IServiceScopeFactory scopeFactory;
+		public SecsGemService(IServiceScopeFactory scopeFactory)
+		{
+			this.scopeFactory = scopeFactory;
+			//hsmsParameter = options.Value;
+		}
+
+
+		private QSWrapper qsWrapper = new();
+		public QSWrapper QSWrapper => qsWrapper;
+
+		private SECSStatus secsStatus = new();
+		public SECSStatus SECSStatus => secsStatus;
+
+		public List<QSEventLog> QSEventLogs = new List<QSEventLog>();
+
+		public Action? HSMSConfigAct;
+		private void HSMSConfigChanged() => HSMSConfigAct?.Invoke();
+
+		private QGWrapper qgWrapper = new();
+		public string configPath => AppContext.BaseDirectory;//Path.Combine(AppContext.BaseDirectory, "SECSGEMConfig");
+
+		public GemStatus GemStatus { get; set; } = new();
+
+
+		public List<SV> SVs = new();
+
+		public event Action? SVsUpdateFunc;
+
+		private void SVUpdate() => SVsUpdateFunc?.Invoke();
+
+		public event Func<int, int, SecsTreeNode, SecsTreeNode, Task>? SecsMessageFunc;
+
+		public event Func<Task>? UIEvent;
+
+		public void UIUpdate()
+		{
+			if (UIEvent is null) return;
+
+			foreach (var handler in UIEvent.GetInvocationList())
+			{
+				var func = (Func<Task>)handler;
+				_ = Task.Run(func);
+			}
+		}
+
+		public void Dispose()
+		{
+			StopHSMS();
+		}
+
+		private void RunOnSTAThread(Action action)
+		{
+			Exception? exception = null;
+
+			var thread = new Thread(() =>
+			{
+				try { action(); }
+				catch (Exception ex) { exception = ex; }
+			});
+
+			thread.SetApartmentState(ApartmentState.STA);
+			thread.Start();
+			thread.Join();
+
+			if (exception != null) throw exception;
+		}
+		private T RunOnSTAThread<T>(Func<T> func)
+		{
+			T? result = default;
+			Exception? exception = null;
+
+			var thread = new Thread(() =>
+			{
+				try
+				{
+					result = func();
+				}
+				catch (Exception ex)
+				{
+					exception = ex;
+				}
+			});
+
+			thread.SetApartmentState(ApartmentState.STA);
+			thread.Start();
+			thread.Join();
+
+			if (exception != null)
+				ExceptionDispatchInfo.Capture(exception).Throw();
+
+			return result!;
+		}
+
+
+		public async Task<RequestResult> UpsertHSMSParameter(HSMSParameter hsmsParameter)
+		{
+			using (var scope = scopeFactory.CreateScope())
+			{
+				var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
+				var target = await dbContext.HSMSParameter.FirstOrDefaultAsync(x=>x.Id == 1);
+				if (target is null)
+				{
+					await dbContext.HSMSParameter.AddAsync(hsmsParameter);
+				}
+				else
+				{
+					dbContext.Entry(target).CurrentValues.SetValues(hsmsParameter);
+				}
+				await dbContext.SaveChangesAsync();
+				return new(2, "Upsert hsms config success");
+			}
+		}
+
+		public async Task<HSMSParameter?> GetHSMSParameter()
+		{
+			using (var scope = scopeFactory.CreateScope())
+			{
+				var hsmsParameter = new HSMSParameter();
+				var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
+				return await dbContext.HSMSParameter.AsNoTracking().FirstOrDefaultAsync(x => x.Id == 1);
+			}
+		}
+
+		private async Task SetHSMSParameter()
+		{
+			var hsmsParameter = new HSMSParameter();
+			var hsms = await GetHSMSParameter();
+			if (hsms is not null)
+				hsmsParameter = hsms;
+
+			qsWrapper.T3 = hsmsParameter.T3;
+			qsWrapper.lDeviceID = hsmsParameter.DeviceID;
+			qsWrapper.lCOMM_Mode = hsmsParameter.CommMode;
+
+			qsWrapper.T5 = hsmsParameter.T5;
+			qsWrapper.T6 = hsmsParameter.T6;
+			qsWrapper.T7 = hsmsParameter.T7;
+			qsWrapper.T8 = hsmsParameter.T8;
+			qsWrapper.lLinkTestPeriod = hsmsParameter.LinkTestPeriod;
+			qsWrapper.szLocalIP = hsmsParameter.LocalIP;
+			qsWrapper.nLocalPort = hsmsParameter.LocalPort;
+			qsWrapper.szRemoteIP = hsmsParameter.RemoteIP;
+			qsWrapper.nRemotePort = hsmsParameter.RemotePort;
+			qsWrapper.HSMS_Connect_Mode = hsmsParameter.HSMS_Connect_Mode;
+			HSMSConfigChanged();
+		}
+
+		public async Task<RequestResult> InitAndStartHSMS()
+		{
+			await SetHSMSParameter();
+			var initRes = qsWrapper.Initialize();
+			if (initRes is not 0)
+			{
+				return new RequestResult(4, $"Init hsms fail({initRes})");
+			}
+			qsWrapper.QSEvent += new _IQSWrapperEvents_QSEventEventHandler(QSEvent);
+
+			int hsmsPassiveRes = qsWrapper.Start();
+			bool success = hsmsPassiveRes is 1;
+			secsStatus.SetHosting(success);
+			UIUpdate();
+			if (success)
+			{
+				return new RequestResult(2, $"Start hsms success");
+			}
+			else
+			{
+				return new RequestResult(4, $"Start hsms fail({hsmsPassiveRes})");
+			}
+
+		}
+
+		//public async Task<RequestResult> StopHSMS()
+		//{
+		//	var initRes = qsWrapper.Stop();
+		//	if (initRes is not 0)
+		//	{
+		//		return new RequestResult(4, $"Stop hsms fail({initRes})");
+		//	}
+		//	else
+		//	{
+		//		return new RequestResult(4, $"Start hsms success");
+		//	}
+		//}
+
+		private void QSEvent(int lID, EVENT_ID lMsgID, int S, int F, int W_Bit, int ulSystemBytes, object RawData, object Head, string pEventText)
+		{
+			var res = SecsParser.Parse(RawData);
+			Log(lMsgID, S, F, res);
+			var processRes = RunOnSTAThread<PROCESS_MSG_RESULT>(() => qgWrapper.ProcessMessage((int)lMsgID, S, F, W_Bit, ulSystemBytes, RawData, Head, pEventText));
+			switch (lMsgID)
+			{
+				case EVENT_ID.QS_EVENT_CONNECTED:
+					secsStatus.SetConnected(true);
+					break;
+				case EVENT_ID.QS_EVENT_RECV_MSG:
+					break;
+				case EVENT_ID.QS_EVENT_SEND_MSG:
+					break;
+				case EVENT_ID.QS_EVENT_DISCONNECTED:
+					secsStatus.SetConnected(false);
+					break;
+				default:
+					break;
+			}
+			UIUpdate();
+		}
+
+
+		public void GetSecsGemDefaultStatus()
+		{
+			UpdateCommunicatingDefaultStatus();
+			UpdateDefaultControlState();
+			UpdateDefaultOfflineSubstate();
+			UpdateDefaultOnlineFailSubstate();
+			UpdateDefaultOnlineSubstate();
+		}
+
+		public async Task UpdateGemStatus()
+		{
+			UpdateCommunicatingStatus();
+			await UpdateControlStateStatus();
+		}
+
+		#region communicating
+		private void UpdateCommunicatingDefaultStatus()
+		{
+			EC_DATA_TYPE lGetFormat;
+			Object currentVal = -1;
+			var updateRes = RunOnSTAThread(() => qgWrapper.GetEC(7, out lGetFormat, out currentVal));
+			GemStatus.SetDefaultCommunicating(int.Parse(currentVal.ToString()) is 1);
+		}
+
+		public Task<RequestResult> SwitchDefaultCommunicatingStatus(bool b)
+		{
+			var res = RunOnSTAThread(() => qgWrapper.UpdateEC(7, b ? 1 : 0));
+			UpdateCommunicatingDefaultStatus();
+			return res is 0 ? Task.FromResult(new RequestResult(2, "Update default communicating status success")) : Task.FromResult(new RequestResult(4, $"Update default communicating status fail({res})"));
+		}
+
+
+		private void UpdateCommunicatingStatus()
+		{
+			var communicating = RunOnSTAThread(() => qgWrapper.GetCurrentCommState());
+			GemStatus.SetCommunicating(communicating);
+		}
+
+		public void SwitchGemCommunicatingStatus(bool b)
+		{
+			if (b)
+				RunOnSTAThread(() => qgWrapper.EnableComm());
+			else
+				RunOnSTAThread(() => qgWrapper.DisableComm());
+			UpdateCommunicatingStatus();
+		}
+
+
+
+		#endregion
+
+
+
+		#region control state
+
+		private Task UpdateControlStateStatus()
+		{
+			SV_DATA_TYPE lGetFormat;
+			Object currentVal = -1;
+			var updateRes = RunOnSTAThread(() => qgWrapper.GetSV(4, out lGetFormat, out currentVal));
+			int intRes = int.Parse(currentVal.ToString() ?? string.Empty);
+			switch (intRes)
+			{
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+				case 5:
+					GemStatus.SetControlState((ControlState)intRes);
+					break;
+				default:
+					break;
+			}
+			return Task.CompletedTask;
+		}
+
+		private void UpdateDefaultControlState()
+		{
+			EC_DATA_TYPE lGetFormat;
+			Object currentVal = -1;
+			var updateRes = RunOnSTAThread(() => qgWrapper.GetEC(8, out lGetFormat, out currentVal));
+			GemStatus.SetDefaultControlState((DefaultControlState)int.Parse(currentVal.ToString()));
+		}
+		public Task<RequestResult> SwitchDefaultControlState(DefaultControlState defaultControlState)
+		{
+			object value = (int)defaultControlState;
+			var res = RunOnSTAThread(() => qgWrapper.UpdateEC(8, value));
+			UpdateDefaultControlState();
+			return res is 0 ? Task.FromResult(new RequestResult(2, "Update default control state success")) : Task.FromResult(new RequestResult(4, $"Update default control status fail({res})"));
+
+		}
+
+		public Task<RequestResult> SendOnlineRequest()
+		{
+			var res = RunOnSTAThread(() => qgWrapper.OnLineRequest());
+			return res is 0 ? Task.FromResult(new RequestResult(2, "Send online request success")) : Task.FromResult(new RequestResult(4, $"Send online request fail({res})"));
+		}
+
+		public Task<RequestResult> SendOffline()
+		{
+			var res = RunOnSTAThread(() => qgWrapper.OffLine());
+			return res is 0 ? Task.FromResult(new RequestResult(2, "Send offline success")) : Task.FromResult(new RequestResult(4, $"Send offline fail({res})"));
+		}
+
+		public Task<RequestResult> SendOnLineRemote()
+		{
+			var res = RunOnSTAThread(() => qgWrapper.OnLineRemote());
+			return res is 0 ? Task.FromResult(new RequestResult(2, "Send online remote success")) : Task.FromResult(new RequestResult(4, $"Send online remote fail({res})"));
+		}
+
+		public Task<RequestResult> SendOnLineLocal()
+		{
+			var res = RunOnSTAThread(() => qgWrapper.OnLineLocal());
+			return res is 0 ? Task.FromResult(new RequestResult(2, "Send online local success")) : Task.FromResult(new RequestResult(4, $"Send online local fail({res})"));
+		}
+
+		private void UpdateDefaultOfflineSubstate()
+		{
+			EC_DATA_TYPE lGetFormat;
+			Object currentVal = -1;
+			var updateRes = RunOnSTAThread(() => qgWrapper.GetEC(49, out lGetFormat, out currentVal));
+			GemStatus.SetDefaultOfflineSubstate((DefaultOfflineOrOnlineFailSubstate)int.Parse(currentVal.ToString()));
+		}
+
+		public Task<RequestResult> SwitchDefaultOfflineSubstate(DefaultOfflineOrOnlineFailSubstate defaultOfflineSubstate)
+		{
+			object value = (int)defaultOfflineSubstate;
+			var res = RunOnSTAThread(() => qgWrapper.UpdateEC(49, value));
+			UpdateDefaultOfflineSubstate();
+			return res is 0 ? Task.FromResult(new RequestResult(2, "Update default offline substate success")) : Task.FromResult(new RequestResult(4, $"Update default offline substate fail({res})"));
+
+		}
+
+		private void UpdateDefaultOnlineFailSubstate()
+		{
+			EC_DATA_TYPE lGetFormat;
+			Object currentVal = -1;
+			var updateRes = RunOnSTAThread(() => qgWrapper.GetEC(50, out lGetFormat, out currentVal));
+			GemStatus.SetDefaultOnlineFailSubstate((DefaultOfflineOrOnlineFailSubstate)int.Parse(currentVal.ToString()));
+		}
+		public Task<RequestResult> SwitchDefaultOnlineFailSubstate(DefaultOfflineOrOnlineFailSubstate defaultOfflineSubstate)
+		{
+			object value = (int)defaultOfflineSubstate;
+			var res = RunOnSTAThread(() => qgWrapper.UpdateEC(50, value));
+			UpdateDefaultOnlineFailSubstate();
+			return res is 0 ? Task.FromResult(new RequestResult(2, "Update default online fail substate success")) : Task.FromResult(new RequestResult(4, $"Update default online fail substate fail({res})"));
+
+		}
+
+		private void UpdateDefaultOnlineSubstate()
+		{
+			EC_DATA_TYPE lGetFormat;
+			Object currentVal = -1;
+			var updateRes = RunOnSTAThread(() => qgWrapper.GetEC(51, out lGetFormat, out currentVal));
+			GemStatus.SetDefaultOnlineSubstate((DefaultOnlineSubstate)int.Parse(currentVal.ToString()));
+		}
+
+		public Task<RequestResult> SwitchDefaultOnlineSubstate(DefaultOnlineSubstate defaultOnlineSubstate)
+		{
+			object value = (int)defaultOnlineSubstate;
+			var res = RunOnSTAThread(() => qgWrapper.UpdateEC(51, value));
+			UpdateDefaultOnlineSubstate();
+			return res is 0 ? Task.FromResult(new RequestResult(2, "Update default online substate success")) : Task.FromResult(new RequestResult(4, $"Update default online substate fail({res})"));
+
+		}
+
+		#endregion
+
+		private void Log(EVENT_ID eventType, int s, int f, SecsTreeNode? SecsItem = null)
+		{
+			QSEventLogs.Add(new QSEventLog()
+			{
+				EventType = eventType,
+				S = s,
+				F = f,
+				LogTime = DateTime.Now,
+				SecsItem = SecsItem
+			});
+			UIUpdate();
+		}
+
+		public RequestResult StopHSMS()
+		{
+			qsWrapper.QSEvent -= new QSACTIVEXLib._IQSWrapperEvents_QSEventEventHandler(QSEvent);
+			var stopRes = qsWrapper.Stop();
+			bool success = stopRes is 1;
+			secsStatus.SetHosting(!success);
+			UIUpdate();
+			if (success)
+			{
+				return new RequestResult(2, $"Stop hsms success");
+
+			}
+			else
+			{
+				return new RequestResult(4, $"Stop hsms fail({stopRes})");
+			}
+		}
+
+
+		public RequestResult InitGem()
+		{
+			var qgRes = qgWrapper.Initialize(configPath);
+			var res = qgRes is 0;
+			if (res)
+			{
+				qgWrapper.QGEvent += new _IQGWrapperEvents_QGEventEventHandler(qgEvent);
+				qgWrapper.PPEvent += new _IQGWrapperEvents_PPEventEventHandler(qgInfoEvent);
+				qgWrapper.TerminalMsgReceive += new _IQGWrapperEvents_TerminalMsgReceiveEventHandler(qgTerminalMsgReceive);
+				GetSecsGemDefaultStatus();
+			}
+			GemStatus.SetInitSuccess(res);
+			return res ? new(2, "Init Gem success") : new(4, "Init Gem fail");
+		}
+
+		#region sv
+
+		public async Task InitSVs()
+		{
+			using (var scope = scopeFactory.CreateScope())
+			{
+				var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
+				SVs = await dbContext.SVs.AsNoTracking().ToListAsync();
+			}
+		}
+
+		public Task UpdateSVs()
+		{
+			foreach (var sv in SVs)
+			{
+				Object? value;
+				SV_DATA_TYPE _data_type;
+				var res = qgWrapper.GetSV(sv.SVId, out _data_type, out value);
+				if (res is 0)
+				{
+					sv.SetValue(value);
+					sv.SV_DATA_TYPE = _data_type;
+				}
+			}
+			SVUpdate();
+			return Task.CompletedTask;
+		}
+
+		public Task SetSV(SetSVParameter setSVParameter)
+		{
+			var target = SVs.FirstOrDefault(sv => sv.Name == setSVParameter.Name);
+			if (target is not null)
+			{
+				Object? obj = null;
+				switch (target.SV_DATA_TYPE)
+				{
+					//case SV_DATA_TYPE.SV_ASCII_TYPE:
+					//	obj = setSVParameter.ValueString;
+					//	break;
+					//case SV_DATA_TYPE.SV_BINARY_TYPE:
+					//	if (byte.TryParse(setSVParameter.ValueString, out byte byteValue))
+					//		obj = byteValue;
+					//	break;
+					//case SV_DATA_TYPE.SV_BOOLEAN_TYPE:
+					//	if (bool.TryParse(setSVParameter.ValueString, out bool booleanValue))
+					//		obj = booleanValue;
+					//	break;
+					//case SV_DATA_TYPE.SV_INT_1_TYPE:
+					//	if (sbyte.TryParse(setSVParameter.ValueString, out sbyte sbyteValue))
+					//		obj = sbyteValue;
+					//	break;
+					//case SV_DATA_TYPE.SV_INT_2_TYPE:
+					//	if (short.TryParse(setSVParameter.ValueString, out short shortValue))
+					//		obj = shortValue;
+					//	break;
+					//case SV_DATA_TYPE.SV_INT_4_TYPE:
+					//	if (int.TryParse(setSVParameter.ValueString, out int intValue))
+					//		obj = intValue;
+					//	break;
+
+					//case SV_DATA_TYPE.SV_UINT_1_TYPE:
+					//	if (byte.TryParse(setSVParameter.ValueString, out byte u1ByteValue))
+					//		obj = u1ByteValue;
+					//	break;
+					//case SV_DATA_TYPE.SV_UINT_2_TYPE:
+					//	if (ushort.TryParse(setSVParameter.ValueString, out ushort ushortValue))
+					//		obj = ushortValue;
+					//	break;
+					//case SV_DATA_TYPE.SV_UINT_4_TYPE:
+					//	if (uint.TryParse(setSVParameter.ValueString, out uint uintValue))
+					//		obj = uintValue;
+					//	break;
+					//case SV_DATA_TYPE.SV_FT_4_TYPE:
+					//	if (float.TryParse(setSVParameter.ValueString, out float floatValue))
+					//		obj = floatValue;
+					//	break;
+					//case SV_DATA_TYPE.SV_FT_8_TYPE:
+					//	if (double.TryParse(setSVParameter.ValueString, out double doubleValue))
+					//		obj = doubleValue;
+					//	break;
+					case SV_DATA_TYPE.SV_ASCII_TYPE:
+						obj = setSVParameter.ValueString;
+						break;
+
+					case SV_DATA_TYPE.SV_BINARY_TYPE or SV_DATA_TYPE.SV_UINT_1_TYPE when byte.TryParse(setSVParameter.ValueString, out var u1):
+						obj = u1;
+						break;
+
+					case SV_DATA_TYPE.SV_BOOLEAN_TYPE when bool.TryParse(setSVParameter.ValueString, out var b):
+						obj = b;
+						break;
+
+					case SV_DATA_TYPE.SV_INT_1_TYPE when sbyte.TryParse(setSVParameter.ValueString, out var i1):
+						obj = i1;
+						break;
+
+					case SV_DATA_TYPE.SV_INT_2_TYPE when short.TryParse(setSVParameter.ValueString, out var i2):
+						obj = i2;
+						break;
+
+					case SV_DATA_TYPE.SV_INT_4_TYPE when int.TryParse(setSVParameter.ValueString, out var i4):
+						obj = i4;
+						break;
+
+					case SV_DATA_TYPE.SV_UINT_2_TYPE when ushort.TryParse(setSVParameter.ValueString, out var u2):
+						obj = u2;
+						break;
+
+					case SV_DATA_TYPE.SV_UINT_4_TYPE when uint.TryParse(setSVParameter.ValueString, out var u4):
+						obj = u4;
+						break;
+
+					case SV_DATA_TYPE.SV_FT_4_TYPE when float.TryParse(setSVParameter.ValueString, out var f4):
+						obj = f4;
+						break;
+
+					case SV_DATA_TYPE.SV_FT_8_TYPE when double.TryParse(setSVParameter.ValueString, out var f8):
+						obj = f8;
+						break;
+					default:
+						break;
+				}
+				if (obj is not null)
+				{
+					RunOnSTAThread(() => qgWrapper.UpdateSV(target.SVId, obj));
+				}
+
+			}
+			else
+			{
+
+			}
+			return Task.CompletedTask;
+		}
+
+		public async Task UpsertSV(SV sv)
+		{
+			await UpsertSVInDB(sv);
+			UpsertSVInMemory(sv);
+			SVUpdate();
+		}
+		private async Task<RequestResult> UpsertSVInDB(SV sv)
+		{
+			using (var scope = scopeFactory.CreateScope())
+			{
+				var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
+				var target = await dbContext.SVs.FirstOrDefaultAsync(x => x.Id == sv.Id);
+				if (target is not null)
+				{
+					dbContext.Entry(target).CurrentValues.SetValues(sv);
+				}
+				else
+				{
+					await dbContext.SVs.AddAsync(sv);
+				}
+				await dbContext.SaveChangesAsync();
+				return new(2, $"Upsert sv config success)");
+			}
+		}
+		private void UpsertSVInMemory(SV sv)
+		{
+			var target = SVs.FirstOrDefault(x => x.Id == sv.Id);
+			if (target is not null)
+			{
+				target = sv;
+			}
+			else
+			{
+				SVs.Add(sv);
+			}
+		}
+
+		public async Task DeleteSV(SV sv)
+		{
+			await DeleteSVInDB(sv);
+			DeleteSVInMemory(sv);
+			SVUpdate();
+		}
+		private async Task<RequestResult> DeleteSVInDB(SV sv)
+		{
+			using (var scope = scopeFactory.CreateScope())
+			{
+				var dbContext = scope.ServiceProvider.GetRequiredService<SecsGemDBContext>();
+				var target = await dbContext.SVs.FirstOrDefaultAsync(x => x.Id == sv.Id);
+				if (target is not null)
+				{
+					dbContext.SVs.Remove(target);
+					await dbContext.SaveChangesAsync();
+					return new(2, $"Delete sv config success)");
+				}
+				else
+				{
+					return new(4, $"Delete sv config fail)");
+				}
+
+			}
+		}
+
+		private void DeleteSVInMemory(SV sv)
+		{
+			var index = SVs.FindIndex(x => x.Id == sv.Id);
+			if (index >= 0)
+			{
+				SVs.RemoveAt(index);
+			}
+		}
+
+		#endregion
+
+		#region event
+
+		public Task<RequestResult> SendEvent(SendEventParameter sendEventParameter)
+		{
+			var res = RunOnSTAThread(() => qgWrapper.EventReportSend(sendEventParameter.EventId));
+			return res is 0 ? Task.FromResult(new RequestResult(2, $"Send event {sendEventParameter.EventId} success")) : Task.FromResult(new RequestResult(4, $"Send event {sendEventParameter.EventId} fail({res})"))
+;
+		}
+
+		#endregion
+
+		private void qgEvent(int lID, int S, int F, int W_Bit, int SystemBytes, object RawData, int Length)
+		{
+			RunOnSTAThread(() => qsWrapper.SendSECSIIMessage(S, F, W_Bit, ref SystemBytes, RawData));
+
+		}
+
+		private void qgInfoEvent(PP_TYPE MsgID, string InfoData)
+		{
+
+		}
+
+		private void qgTerminalMsgReceive(string Message)
+		{
+
+		}
+
+
+	}
 }

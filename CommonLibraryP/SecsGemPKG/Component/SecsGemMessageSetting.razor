@@ -1,4 +1,4 @@
-﻿@namespace CommonLibraryP.SecsGemPKG.Component
+﻿@* @namespace CommonLibraryP.SecsGemPKG.Component
 @rendermode RenderMode.InteractiveServer
 
 @inject SecsGemService secsGemService
@@ -21,7 +21,7 @@
                                     </Items>
                                 </DxToolbarItem>
                                 <DxToolbarItem IconCssClass="oi oi-pencil" Enabled="@secsRootItemSelected" Click="@ShowRootNodePopup" RenderStyle="ButtonRenderStyle.Info" BeginGroup="true" />
-                                <DxToolbarItem IconCssClass="bi bi-chat-left-text" Enabled="@secsRootItemSelected" Click="@TrySendMessage" RenderStyle="ButtonRenderStyle.Success" BeginGroup="true" />
+                                <DxToolbarItem IconCssClass="bi bi-chat-left-text" Enabled="@secsRootItemSelected" Click="@ShowSendPopup" RenderStyle="ButtonRenderStyle.Success" BeginGroup="true" />
                                 <DxToolbarItem IconCssClass="oi oi-trash" Enabled="@secsRootItemSelected" Click="ShowDeleteRootPopup" RenderStyle="ButtonRenderStyle.Danger" Alignment="ToolbarItemAlignment.Right" BeginGroup="true" />
                             </Items>
                         </DxToolbar>
@@ -69,13 +69,16 @@
     </Panes>
 </DxSplitter>
 
-<DxPopup @ref="@rootNodePopup" HeaderText="@(targetSecsTreeNode?.GetType().Name)" ShowCloseButton="true" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+<DxPopup @ref="@rootNodePopup" HeaderText="@(targetRootSecsItem?.GetType().Name)" ShowCloseButton="true" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
     <BodyContentTemplate Context="bodycontext">
         <EditForm Model="@targetRootSecsItem" Context="EditFormContext" OnValidSubmit="UpsertRootNode">
             <DataAnnotationsValidator />
             <DxFormLayout>
                 <DxFormLayoutItem Caption="Name" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6" BeginRow="true">
                     <DxTextBox @bind-Text="@targetRootSecsItem.Name" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Sequence" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6">
+                    <DxSpinEdit @bind-Value="@targetRootSecsItem.Sequence" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
                 <DxFormLayoutItem ColSpanLg="12">
                     <hr />
@@ -97,10 +100,10 @@
         <EditForm Model="@targetSecsTreeNode" Context="EditFormContext" OnValidSubmit="UpsertTreeNode">
             <DataAnnotationsValidator />
             <DxFormLayout>
-                <DxFormLayoutItem Caption="Name" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6" BeginRow="true">
+                <DxFormLayoutItem Caption="Name" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="4" BeginRow="true">
                     <DxTextBox @bind-Text="@targetSecsTreeNode.Name" ShowValidationIcon="true" />
                 </DxFormLayoutItem>
-                <DxFormLayoutItem Caption="Value" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6">
+                <DxFormLayoutItem Caption="Value" Visible="@(targetSecsTreeNode?.IsValueType ?? false)" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="4">
                     @switch (targetSecsTreeNode)
                     {
                         case SecsAscii secsAscii:
@@ -146,6 +149,9 @@
                             break;
                     }
                 </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="Sequence" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="4" >
+                    <DxSpinEdit @bind-Value="@targetSecsTreeNode.Sequence" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
                 <DxFormLayoutItem ColSpanLg="12">
                     <hr />
                 </DxFormLayoutItem>
@@ -170,6 +176,35 @@
               Closed="DeleteTreeNode">
 </DxMessageBox>
 
+<DxPopup @ref="@sendPopup" ShowCloseButton="true" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <BodyContentTemplate Context="bodycontext">
+        <EditForm Model="@secsGemMessageParameter" Context="EditFormContext" OnValidSubmit="TrySendMessage">
+            <DataAnnotationsValidator />
+            <DxFormLayout>
+                <DxFormLayoutItem Caption="Message" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <DxComboBox Data="@secsRootNodes" @bind-Value="@secsGemMessageParameter.RootId" ValueFieldName="@nameof(SecsTreeNode.Id)" TextFieldName="@nameof(SecsTreeNode.Name)"></DxComboBox>
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="S" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6" BeginRow="true">
+                    <DxSpinEdit @bind-Value="@secsGemMessageParameter.S" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem Caption="F" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6">
+                    <DxSpinEdit @bind-Value="@secsGemMessageParameter.F" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem ColSpanLg="12">
+                    <hr />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <DxToolbar>
+                        <Items>
+                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                        </Items>
+                    </DxToolbar>
+                </DxFormLayoutItem>
+            </DxFormLayout>
+        </EditForm>
+    </BodyContentTemplate>
+</DxPopup>
+
 @code {
     IGrid? rootNodesGrid { get; set; }
     DxPopup? rootNodePopup { get; set; }
@@ -189,6 +224,11 @@
     DxPopup? treeNodePopup { get; set; }
     private SecsTreeNode? targetSecsTreeNode;
     private bool secsTreeNodeSelected => targetSecsTreeNode is not null;
+
+
+    DxPopup? sendPopup { get; set; }
+    SecsGemMessageParameter secsGemMessageParameter = new SecsGemMessageParameter();
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -231,6 +271,19 @@
         await treeNodePopup?.CloseAsync();
     }
 
+    private async Task ShowSendPopup()
+    {
+        secsGemMessageParameter = new SecsGemMessageParameter()
+        {
+            RootId = targetRootSecsItem.Id
+        };
+        await sendPopup.ShowAsync();
+    }
+    private async Task CloseSendPopup()
+    {
+        await sendPopup.CloseAsync();
+    }
+
     private async Task LoadRootNodes()
     {
         secsRootNodes = await secsGemService.GetAllSecsGemRootItems();
@@ -256,8 +309,10 @@
     private async Task NewNodeClicked(SecsDataTypeWrapperClass secsDataTypeWrapperClass)
     {
         var parentId = targetSecsTreeNode?.Id;
+        var currentcount = targetSecsTreeNode.ChildrenNode.Count;
         targetSecsTreeNode = SecsGemTypeEnumHelper.GetSecsTreeNodeTypeByEnum(secsDataTypeWrapperClass.SecsDataTypeEnum);
         targetSecsTreeNode.ParentId = parentId;
+        targetSecsTreeNode.Sequence = currentcount;
         await ShowTreeNodePopup();
     }
 
@@ -305,9 +360,11 @@
     }
 
 
-    private Task TrySendMessage()
+    private async Task TrySendMessage()
     {
-        secsGemService.SendMessage(0, 0, targetRootSecsItem);
-        return Task.CompletedTask;
+        var res = await secsGemService.SendMessage(secsGemMessageParameter);
+        await CloseSendPopup();
+        notificationService.ShowToast(res);
     }
 }
+ *@
