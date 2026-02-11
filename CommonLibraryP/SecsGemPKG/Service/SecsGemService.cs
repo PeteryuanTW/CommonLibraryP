@@ -658,15 +658,69 @@ namespace CommonLibraryP.SecsGemPKG
 
 		#endregion
 
+		#region remote command
+		private RemoteCommand remoteCommand = new();
+
+		private string parameterName = string.Empty;
+
+		public event Func<RemoteCommand, Task>? RemoteCommandAction;
+
+		private void ProcessRemoteCommandSuccess()
+		{
+			if (RemoteCommandAction != null)
+			{
+				foreach (Func<RemoteCommand, Task> handler in RemoteCommandAction.GetInvocationList())
+				{
+					_ = Task.Run(async () =>
+					{
+						try
+						{
+							await handler(remoteCommand);
+						}
+						catch (Exception ex)
+						{
+						}
+					});
+				}
+			}
+			//remoteCommand = new();
+		}
+
+		public int ReplyForRemoteCommand(Object obj)
+		{
+			Object obj2 = "";
+			var res = RunOnSTAThread(() => qgWrapper.Command((int)QGACTIVEXLib.PP_TYPE.CMD_REPLY_S2F42_HCACK, ref obj, ref obj2));
+			return res;
+		}
+
+		#endregion
+
 		private void qgEvent(int lID, int S, int F, int W_Bit, int SystemBytes, object RawData, int Length)
 		{
-			RunOnSTAThread(() => qsWrapper.SendSECSIIMessage(S, F, W_Bit, ref SystemBytes, RawData));
+			//RunOnSTAThread(() => qsWrapper.SendSECSIIMessage(S, F, W_Bit, ref SystemBytes, RawData));
 
 		}
 
 		private void qgInfoEvent(PP_TYPE MsgID, string InfoData)
 		{
-
+			//parsing remote command
+			if (MsgID is PP_TYPE.RECEIVE_S2F41_RCMD)
+			{
+				remoteCommand = new(InfoData);
+			}
+			else if (MsgID is PP_TYPE.RECEIVE_S2F41_CPNAME)
+			{
+				parameterName = InfoData;
+			}
+			else if (MsgID is PP_TYPE.RECEIVE_S2F41_CPVAL)
+			{
+				remoteCommand.ParameterList.Add(parameterName, InfoData);
+				parameterName = string.Empty;
+			}
+			else if (MsgID is PP_TYPE.RECEIVE_S2F41_RCMD_END)
+			{
+				ProcessRemoteCommandSuccess();
+			}
 		}
 
 		private void qgTerminalMsgReceive(string Message)
