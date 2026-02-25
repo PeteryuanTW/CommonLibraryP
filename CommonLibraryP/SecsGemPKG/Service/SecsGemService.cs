@@ -697,7 +697,7 @@ namespace CommonLibraryP.SecsGemPKG
 
 		private void qgEvent(int lID, int S, int F, int W_Bit, int SystemBytes, object RawData, int Length)
 		{
-			//RunOnSTAThread(() => qsWrapper.SendSECSIIMessage(S, F, W_Bit, ref SystemBytes, RawData));
+			RunOnSTAThread(() => qsWrapper.SendSECSIIMessage(S, F, W_Bit, ref SystemBytes, RawData));
 
 		}
 
