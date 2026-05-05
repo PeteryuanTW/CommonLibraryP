@@ -26,8 +26,8 @@ namespace CommonLibraryP.UserPKG.Extension
             });
             builder.AddBlazorCookies();
             builder.Services.AddDataProtection();
-
-            return builder;
+			builder.Services.AddLocalization();
+			return builder;
 
         }
     }

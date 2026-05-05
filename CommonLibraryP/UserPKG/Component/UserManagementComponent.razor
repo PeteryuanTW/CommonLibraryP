@@ -1,0 +1,105 @@
+﻿@namespace CommonLibraryP.UserPKG.Component
+@inherits AuthComponentBase
+@rendermode RenderMode.InteractiveServer
+@inject IStringLocalizer<UserLanguage> localizer
+@inject NotificationService notificationService
+
+
+<DxGrid @ref="grid" Data="@userInfos" @bind-SelectedDataItem="@targetUserInfoObj" FilterMenuButtonDisplayMode="GridFilterMenuButtonDisplayMode.Always" AllowSelectRowByClick="true" SelectionMode="GridSelectionMode.Single" DataItemDeleting="DeleteUser" HighlightRowOnHover="true">
+    <ToolbarTemplate>
+        <DxToolbar Title="@(targetUserInfo?.Username)" SizeMode="SizeMode.Large" ItemRenderStyleMode="ToolbarRenderStyleMode.Contained">
+            <DxToolbarItem IconCssClass="oi oi-plus" Click="@NewUserClicked" BeginGroup="true" />
+            <DxToolbarItem Enabled="@userSelected" Click="@ShowUserDelete" IconCssClass="oi oi-trash" RenderStyle="ButtonRenderStyle.Danger" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" />
+        </DxToolbar>
+    </ToolbarTemplate>
+    <Columns>
+        <DxGridDataColumn Caption="@($"{localizer["Id"]}")" FieldName="@nameof(UserInfo.Id)" />
+        <DxGridDataColumn Caption="@($"{localizer["User Name"]}")" FieldName="@nameof(UserInfo.Username)" />
+        <DxGridDataColumn Caption="@($"{localizer["Role"]}")" FieldName="@nameof(UserInfo.Role)" />
+    </Columns>
+</DxGrid>
+
+<DxPopup @ref="@userPopup" ShowCloseButton="true" CloseOnOutsideClick="false" ShowHeader="true" ShowFooter="false" Width="50rem">
+    <BodyContentTemplate Context="bodycontext">
+        <EditForm Model="@newUserDTO" Context="EditFormContext" OnValidSubmit="InsertNewUser">
+            <DataAnnotationsValidator />
+            <DxFormLayout>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["User Name"]}")" ColSpanLg="6" BeginRow="true">
+                    <DxTextBox @bind-Text="@newUserDTO.UserName" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["Password"]}")" ColSpanLg="6">
+                    <DxTextBox @bind-Text="@newUserDTO.Password" ShowValidationIcon="true" />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" Caption="@($"{localizer["Role"]}")" ColSpanLg="6">
+                    <DxComboBox Data="@userRoleWrapperClass" @bind-Value="@newUserDTO.NewUserRole" ValueFieldName="@(nameof(UserRoleWrapperClass.UserRole))" TextFieldName="@(nameof(UserRoleWrapperClass.DisplayName))" />
+                </DxFormLayoutItem>
+
+                <DxFormLayoutItem ColSpanLg="12">
+                    <hr />
+                </DxFormLayoutItem>
+                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                    <DxToolbar>
+                        <Items>
+                            <DxToolbarItem IconCssClass="oi oi-check" SubmitFormOnClick="true" RenderStyle="ButtonRenderStyle.Primary" BeginGroup="true" Alignment="ToolbarItemAlignment.Right" RenderStyleMode="ToolbarItemRenderStyleMode.Contained" />
+                        </Items>
+                    </DxToolbar>
+                </DxFormLayoutItem>
+
+            </DxFormLayout>
+        </EditForm>
+    </BodyContentTemplate>
+</DxPopup>
+
+@code {
+    IGrid? grid { get; set; }
+    private DxPopup? userPopup { get; set; }
+
+    private IEnumerable<UserInfo> userInfos = new List<UserInfo>();
+    private Object? targetUserInfoObj;
+    private UserInfo? targetUserInfo => targetUserInfoObj as UserInfo;
+    private bool userSelected => (targetUserInfo != null) && (userService.IsRoleLargeThan(UserRole.Admin)) && (targetUserInfo.Username != userService.UserInfoDTO.Username);
+
+    private NewUserDTO newUserDTO = new NewUserDTO();
+
+    private IEnumerable<UserRoleWrapperClass> userRoleWrapperClass => UserTypeEnumHelper.GetGeneralUserRoleWrapperClass(userService.UserInfoDTO?.Role?? UserRole.Guest, localizer);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetUserData();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task GetUserData()
+    {
+        userInfos = await userService.GetUserInfo();
+    }
+
+    private async Task ShowPopup() => await userPopup?.ShowAsync();
+    private async Task ClosePopup() => await userPopup?.CloseAsync();
+
+    private async Task NewUserClicked()
+    {
+        newUserDTO = new NewUserDTO();
+        await ShowPopup();
+    }
+
+    private async Task InsertNewUser()
+    {
+        var res = await userService.AddNewUser(newUserDTO);
+        await GetUserData();
+        await ClosePopup();
+        notificationService.ShowToast(res);
+    }
+
+    private async Task ShowUserDelete()
+    {
+        grid?.ShowDataItemDeleteConfirmation(targetUserInfoObj);
+    }
+
+    private async Task DeleteUser()
+    {
+        var res = await userService.DeleteUser(targetUserInfo);
+        await GetUserData();
+        notificationService.ShowToast(res);
+    }
+}

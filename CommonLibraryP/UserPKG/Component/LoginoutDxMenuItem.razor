@@ -1,11 +1,12 @@
 ﻿@namespace CommonLibraryP.UserPKG.Component
 @rendermode RenderMode.InteractiveServer
+@inject IStringLocalizer<UserLanguage> localizer
 
 @inherits AuthComponentBase
 
-<DxMenuItem Text="@(userService.UserInfoDTO?.Username)" IconCssClass="@processingIconCssClass" Position="ItemPosition.End">
+<DxMenuItem Text="@($"{userService.UserInfoDTO?.Username}({localizer[userService.UserInfoDTO?.Role.ToString()??string.Empty]})")" IconCssClass="@processingIconCssClass" Position="ItemPosition.End">
     <Items>
-        <DxMenuItem Text="@text" IconCssClass="@iconCss" NavigateUrl="Loginout"/>
+        <DxMenuItem Text="@(localizer[text])" IconCssClass="@iconCss" NavigateUrl="Loginout" />
     </Items>
 </DxMenuItem>
 
