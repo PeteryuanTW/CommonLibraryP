@@ -17,7 +17,13 @@ namespace CommonLibraryP.MachinePKG
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString(dbConnectionStringName));
             });
-            builder.Services.AddSingleton<MachineService>();
+			using (var scope = builder.Services.BuildServiceProvider().CreateScope())
+			{
+				var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MachineDBContext>>();
+				using var db = dbFactory.CreateDbContext();
+                db.Database.Migrate();
+			}
+			builder.Services.AddSingleton<MachineService>();
             builder.Services.AddHostedService<MachineInitHostingService>();
             builder.Services.TryAddScoped<NotificationService>();
             builder.Services.AddLocalization();
@@ -33,7 +39,6 @@ namespace CommonLibraryP.MachinePKG
             });
             builder.Services.AddSingleton<MachineService, MachineServiceImplementation>();
             builder.Services.AddHostedService<MachineInitHostingService>();
-            //builder.Services.AddHostedService<ConditionHostService>();
             builder.Services.AddLocalization();
             return builder;
         }
