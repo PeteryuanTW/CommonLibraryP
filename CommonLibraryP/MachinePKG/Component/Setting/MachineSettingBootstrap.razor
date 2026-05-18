@@ -1,0 +1,155 @@
+﻿@namespace CommonLibraryP.MachinePKG.Component
+
+@rendermode RenderMode.InteractiveServer
+
+@inject IStringLocalizer<MachineLanguage> localizer
+@inject MachineService machineService
+@inject NotificationService notificationService
+@inject NavigationManager nav
+
+<div class="card">
+    <div class="card-header">
+        <button @onclick="NewMachine" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#machineModal">
+            <span class="oi oi-plus"></span>
+        </button>
+    </div>
+    <div class="card-body">
+        <QuickGrid TGridItem="Machine" Items="machinesQueryable" class="table table-striped-columns">
+            <TemplateColumn>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#machineModal"
+                        @onclick="() => EditMachine(context)">
+                    <span class="oi oi-pencil"></span>
+                </button>
+            </TemplateColumn>
+            <PropertyColumn Property="@(p => p.Id)" Title="@($"{localizer["Id"]}")" Sortable="true" />
+            <PropertyColumn Property="@(p => p.Name)" Title="@($"{localizer["Name"]}")" Sortable="true" />
+            <PropertyColumn Property="@(p => p.Ip)" Title="@($"{localizer["IP"]}")" Sortable="true" />
+            <PropertyColumn Property="@(p => p.Port)" Title="@($"{localizer["Port"]}")" Sortable="true" />
+            <TemplateColumn Title="@localizer["Connection Type"]">
+                @(MachineTypeEnumHelper.GetConnectionTypeWrapperClassByIndex(context.ConnectionType)?.DisplayName)
+            </TemplateColumn>
+            <TemplateColumn Title="@localizer["Tag Category"]">
+                @(tagCategories.FirstOrDefault(x => x.Id == context.TagCategoryId))
+            </TemplateColumn>
+            <PropertyColumn Property="@(p => p.MaxRetryCount)" Title="@($"{localizer["Maximal Retry Count"]}")" Sortable="true" />
+            <PropertyColumn Property="@(p => p.Enabled)" Title="@($"{localizer["Enable"]}")" Sortable="true" />
+            <PropertyColumn Property="@(p => p.UpdateDelay)" Title="@($"{localizer["Update Delay"]}")" Sortable="true" />
+            <PropertyColumn Property="@(p => p.RecordStatusChanged)" Title="@($"{localizer["Record Status Changed"]}")" Sortable="true" />
+        </QuickGrid>
+    </div>
+</div>
+
+<div class="modal modal-lg fade" id="machineModal" aria-hidden="true" aria-labelledby="exampleModalToggleLabel" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button @onclick="InitParam" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@targetMachine" OnValidSubmit="UpsertMachine">
+                    <DataAnnotationsValidator />
+                    <div class="row">
+                        <div class="col-lg-6 mb-3">
+                            <label>@localizer["Name"]</label>
+                            <InputText class="form-control" @bind-Value="@targetMachine.Name" />
+                        </div>
+                        <div class="col-lg-6 mb-3">
+                            <label class="form-check-label">@localizer["Enable"]</label>
+                            <div class="form-check form-switch">
+                                <InputCheckbox class="form-check-input" @bind-Value="@targetMachine.Enabled" />
+                            </div>
+                        </div>
+                        <div class="col-lg-6 mb-3">
+                            <label>@localizer["IP"]</label>
+                            <InputText class="form-control" @bind-Value="@targetMachine.Ip" />
+                        </div>
+                        <div class="col-lg-6 mb-3">
+                            <label>@localizer["Port"]</label>
+                            <InputNumber class="form-control" @bind-Value="@targetMachine.Port" />
+                        </div>
+                        <div class="col-lg-6 mb-3">
+                            <label class="form-label">@localizer["Connection Type"]</label>
+                            <InputSelect class="form-select" @bind-Value="@targetMachine.ConnectionType">
+                                @foreach (var type in ConnectTypes)
+                                {
+                                    <option value="@type.Index">@type.DisplayName</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-lg-6 mb-3">
+                            <label class="form-label">@localizer["Tag Category"]</label>
+                            <InputSelect class="form-select" @bind-Value="@targetMachine.TagCategoryId">
+                                @foreach (var tag in tagCategories)
+                                {
+                                    <option value="@tag.Id">@tag.Name</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-lg-6 mb-3">
+                            <label>@localizer["Update Delay"]</label>
+                            <InputNumber class="form-control" @bind-Value="@targetMachine.UpdateDelay" />
+                        </div>
+                        <div class="col-lg-6 mb-3">
+                            <label class="form-check-label">@localizer["Record Status Changed"]</label>
+                            <div class="form-check form-switch">
+                                <InputCheckbox class="form-check-input" @bind-Value="@targetMachine.RecordStatusChanged" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">
+                            <span class="oi oi-check"></span> @localizer["Save"]
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private IEnumerable<Machine> machines = new List<Machine>();
+    private IQueryable<Machine> machinesQueryable => machines.AsQueryable();
+    private Machine targetMachine = new();
+
+    private IEnumerable<ConnectionTypeWrapperClass> ConnectTypes => MachineTypeEnumHelper.GetConnectionTypeWrapperClasses();
+    private IEnumerable<TagCategory> tagCategories = new List<TagCategory>();
+    private IEnumerable<TagCategory> suitableTagCategories = new List<TagCategory>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitParam();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task InitParam()
+    {
+        machines = await machineService.GetAllMachinesConfig();
+        tagCategories = await machineService.GetAllTagCategories();
+    }
+
+    private async Task GetTagCategory()
+    {
+        suitableTagCategories = await machineService.GetAllSuitableTags(targetMachine.ConnectionType);
+    }
+
+    private async Task NewMachine()
+    {
+        targetMachine = new();
+    }
+
+    private async Task EditMachine(Machine machine)
+    {
+        targetMachine = machine;
+        await GetTagCategory();
+    }
+
+    private async Task UpsertMachine()
+    {
+        var res = await machineService.UpsertMachineConfig(targetMachine);
+        await InitParam();
+    }
+}

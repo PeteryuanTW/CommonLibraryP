@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFrameworks>net8.0</TargetFrameworks>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Authors>Peter Yuan</Authors>
@@ -9,9 +9,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<EnableDefaultContentItems>true</EnableDefaultContentItems>
 		<StaticWebAssetsEnabled>true</StaticWebAssetsEnabled>
-		<Platforms>AnyCPU;x86</Platforms>
-
-
+		<Platforms>AnyCPU</Platforms>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -39,29 +37,6 @@
 	<ItemGroup>
 		<Content Remove="MachinePKG\Component\Setting\ConditionSetting.razor" />
 		<Content Remove="MapPKG\Component\Setting\MapComponent\MapComponentEdit.razor" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <COMReference Include="QSACTIVEXLib">
-	    <VersionMinor>0</VersionMinor>
-	    <VersionMajor>1</VersionMajor>
-	    <Guid>b25f3585-0060-40de-b95f-80146b9365e6</Guid>
-	    <Lcid>0</Lcid>
-	    <WrapperTool>tlbimp</WrapperTool>
-	    <Isolated>false</Isolated>
-	    <EmbedInteropTypes>true</EmbedInteropTypes>
-	    <Private>True</Private>
-	  </COMReference>
-	  <COMReference Include="QGACTIVEXLib">
-	    <VersionMinor>0</VersionMinor>
-	    <VersionMajor>1</VersionMajor>
-	    <Guid>dcf453ea-d30f-47d6-a916-cfd254b85739</Guid>
-	    <Lcid>0</Lcid>
-	    <WrapperTool>tlbimp</WrapperTool>
-	    <Isolated>false</Isolated>
-	    <EmbedInteropTypes>true</EmbedInteropTypes>
-	    <Private>True</Private>
-	  </COMReference>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -95,7 +70,8 @@
 	<ItemGroup>
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
 		<PackageReference Include="BitzArt.Blazor.Cookies.Server" Version="1.5.1" />
-		<PackageReference Include="DevExpress.Blazor" Version="25.1.3" />
+		<PackageReference Include="DevExpress.Blazor" Version="25.2.7" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid" Version="8.0.15" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.15" />
 		<PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.7" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.12" />

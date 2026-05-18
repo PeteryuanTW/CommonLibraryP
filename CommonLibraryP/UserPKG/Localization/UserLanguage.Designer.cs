@@ -106,7 +106,7 @@ namespace CommonLibraryP.UserPKG.Localization {
         }
         
         /// <summary>
-        ///   查詢類似  的當地語系化字串。
+        ///   查詢類似 Logout 的當地語系化字串。
         /// </summary>
         public static string Logout {
             get {
