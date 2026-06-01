@@ -65,6 +65,6 @@ namespace CommonLibraryP.MachinePKG
 
         public bool StringReverse { get; set; }
 
-
-    }
+		public override int OrderIndex => StartIndex;
+	}
 }

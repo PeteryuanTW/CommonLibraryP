@@ -88,6 +88,7 @@
                                     <DxFormLayoutItem ColSpanLg="12">
                                         <DxGrid Data="@Machine.TagCategory.Tags">
                                             <Columns>
+                                                <DxGridDataColumn Caption="@(localizer["Order Index"])" FieldName="@nameof(Tag.OrderIndex)" FilterMenuButtonDisplayMode="GridFilterMenuButtonDisplayMode.Always" />
                                                 <DxGridDataColumn Caption="@(localizer["Tag Name"])" FieldName="@nameof(Tag.Name)" FilterMenuButtonDisplayMode="GridFilterMenuButtonDisplayMode.Always" />
                                                 <DxGridDataColumn Caption="@(localizer["Data Type"])" FieldName="@nameof(Tag.DataType)">
                                                     <CellDisplayTemplate Context="datatypecontext">

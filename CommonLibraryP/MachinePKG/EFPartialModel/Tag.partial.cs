@@ -27,6 +27,9 @@ namespace CommonLibraryP.MachinePKG
         }
 
         [NotMapped]
+        public abstract int OrderIndex { get; }
+
+		[NotMapped]
         public bool IsMultipleValue => DataType > 10;
         [NotMapped]
         public bool IsBoolean => DataType % 10 == 1;
