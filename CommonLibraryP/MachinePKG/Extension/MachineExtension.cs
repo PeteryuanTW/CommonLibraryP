@@ -21,7 +21,7 @@ namespace CommonLibraryP.MachinePKG
 			{
 				var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MachineDBContext>>();
 				using var db = dbFactory.CreateDbContext();
-                db.Database.Migrate();
+                //db.Database.Migrate();
 			}
 			builder.Services.AddSingleton<MachineService>();
             builder.Services.AddHostedService<MachineInitHostingService>();
